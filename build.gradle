@@ -5,11 +5,26 @@ allprojects {
     version = '1.0.0-SNAPSHOT'
 
     repositories {
-        mavenLocal()
         maven {
-            url "https://repo.huaweicloud.com/repository/maven/"
+            url 'https://maven.aliyun.com/repository/public'
         }
-        mavenCentral()
+        maven {
+            credentials {
+                username project.property("aliRepositoryUsername")
+                password project.property("aliRepositoryPassword")
+            }
+            url 'https://packages.aliyun.com/maven/repository/2060080-release-7hoBmd/'
+        }
+        maven {
+            credentials {
+                username project.property("aliRepositoryUsername")
+                password project.property("aliRepositoryPassword")
+            }
+            url 'https://packages.aliyun.com/maven/repository/2060080-snapshot-T6PKvR/'
+        }
+    }
 
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 0, "minutes"
     }
 }

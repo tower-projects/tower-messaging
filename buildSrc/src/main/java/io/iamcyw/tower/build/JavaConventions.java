@@ -96,8 +96,8 @@ class JavaConventions {
                 .withType(JavaPlugin.class, (javaPlugin) -> {
                     project.getDependencies()
                             .add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.junit.jupiter:junit-jupiter");
-                    project.getDependencies()
-                            .add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.mockito:mockito-core");
+//                    project.getDependencies()
+//                            .add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.mockito:mockito-core");
                     project.getDependencies()
                             .add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME,
                                  "org.junit.platform:junit-platform-launcher");

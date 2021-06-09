@@ -16,9 +16,8 @@
 
 package io.iamcyw.tower.serialization;
 
-import io.iamcyw.tower.exception.ErrorMessage;
-import io.iamcyw.tower.i18n.I18nUtils;
 import io.iamcyw.tower.utils.Assert;
+import io.iamcyw.tower.utils.i18n.I18ns;
 
 import java.util.Objects;
 
@@ -42,9 +41,10 @@ public class SimpleSerializedType implements SerializedType {
      * @param revisionNumber The revision of the serialized object's type
      */
     public SimpleSerializedType(String objectType, String revisionNumber) {
-        Assert.nonNull(objectType, I18nUtils.load()
-                .andThen(I18nUtils.args("objectType"))
-                .apply(ErrorMessage.COMMON_NULL));
+        Assert.nonNull(objectType, () -> I18ns.create()
+                .key("common.object_null")
+                .args("objectType")
+                .apply());
         this.type = objectType;
         this.revisionId = revisionNumber;
     }

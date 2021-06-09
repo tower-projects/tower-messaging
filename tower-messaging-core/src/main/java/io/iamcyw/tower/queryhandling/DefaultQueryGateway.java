@@ -31,17 +31,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static java.util.Arrays.asList;
 import static io.iamcyw.tower.messaging.GenericMessage.asMessage;
 import static io.iamcyw.tower.queryhandling.GenericQueryResponseMessage.asResponseMessage;
+import static java.util.Arrays.asList;
 
 /**
  * Implementation of the QueryGateway interface that allows the registration of dispatchInterceptors.
- *
  */
 public class DefaultQueryGateway implements QueryGateway {
 
     private final QueryBus queryBus;
+
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors;
 
     /**
@@ -72,76 +72,64 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @Override
     public <R, Q> CompletableFuture<R> query(String queryName, Q query, ResponseType<R> responseType) {
-        CompletableFuture<QueryResponseMessage<R>> queryResponse = queryBus
-                .query(processInterceptors(new GenericQueryMessage<>(asMessage(query), queryName, responseType)));
+        CompletableFuture<QueryResponseMessage<R>> queryResponse = queryBus.query(
+                (new GenericQueryMessage<>(asMessage(query), queryName, responseType)));
         CompletableFuture<R> result = new CompletableFuture<>();
         queryResponse.exceptionally(cause -> asResponseMessage(responseType.responseMessagePayloadType(), cause))
-                     .thenAccept(queryResponseMessage -> {
-                         try {
-                             if (queryResponseMessage.isExceptional()) {
-                                 result.completeExceptionally(queryResponseMessage.exceptionResult());
-                             } else {
-                                 result.complete(queryResponseMessage.getPayload());
-                             }
-                         } catch (Exception e) {
-                             result.completeExceptionally(e);
-                         }
-                     });
+                .thenAccept(queryResponseMessage -> {
+                    try {
+                        if (queryResponseMessage.isExceptional()) {
+                            result.completeExceptionally(queryResponseMessage.exceptionResult());
+                        } else {
+                            result.complete(queryResponseMessage.getPayload());
+                        }
+                    } catch (Exception e) {
+                        result.completeExceptionally(e);
+                    }
+                });
         return result;
     }
 
     @Override
-    public <R, Q> Stream<R> scatterGather(String queryName,
-                                          Q query,
-                                          ResponseType<R> responseType,
-                                          long timeout,
-                                          TimeUnit timeUnit) {
+    public <R, Q> Stream<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout, TimeUnit timeUnit) {
         GenericQueryMessage<?, R> queryMessage = new GenericQueryMessage<>(asMessage(query), queryName, responseType);
         return queryBus.scatterGather(processInterceptors(queryMessage), timeout, timeUnit)
-                       .map(QueryResponseMessage::getPayload);
+                .map(QueryResponseMessage::getPayload);
     }
 
-    @Override
-    public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
-                                                                     Q query,
-                                                                     ResponseType<I> initialResponseType,
-                                                                     ResponseType<U> updateResponseType,
-                                                                     int updateBufferSize) {
-        SubscriptionQueryMessage<?, I, U> interceptedQuery =
-                getSubscriptionQueryMessage(queryName, query, initialResponseType, updateResponseType);
 
-        SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result =
-                queryBus.subscriptionQuery(interceptedQuery, updateBufferSize);
+    @Override
+    public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query, ResponseType<I> initialResponseType, ResponseType<U> updateResponseType, int updateBufferSize) {
+        SubscriptionQueryMessage<?, I, U> interceptedQuery = getSubscriptionQueryMessage(queryName, query,
+                                                                                         initialResponseType,
+                                                                                         updateResponseType);
+
+        SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result = queryBus.subscriptionQuery(
+                interceptedQuery, updateBufferSize);
 
         return getSubscriptionQueryResult(result);
     }
 
-    private <Q, I, U> SubscriptionQueryMessage<?, I, U> getSubscriptionQueryMessage(String queryName, Q query,
-                                                                                    ResponseType<I> initialResponseType,
-                                                                                    ResponseType<U> updateResponseType) {
+    private <Q, I, U> SubscriptionQueryMessage<?, I, U> getSubscriptionQueryMessage(String queryName, Q query, ResponseType<I> initialResponseType, ResponseType<U> updateResponseType) {
         SubscriptionQueryMessage<?, I, U> subscriptionQueryMessage = new GenericSubscriptionQueryMessage<>(
-                asMessage(query), queryName, initialResponseType, updateResponseType
-        );
+                asMessage(query), queryName, initialResponseType, updateResponseType);
         return processInterceptors(subscriptionQueryMessage);
     }
 
-    private <I, U> DefaultSubscriptionQueryResult<I, U> getSubscriptionQueryResult(
-            SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result) {
-        return new DefaultSubscriptionQueryResult<>(
-                result.initialResult()
-                      .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
-                      .map(Message::getPayload)
-                      .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
-                result.updates()
-                      .filter(update -> Objects.nonNull(update.getPayload()))
-                      .map(SubscriptionQueryUpdateMessage::getPayload),
-                result
-        );
+    private <I, U> DefaultSubscriptionQueryResult<I, U> getSubscriptionQueryResult(SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result) {
+        return new DefaultSubscriptionQueryResult<>(result.initialResult()
+                                                            .filter(initialResult -> Objects.nonNull(
+                                                                    initialResult.getPayload()))
+                                                            .map(Message::getPayload)
+                                                            .onErrorMap(
+                                                                    e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
+                                                    result.updates()
+                                                            .filter(update -> Objects.nonNull(update.getPayload()))
+                                                            .map(SubscriptionQueryUpdateMessage::getPayload), result);
     }
 
     @Override
-    public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super QueryMessage<?, ?>> interceptor) {
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super QueryMessage<?, ?>> interceptor) {
         dispatchInterceptors.add(interceptor);
         return () -> dispatchInterceptors.remove(interceptor);
     }
@@ -164,8 +152,8 @@ public class DefaultQueryGateway implements QueryGateway {
     public static class Builder {
 
         private QueryBus queryBus;
-        private List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors =
-                new CopyOnWriteArrayList<>();
+
+        private List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
 
         /**
          * Sets the {@link QueryBus} to deliver {@link QueryMessage}s on received in this {@link QueryGateway}
@@ -176,7 +164,7 @@ public class DefaultQueryGateway implements QueryGateway {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder queryBus(QueryBus queryBus) {
-            Assert.nonNull(queryBus,()-> "QueryBus may not be null");
+            Assert.nonNull(queryBus, () -> "QueryBus may not be null");
             this.queryBus = queryBus;
             return this;
         }
@@ -188,8 +176,7 @@ public class DefaultQueryGateway implements QueryGateway {
          * @param dispatchInterceptors which are invoked when a query is being dispatched
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder dispatchInterceptors(
-                MessageDispatchInterceptor<? super QueryMessage<?, ?>>... dispatchInterceptors) {
+        public Builder dispatchInterceptors(MessageDispatchInterceptor<? super QueryMessage<?, ?>>... dispatchInterceptors) {
             return dispatchInterceptors(asList(dispatchInterceptors));
         }
 
@@ -200,11 +187,9 @@ public class DefaultQueryGateway implements QueryGateway {
          * @param dispatchInterceptors which are invoked when a query is being dispatched
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder dispatchInterceptors(
-                List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors) {
-            this.dispatchInterceptors = dispatchInterceptors != null && !dispatchInterceptors.isEmpty()
-                    ? new CopyOnWriteArrayList<>(dispatchInterceptors)
-                    : new CopyOnWriteArrayList<>();
+        public Builder dispatchInterceptors(List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors) {
+            this.dispatchInterceptors = dispatchInterceptors != null && !dispatchInterceptors.isEmpty() ? new CopyOnWriteArrayList<>(
+                    dispatchInterceptors) : new CopyOnWriteArrayList<>();
             return this;
         }
 
@@ -221,10 +206,12 @@ public class DefaultQueryGateway implements QueryGateway {
          * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws MessagingConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
+         *                                         specifications
          */
         protected void validate() throws MessagingConfigurationException {
             Assert.nonNull(queryBus, () -> "The QueryBus is a hard requirement and should be provided");
         }
+
     }
+
 }

@@ -142,7 +142,8 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
                                 .exceptionally(t -> {
                                     monoSinkWrapper.error(t);
                                     return null;
-                                })).getMono();
+                                }))
+                        .getMono();
             }
 
             @Override

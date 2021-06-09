@@ -39,10 +39,10 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * query}. Execution may be asynchronous, depending on the QueryBus implementation.
      *
      * @param query        The {@code query} to be sent
-     * @param responseType A {@link Class} describing the desired response type
+     * @param responseType A {@link java.lang.Class} describing the desired response type
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return A {@link CompletableFuture} containing the query result as dictated by the given
+     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
      * {@code responseType}
      */
     default <R, Q> CompletableFuture<R> query(Q query, Class<R> responseType) {
@@ -54,12 +54,12 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * the given {@code responseType} from a single source. Execution may be asynchronous, depending on the QueryBus
      * implementation.
      *
-     * @param queryName    A {@link String} describing the query to be executed
+     * @param queryName    A {@link java.lang.String} describing the query to be executed
      * @param query        The {@code query} to be sent
      * @param responseType The {@link ResponseType} used for this query
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return A {@link CompletableFuture} containing the query result as dictated by the given
+     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
      * {@code responseType}
      */
     default <R, Q> CompletableFuture<R> query(String queryName, Q query, Class<R> responseType) {
@@ -75,7 +75,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param responseType The {@link ResponseType} used for this query
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return A {@link CompletableFuture} containing the query result as dictated by the given
+     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
      * {@code responseType}
      */
     default <R, Q> CompletableFuture<R> query(Q query, ResponseType<R> responseType) {
@@ -87,12 +87,12 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * form of {@code responseType} from a single source. Execution may be asynchronous, depending on the QueryBus
      * implementation.
      *
-     * @param queryName    A {@link String} describing the query to be executed
+     * @param queryName    A {@link java.lang.String} describing the query to be executed
      * @param query        The {@code query} to be sent
      * @param responseType The {@link ResponseType} used for this query
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return A {@link CompletableFuture} containing the query result as dictated by the given
+     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
      * {@code responseType}
      */
     <R, Q> CompletableFuture<R> query(String queryName, Q query, ResponseType<R> responseType);
@@ -106,7 +106,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param query        The {@code query} to be sent
      * @param responseType The {@link ResponseType} used for this query
      * @param timeout      A timeout of {@code long} for the query
-     * @param timeUnit     The selected {@link TimeUnit} for the given {@code timeout}
+     * @param timeUnit     The selected {@link java.util.concurrent.TimeUnit} for the given {@code timeout}
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
      * @return A stream of results.
@@ -120,11 +120,11 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * form of {@code responseType} from several sources. The stream is completed when a {@code timeout} occurs or when
      * all results are received. Execution may be asynchronous, depending on the QueryBus implementation.
      *
-     * @param queryName    A {@link String} describing the query to be executed
+     * @param queryName    A {@link java.lang.String} describing the query to be executed
      * @param query        The {@code query} to be sent
      * @param responseType The {@link ResponseType} used for this query
      * @param timeout      A timeout of {@code long} for the query
-     * @param timeUnit     The selected {@link TimeUnit} for the given {@code timeout}
+     * @param timeUnit     The selected {@link java.util.concurrent.TimeUnit} for the given {@code timeout}
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
      * @return A stream of results.
@@ -202,6 +202,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
         return subscriptionQuery(queryName(query), query, initialResponseType, updateResponseType);
     }
 
+
     /**
      * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
      * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
@@ -225,6 +226,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query, ResponseType<I> initialResponseType, ResponseType<U> updateResponseType) {
         return subscriptionQuery(queryName, query, initialResponseType, updateResponseType, Queues.SMALL_BUFFER_SIZE);
     }
+
 
     /**
      * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and

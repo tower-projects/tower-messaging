@@ -2,10 +2,10 @@ apply plugin: 'java-library'
 apply plugin: 'conventions'
 apply plugin: 'deployed'
 
-description("tower message core")
+description("tower message config")
 
 dependencies {
     implementation("io.iamcyw.tower:tower-utils")
     implementation("io.iamcyw.tower:tower-exception")
-    implementation("io.projectreactor:reactor-core")
+    implementation(project(':tower-messaging-core'))
 }
