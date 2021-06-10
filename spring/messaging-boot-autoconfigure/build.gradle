@@ -1,0 +1,17 @@
+apply plugin: 'java-library'
+apply plugin: 'conventions'
+apply plugin: 'deployed'
+
+description("tower message spring boot autoconfigure")
+
+dependencies {
+    annotationProcessor("org.springframework.boot:spring-boot-autoconfigure-processor")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+
+    compileOnly("org.springframework.boot:spring-boot-starter")
+    compileOnly("org.springframework:spring-tx")
+
+    compileOnly(project(':messaging-config'))
+    compileOnly(project(':messaging-core'))
+    compileOnly(project(':spring:messaging-spring'))
+}

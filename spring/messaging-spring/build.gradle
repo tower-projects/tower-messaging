@@ -1,0 +1,14 @@
+apply plugin: 'java-library'
+apply plugin: 'conventions'
+apply plugin: 'deployed'
+
+description("tower message spring")
+
+dependencies {
+    implementation("org.springframework:spring-beans")
+    implementation("org.springframework:spring-tx")
+    implementation("org.springframework:spring-context")
+
+    implementation(project(':messaging-core'))
+    implementation(project(':messaging-config'))
+}

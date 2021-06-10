@@ -19,6 +19,8 @@ class DeployedPlugin : Plugin<Project> {
             this.publications.create("maven", MavenPublication::class)
         }
 
+        mavenPublication.artifactId = "tower-" + mavenPublication.artifactId
+
         target.afterEvaluate {
             this.plugins.withType(JavaPlugin::class).all {
                 if (target.tasks.getByName(JavaPlugin.JAR_TASK_NAME).enabled) {

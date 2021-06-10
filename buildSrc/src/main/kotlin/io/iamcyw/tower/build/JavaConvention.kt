@@ -67,7 +67,7 @@ class JavaConvention {
     }
 
     private fun configureEnforcedPlatform(project: Project) {
-        val dependencyProject = project.dependencies.project(":tower-messaging-dependencies")
+        val dependencyProject = project.dependencies.project(":messaging-dependencies")
         if (project.name != dependencyProject.name) {
             project.plugins.withType(JavaPlugin::class) {
                 project.dependencies.add(

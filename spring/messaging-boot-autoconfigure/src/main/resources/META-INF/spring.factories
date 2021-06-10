@@ -1,0 +1,5 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  io.iamcyw.tower.springboot.autoconfig.TowerAutoConfiguration,\
+  io.iamcyw.tower.springboot.autoconfig.TransactionAutoConfiguration,\
+  io.iamcyw.tower.springboot.autoconfig.NoOpTransactionAutoConfiguration,\
+  io.iamcyw.tower.springboot.autoconfig.InfraConfiguration
