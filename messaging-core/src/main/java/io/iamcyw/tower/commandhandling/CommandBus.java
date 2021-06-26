@@ -17,6 +17,7 @@
 package io.iamcyw.tower.commandhandling;
 
 
+import io.iamcyw.tower.commandhandling.callbacks.LoggingCallback;
 import io.iamcyw.tower.common.Registration;
 import io.iamcyw.tower.messaging.MessageDispatchInterceptorSupport;
 import io.iamcyw.tower.messaging.MessageHandler;
@@ -31,8 +32,8 @@ import io.iamcyw.tower.messaging.MessageHandlerInterceptorSupport;
 public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMessage<?>>, MessageDispatchInterceptorSupport<CommandMessage<?>> {
 
     /**
-     * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name. No
-     * feedback is given about the status of the dispatching process. Implementations may return immediately after
+     * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name.
+     * No feedback is given about the status of the dispatching process. Implementations may return immediately after
      * asserting a valid handler is registered for the given command.
      *
      * @param <C>     The payload type of the command to dispatch
@@ -40,15 +41,17 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
      * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}'s name.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
-    <C> void dispatch(CommandMessage<C> command);
+    default <C> void dispatch(CommandMessage<C> command) {
+        dispatch(command, LoggingCallback.INSTANCE);
+    }
 
     /**
-     * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name. When the
-     * command is processed, one of the callback's methods is called, depending on the result of the processing.
+     * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name.
+     * When the command is processed, one of the callback's methods is called, depending on the result of the processing.
      * <p/>
-     * There are no guarantees about the successful completion of command dispatching or handling after the method
-     * returns. Implementations are highly recommended to perform basic validation of the command before returning
-     * from this method call.
+     * When the method returns, the only guarantee provided by the CommandBus implementation is that the command has
+     * been successfully received. Implementations are highly recommended to perform basic validation of the command
+     * before returning from this method call.
      * <p/>
      * Implementations must start a UnitOfWork when before dispatching the command, and either commit or rollback after
      * a successful or failed execution, respectively.
@@ -60,18 +63,19 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
      * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
-    <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback);
+    <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback);
 
     /**
      * Subscribe the given {@code handler} to commands with the given {@code commandName}.
      * <p/>
      * If a subscription already exists for the given name, the behavior is undefined. Implementations may throw an
-     * Exception to refuse duplicate subscription or alternatively decide whether the existing or new {@code handler}
-     * gets the subscription.
+     * Exception to refuse duplicate subscription or alternatively decide whether the existing or new
+     * {@code handler} gets the subscription.
      *
      * @param commandName The name of the command to subscribe the handler to
      * @param handler     The handler instance that handles the given type of command
      * @return a handle to unsubscribe the {@code handler}. When unsubscribed it will no longer receive commands.
      */
     Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
+
 }

@@ -16,10 +16,12 @@
 
 package io.iamcyw.tower.commandhandling.gateway;
 
-import io.iamcyw.tower.commandhandling.*;
+import io.iamcyw.tower.commandhandling.CommandBus;
+import io.iamcyw.tower.commandhandling.CommandCallback;
+import io.iamcyw.tower.commandhandling.CommandExecutionException;
+import io.iamcyw.tower.commandhandling.CommandMessage;
 import io.iamcyw.tower.commandhandling.callbacks.FailureLoggingCallback;
 import io.iamcyw.tower.commandhandling.callbacks.FutureCallback;
-import io.iamcyw.tower.common.Registration;
 import io.iamcyw.tower.messaging.MessageDispatchInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +29,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+
+import static java.util.Arrays.asList;
 
 /**
  * Default implementation of the CommandGateway interface. It allow configuration of a {@link RetryScheduler} and
@@ -43,32 +47,52 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     private static final Logger logger = LoggerFactory.getLogger(DefaultCommandGateway.class);
 
     /**
-     * Instantiate a {@link DefaultCommandGateway} based on the fields contained in the {@link Builder}.
-     * <p>
-     * Will assert that the {@link CommandBus} is not {@code null} and will throw an {@link io.iamcyw.tower.common.MessagingConfigurationException}
-     * if this is the case.
+     * Initializes a command gateway that dispatches commands to the given {@code commandBus} after they have been
+     * handles by the given {@code commandDispatchInterceptors}. Commands will not be retried when command
+     * execution fails.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link DefaultCommandGateway}
-     *                instance
+     * @param commandBus                  The CommandBus on which to dispatch the Command Messages
+     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
-    protected DefaultCommandGateway(Builder builder) {
-        super(builder);
+    @SafeVarargs
+    public DefaultCommandGateway(CommandBus commandBus,
+                                 MessageDispatchInterceptor<? super CommandMessage<?>>... messageDispatchInterceptors) {
+        this(commandBus, null, messageDispatchInterceptors);
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link DefaultCommandGateway}.
-     * <p>
-     * The {@code dispatchInterceptors} are defaulted to an empty list.
-     * The {@link CommandBus} is a <b>hard requirement</b> and as such should be provided.
+     * Initializes a command gateway that dispatches commands to the given {@code commandBus} after they have been
+     * handles by the given {@code commandDispatchInterceptors}. When command execution results in an unchecked
+     * exception, the given {@code retryScheduler} is invoked to allow it to retry that command.
+     * execution fails.
      *
-     * @return a Builder to be able to create a {@link DefaultCommandGateway}
+     * @param commandBus                  The CommandBus on which to dispatch the Command Messages
+     * @param retryScheduler              The scheduler that will decide whether to reschedule commands
+     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
-    public static Builder builder() {
-        return new Builder();
+    @SafeVarargs
+    public DefaultCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
+                                 MessageDispatchInterceptor<? super CommandMessage<?>>... messageDispatchInterceptors) {
+        this(commandBus, retryScheduler, asList(messageDispatchInterceptors));
+    }
+
+    /**
+     * Initializes a command gateway that dispatches commands to the given {@code commandBus} after they have been
+     * handles by the given {@code commandDispatchInterceptors}. When command execution results in an unchecked
+     * exception, the given {@code retryScheduler} is invoked to allow it to retry that command.
+     * execution fails.
+     *
+     * @param commandBus                  The CommandBus on which to dispatch the Command Messages
+     * @param retryScheduler              The scheduler that will decide whether to reschedule commands
+     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
+     */
+    public DefaultCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
+                                 List<MessageDispatchInterceptor<? super CommandMessage<?>>> messageDispatchInterceptors) {
+        super(commandBus, retryScheduler, messageDispatchInterceptors);
     }
 
     @Override
-    public <C, R> void send(C command, CommandCallback<? super C, ? super R> callback) {
+    public <C, R> void send(C command, CommandCallback<? super C, R> callback) {
         super.send(command, callback);
     }
 
@@ -79,19 +103,14 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      * @param command The command to send
      * @param <R>     The expected type of return value
      * @return The result of the command handler execution
-     * @throws CommandExecutionException when command execution threw a checked
-     *                                                                     exception
+     * @throws CommandExecutionException when command execution threw a checked exception
      */
     @Override
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command) {
-        FutureCallback<Object, R> futureCallback = new FutureCallback<>();
+        FutureCallback<Object, Object> futureCallback = new FutureCallback<>();
         send(command, futureCallback);
-        CommandResultMessage<? extends R> commandResultMessage = futureCallback.getResult();
-        if (commandResultMessage.isExceptional()) {
-            throw asRuntime(commandResultMessage.exceptionResult());
-        }
-        return commandResultMessage.getPayload();
+        return (R) futureCallback.getResult();
     }
 
     /**
@@ -105,98 +124,21 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      * @param unit    The time unit of the timeout argument
      * @param <R>     The expected type of return value
      * @return The result of the command handler execution
-     * @throws CommandExecutionException when command execution threw a checked
-     *                                                                     exception
+     * @throws CommandExecutionException when command execution threw a checked exception
      */
     @Override
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command, long timeout, TimeUnit unit) {
-        FutureCallback<Object, R> futureCallback = new FutureCallback<>();
+        FutureCallback<Object, Object> futureCallback = new FutureCallback<>();
         send(command, futureCallback);
-        CommandResultMessage<? extends R> commandResultMessage = futureCallback.getResult(timeout, unit);
-        if (commandResultMessage.isExceptional()) {
-            throw asRuntime(commandResultMessage.exceptionResult());
-        }
-        return commandResultMessage.getPayload();
+        return (R) futureCallback.getResult(timeout, unit);
     }
 
     @Override
     public <R> CompletableFuture<R> send(Object command) {
         FutureCallback<Object, R> callback = new FutureCallback<>();
         send(command, new FailureLoggingCallback<>(logger, callback));
-        CompletableFuture<R> result = new CompletableFuture<>();
-        callback.exceptionally(GenericCommandResultMessage::asCommandResultMessage)
-                .thenAccept(r -> {
-                    try {
-                        if (r.isExceptional()) {
-                            result.completeExceptionally(r.exceptionResult());
-                        } else {
-                            result.complete(r.getPayload());
-                        }
-                    } catch (Exception e) {
-                        result.completeExceptionally(e);
-                    }
-                });
-        return result;
+        return callback;
     }
 
-    @Override
-    public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
-        return super.registerDispatchInterceptor(dispatchInterceptor);
-    }
-
-    private RuntimeException asRuntime(Throwable e) {
-        if (e instanceof Error) {
-            throw (Error) e;
-        } else if (e instanceof RuntimeException) {
-            return (RuntimeException) e;
-        } else {
-            return new CommandExecutionException("An exception occurred while executing a command", e);
-        }
-    }
-
-    /**
-     * Builder class to instantiate a {@link DefaultCommandGateway}.
-     * <p>
-     * The {@code dispatchInterceptors} are defaulted to an empty list.
-     * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
-     */
-    public static class Builder extends AbstractCommandGateway.Builder {
-
-        @Override
-        public Builder commandBus(CommandBus commandBus) {
-            super.commandBus(commandBus);
-            return this;
-        }
-
-        @Override
-        public Builder retryScheduler(RetryScheduler retryScheduler) {
-            super.retryScheduler(retryScheduler);
-            return this;
-        }
-
-        @Override
-        public Builder dispatchInterceptors(
-                MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
-            super.dispatchInterceptors(dispatchInterceptors);
-            return this;
-        }
-
-        @Override
-        public Builder dispatchInterceptors(
-                List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
-            super.dispatchInterceptors(dispatchInterceptors);
-            return this;
-        }
-
-        /**
-         * Initializes a {@link DefaultCommandGateway} as specified through this Builder.
-         *
-         * @return a {@link DefaultCommandGateway} as specified through this Builder
-         */
-        public DefaultCommandGateway build() {
-            return new DefaultCommandGateway(this);
-        }
-    }
 }

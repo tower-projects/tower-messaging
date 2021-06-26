@@ -16,6 +16,7 @@
 
 package io.iamcyw.tower.messaging.unitofwork;
 
+import io.iamcyw.tower.messaging.ExecutionException;
 import io.iamcyw.tower.messaging.ResultMessage;
 
 import java.util.Objects;
@@ -25,23 +26,35 @@ import java.util.Objects;
  */
 public class ExecutionResult {
 
-    private final ResultMessage<?> result;
+    private final Object result;
 
     /**
-     * Initializes an {@link ExecutionResult} from the given {@code result}.
+     * Initializes an {@link ExecutionResult} from the given {@code object}.
      *
-     * @param result the result message of an executed task
+     * @param result the result of an executed task
      */
-    public ExecutionResult(ResultMessage<?> result) {
+    public ExecutionResult(Object result) {
         this.result = result;
     }
 
     /**
-     * Return the execution result message.
+     * Returns the execution result. If the execution was completed successfully but yielded no result this method
+     * returns {@code null}. If the execution gave rise to an exception, invoking this method will throw an
+     * exception. Unchecked exceptions will be thrown directly. Checked exceptions are wrapped by a
+     * {@link ExecutionException}.
      *
-     * @return the execution result message
+     * @return The result of the execution if the operation was executed without raising an exception.
      */
-    public ResultMessage<?> getResult() {
+    public Object getResult() {
+        if (isExceptionResult()) {
+            if (result instanceof RuntimeException) {
+                throw (RuntimeException) result;
+            }
+            if (result instanceof Error) {
+                throw (Error) result;
+            }
+            throw new ExecutionException("Execution of the task gave rise to an exception", (Throwable) result);
+        }
         return result;
     }
 
@@ -52,7 +65,7 @@ public class ExecutionResult {
      * @return The exception raised during execution of the task if any, {@code null} otherwise.
      */
     public Throwable getExceptionResult() {
-        return isExceptionResult() ? result.exceptionResult() : null;
+        return isExceptionResult() ? (Throwable) result : null;
     }
 
     /**
@@ -61,7 +74,15 @@ public class ExecutionResult {
      * @return {@code true} if execution of the task gave rise to an exception, {@code false} otherwise.
      */
     public boolean isExceptionResult() {
-        return result.isExceptional();
+        return result instanceof Throwable;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ExecutionResult that = (ExecutionResult) o;
+        return Objects.equals(result, that.result);
     }
 
     @Override
@@ -70,18 +91,7 @@ public class ExecutionResult {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        ExecutionResult that = (ExecutionResult) o;
-        return Objects.equals(result, that.result);
-    }
-
-    @Override
     public String toString() {
         return String.format("ExecutionResult containing [%s]", result);
     }
-
 }

@@ -19,10 +19,8 @@ package io.iamcyw.tower.spring.config.annotation;
 import io.iamcyw.tower.commandhandling.AnnotationCommandHandlerAdapter;
 import io.iamcyw.tower.commandhandling.CommandHandler;
 import io.iamcyw.tower.commandhandling.CommandMessage;
-import io.iamcyw.tower.commandhandling.CommandMessageHandler;
-import io.iamcyw.tower.common.annotation.AnnotationUtils;
+import io.iamcyw.tower.commandhandling.SupportedCommandNamesAware;
 import io.iamcyw.tower.messaging.MessageHandler;
-import io.iamcyw.tower.messaging.annotation.HandlerDefinition;
 import io.iamcyw.tower.messaging.annotation.ParameterResolverFactory;
 import io.iamcyw.tower.spring.config.AbstractAnnotationHandlerBeanPostProcessor;
 import org.springframework.util.ReflectionUtils;
@@ -33,15 +31,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Spring Bean post processor that automatically generates an adapter for each bean containing {@link CommandHandler}
  * annotated methods.
- *
- * @author Allard Buijze
- * @since 0.5
  */
-public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor<MessageHandler<CommandMessage<?>>, AnnotationCommandHandlerAdapter<?>> {
+public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor<MessageHandler<CommandMessage<?>>, AnnotationCommandHandlerAdapter> {
 
     @Override
     protected Class<?>[] getAdapterInterfaces() {
-        return new Class[]{CommandMessageHandler.class};
+        return new Class[]{MessageHandler.class, SupportedCommandNamesAware.class};
     }
 
     @Override
@@ -50,8 +45,9 @@ public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotatio
     }
 
     @Override
-    protected AnnotationCommandHandlerAdapter<?> initializeAdapterFor(Object bean, ParameterResolverFactory parameterResolverFactory, HandlerDefinition handlerDefinition) {
-        return new AnnotationCommandHandlerAdapter<>(bean, parameterResolverFactory, handlerDefinition);
+    protected AnnotationCommandHandlerAdapter initializeAdapterFor(Object bean,
+                                                                   ParameterResolverFactory parameterResolverFactory) {
+        return new AnnotationCommandHandlerAdapter(bean, parameterResolverFactory);
     }
 
     private boolean hasCommandHandlerMethod(Class<?> beanClass) {
@@ -73,8 +69,7 @@ public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotatio
          */
         @Override
         public void doWith(Method method) throws IllegalArgumentException {
-            if (AnnotationUtils.findAnnotationAttributes(method, CommandHandler.class)
-                    .isPresent()) {
+            if (method.isAnnotationPresent(CommandHandler.class)) {
                 result.set(true);
             }
         }

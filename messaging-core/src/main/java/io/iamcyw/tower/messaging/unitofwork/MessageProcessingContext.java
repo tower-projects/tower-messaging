@@ -36,14 +36,11 @@ import java.util.function.Function;
 public class MessageProcessingContext<T extends Message<?>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageProcessingContext.class);
-
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     private static final Deque EMPTY = new LinkedList<>();
 
     private final EnumMap<Phase, Deque<Consumer<UnitOfWork<T>>>> handlers = new EnumMap<>(Phase.class);
-
     private T message;
-
     private ExecutionResult executionResult;
 
     /**
@@ -58,8 +55,8 @@ public class MessageProcessingContext<T extends Message<?>> {
     /**
      * Invoke the handlers in this collection attached to the given {@code phase}.
      *
-     * @param unitOfWork The Unit of Work that is changing its phase
-     * @param phase      The phase for which attached handlers should be invoked
+     * @param unitOfWork    The Unit of Work that is changing its phase
+     * @param phase         The phase for which attached handlers should be invoked
      */
     @SuppressWarnings("unchecked")
     public void notifyHandlers(UnitOfWork<T> unitOfWork, Phase phase) {
@@ -68,16 +65,7 @@ public class MessageProcessingContext<T extends Message<?>> {
         }
         Deque<Consumer<UnitOfWork<T>>> l = handlers.getOrDefault(phase, EMPTY);
         while (!l.isEmpty()) {
-            try {
-                l.remove()
-                        .accept(unitOfWork);
-            } catch (Exception e) {
-                if (phase.isSuppressHandlerErrors()) {
-                    LOGGER.info("An error occurred while executing a lifecycle phase handler for phase {}", phase, e);
-                } else {
-                    throw e;
-                }
-            }
+            l.remove().accept(unitOfWork);
         }
     }
 
@@ -90,14 +78,34 @@ public class MessageProcessingContext<T extends Message<?>> {
      */
     public void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Adding handler {} for phase {}", handler.getClass()
-                    .getName(), phase.toString());
+            LOGGER.debug("Adding handler {} for phase {}", handler.getClass().getName(), phase.toString());
         }
         final Deque<Consumer<UnitOfWork<T>>> consumers = handlers.computeIfAbsent(phase, p -> new ArrayDeque<>());
         if (phase.isReverseCallbackOrder()) {
             consumers.addFirst(handler);
         } else {
             consumers.add(handler);
+        }
+    }
+
+    /**
+     * Set the execution result of processing the current {@link #getMessage() Message}. In case this context has a
+     * previously set ExecutionResult, setting a new result is only allowed if the new result is an exception result.
+     * <p/>
+     * In case the previously set result is also an exception result, the exception in the new execution result is
+     * added to the original exception as a suppressed exception.
+     *
+     * @param executionResult the ExecutionResult of the currently handled Message
+     */
+    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
+    public void setExecutionResult(ExecutionResult executionResult) {
+        Assert.state(this.executionResult == null || executionResult.isExceptionResult(),
+                     () -> String.format("Cannot change execution result [%s] to [%s] for message [%s].",
+                                         message, this.executionResult, executionResult));
+        if (this.executionResult != null && this.executionResult.isExceptionResult()) {
+            this.executionResult.getExceptionResult().addSuppressed(executionResult.getExceptionResult());
+        } else {
+            this.executionResult = executionResult;
         }
     }
 
@@ -121,28 +129,6 @@ public class MessageProcessingContext<T extends Message<?>> {
     }
 
     /**
-     * Set the execution result of processing the current {@link #getMessage() Message}. In case this context has a
-     * previously set ExecutionResult, setting a new result is only allowed if the new result is an exception result.
-     * <p/>
-     * In case the previously set result is also an exception result, the exception in the new execution result is
-     * added to the original exception as a suppressed exception.
-     *
-     * @param executionResult the ExecutionResult of the currently handled Message
-     */
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    public void setExecutionResult(ExecutionResult executionResult) {
-        Assert.state(this.executionResult == null || executionResult.isExceptionResult(),
-                     () -> String.format("Cannot change execution result [%s] to [%s] for message [%s].", message,
-                                         this.executionResult, executionResult));
-        if (this.executionResult != null && this.executionResult.isExceptionResult()) {
-            this.executionResult.getExceptionResult()
-                    .addSuppressed(executionResult.getExceptionResult());
-        } else {
-            this.executionResult = executionResult;
-        }
-    }
-
-    /**
      * Transform the Message being processed using the given operator.
      *
      * @param transformOperator The transform operator to apply to the stored message
@@ -162,5 +148,4 @@ public class MessageProcessingContext<T extends Message<?>> {
         handlers.clear();
         executionResult = null;
     }
-
 }

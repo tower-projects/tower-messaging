@@ -10,41 +10,47 @@ import java.util.function.Supplier;
 
 public class Component<B> {
 
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup()
-                                                                         .lookupClass());
-
     private final String name;
-
-    private final Supplier<Configuration> configSupplier;
-
+    private final Supplier<Configuration> configuration;
     private Function<Configuration, ? extends B> builderFunction;
-
     private B instance;
 
+    /**
+     * Creates a component for the given {@code config} with given {@code name} created by the given
+     * {@code builderFunction}. Then the Configuration is not initialized yet, consider using
+     * {@link #Component(Supplier, String, Function)} instead.
+     *
+     * @param config          The Configuration the component is part of
+     * @param name            The name of the component
+     * @param builderFunction The builder function of the component
+     */
     public Component(Configuration config, String name, Function<Configuration, ? extends B> builderFunction) {
         this(() -> config, name, builderFunction);
     }
 
+    /**
+     * Creates a component for the given {@code config} with given {@code name} created by the given
+     * {@code builderFunction}.
+     *
+     * @param config          The supplier function of the configuration
+     * @param name            The name of the component
+     * @param builderFunction The builder function of the component
+     */
     public Component(Supplier<Configuration> config, String name, Function<Configuration, ? extends B> builderFunction) {
-        this.configSupplier = config;
+        this.configuration = config;
         this.name = name;
         this.builderFunction = builderFunction;
     }
 
-
     /**
      * Retrieves the object contained in this component, triggering the builder function if the component hasn't been
-     * built yet. Upon initiation of the instance the {@link LifecycleHandlerInspector#registerLifecycleHandlers(Configuration,
-     * Object)} methods will be called to resolve and register lifecycle methods.
+     * built yet.
      *
      * @return the initialized component contained in this instance
      */
     public B get() {
         if (instance == null) {
-            Configuration configuration = configSupplier.get();
-            instance = builderFunction.apply(configuration);
-            logger.debug("Instantiated component [{}]: {}", name, instance);
-            LifecycleHandlerInspector.registerLifecycleHandlers(configuration, instance);
+            instance = builderFunction.apply(configuration.get());
         }
         return instance;
     }
@@ -59,14 +65,4 @@ public class Component<B> {
         Assert.state(instance == null, () -> "Cannot change " + name + ": it is already in use");
         this.builderFunction = builderFunction;
     }
-
-    /**
-     * Checks if the component is already initialized.
-     *
-     * @return true if component is initialized
-     */
-    public boolean isInitialized() {
-        return instance != null;
-    }
-
 }

@@ -2,18 +2,12 @@ package io.iamcyw.tower.spring.config;
 
 import io.iamcyw.tower.commandhandling.CommandBus;
 import io.iamcyw.tower.common.transaction.TransactionManager;
-import io.iamcyw.tower.config.Configuration;
-import io.iamcyw.tower.config.Configure;
-import io.iamcyw.tower.config.DefaultConfigure;
-import io.iamcyw.tower.config.ModuleConfiguration;
-import io.iamcyw.tower.messaging.annotation.HandlerDefinition;
+import io.iamcyw.tower.config.*;
 import io.iamcyw.tower.messaging.annotation.ParameterResolverFactory;
 import io.iamcyw.tower.messaging.correlation.CorrelationDataProvider;
 import io.iamcyw.tower.queryhandling.QueryBus;
 import io.iamcyw.tower.queryhandling.QueryUpdateEmitter;
 import io.iamcyw.tower.serialization.Serializer;
-import io.iamcyw.tower.spring.ConfigurerFactoryBean;
-import io.iamcyw.tower.spring.config.annotation.SpringContextHandlerDefinitionBuilder;
 import io.iamcyw.tower.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import io.iamcyw.tower.spring.messaging.unitofwork.SpringTransactionManager;
 import org.slf4j.Logger;
@@ -24,6 +18,7 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
+import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.DeferredImportSelector;
@@ -33,14 +28,11 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.iamcyw.tower.spring.SpringUtils.isQualifierMatch;
-import static org.springframework.beans.factory.BeanFactoryUtils.beanNamesForTypeIncludingAncestors;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
 public class SpringTowerAutoConfiguration implements ImportBeanDefinitionRegistrar, BeanFactoryAware {
@@ -57,152 +49,204 @@ public class SpringTowerAutoConfiguration implements ImportBeanDefinitionRegistr
     @SuppressWarnings("WeakerAccess")
     public static final String TOWER_CONFIGURE_BEAN = "io.iamcyw.tower.config.Configure";
 
+
     private static final Logger logger = LoggerFactory.getLogger(SpringTowerAutoConfiguration.class);
 
     private ConfigurableListableBeanFactory beanFactory;
 
     @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-
-    }
-
-    @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
+        registry.registerBeanDefinition("commandHandlerSubscriber",
+                                        genericBeanDefinition(CommandHandlerSubscriber.class).getBeanDefinition());
 
-        Configure configure = DefaultConfigure.defaultConfiguration(false);
+        registry.registerBeanDefinition("queryHandlerSubscriber",
+                                        genericBeanDefinition(QueryHandlerSubscriber.class).getBeanDefinition());
 
-        RuntimeBeanReference parameterResolver = SpringContextParameterResolverFactoryBuilder.getBeanReference(
-                registry);
-        configure.registerComponent(ParameterResolverFactory.class,
-                                    c -> beanFactory.getBean(parameterResolver.getBeanName(),
-                                                             ParameterResolverFactory.class));
+        Configure configurer = DefaultConfigure.defaultConfiguration();
 
-        RuntimeBeanReference handlerDefinition = SpringContextHandlerDefinitionBuilder.getBeanReference(registry);
-        configure.registerHandlerDefinition(
-                (c, clazz) -> beanFactory.getBean(handlerDefinition.getBeanName(), HandlerDefinition.class));
+        RuntimeBeanReference parameterResolver = SpringContextParameterResolverFactoryBuilder
+                .getBeanReference(registry);
+        configurer.registerComponent(ParameterResolverFactory.class, c -> beanFactory
+                .getBean(parameterResolver.getBeanName(), ParameterResolverFactory.class));
 
-        registerComponent(CommandBus.class, configure::configureCommandBus, configure, Configuration::commandBus);
-        registerComponent(QueryBus.class, configure::configureQueryBus, configure, Configuration::queryBus);
-        registerComponent(QueryUpdateEmitter.class, configure::configureQueryUpdateEmitter);
-        registerComponent(Serializer.class, configure::configureSerializer);
-        registerComponent(Serializer.class, "eventSerializer", configure::configureEventSerializer);
-        registerComponent(Serializer.class, "messageSerializer", configure::configureMessageSerializer);
+        findComponent(CommandBus.class)
+                .ifPresent(commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
+        findComponent(QueryBus.class).ifPresent(queryBus -> configurer.configureQueryBus(c -> getBean(queryBus, c)));
+        findComponent(QueryUpdateEmitter.class).ifPresent(
+                queryUpdateEmitter -> configurer.configureQueryUpdateEmitter(c -> getBean(queryUpdateEmitter, c)));
+        findComponent(Serializer.class)
+                .ifPresent(serializer -> configurer.configureSerializer(c -> getBean(serializer, c)));
+        findComponent(Serializer.class, "eventSerializer")
+                .ifPresent(eventSerializer -> configurer.configureEventSerializer(c -> getBean(eventSerializer, c)));
+        findComponent(Serializer.class, "messageSerializer").ifPresent(
+                messageSerializer -> configurer.configureMessageSerializer(c -> getBean(messageSerializer, c)));
         try {
             findComponent(PlatformTransactionManager.class).ifPresent(
-                    ptm -> configure.configureTransactionManager(c -> new SpringTransactionManager(getBean(ptm, c))));
+                    ptm -> configurer.configureTransactionManager(c -> new SpringTransactionManager(getBean(ptm, c))));
         } catch (NoClassDefFoundError error) {
             // that's fine...
         }
-        registerComponent(TransactionManager.class, configure::configureTransactionManager);
+        findComponent(TransactionManager.class)
+                .ifPresent(tm -> configurer.configureTransactionManager(c -> getBean(tm, c)));
+        // findComponent(ListenerInvocationErrorHandler.class).ifPresent(handler -> configurer
+        //         .registerComponent(ListenerInvocationErrorHandler.class, c -> getBean(handler, c)));
+        // findComponent(ErrorHandler.class)
+        //         .ifPresent(handler -> configurer.registerComponent(ErrorHandler.class, c -> getBean(handler, c)));
 
-        registerModuleConfigurations(configure);
-        registerCorrelationDataProviders(configure);
+        // String resourceInjector = findComponent(ResourceInjector.class, registry,
+        //                                         () -> genericBeanDefinition(SpringResourceInjector.class)
+        //                                                 .getBeanDefinition());
+        // configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
 
-        registry.registerBeanDefinition(TOWER_CONFIGURE_BEAN,
-                                        genericBeanDefinition(ConfigurerFactoryBean.class).addConstructorArgValue(
-                                                configure)
-                                                .getBeanDefinition());
-        registry.registerBeanDefinition(TOWER_CONFIGURATION_BEAN,
-                                        genericBeanDefinition(TowerConfiguration.class).addConstructorArgReference(
-                                                TOWER_CONFIGURE_BEAN)
-                                                .getBeanDefinition());
+        registerCorrelationDataProviders(configurer);
+        // registerAggregateBeanDefinitions(configurer, registry);
+        registerModules(configurer);
+
+        beanFactory.registerSingleton(TOWER_CONFIGURE_BEAN, configurer);
+        registry.registerBeanDefinition(TOWER_CONFIGURATION_BEAN, genericBeanDefinition(TowerConfiguration.class)
+                .addConstructorArgReference(TOWER_CONFIGURE_BEAN).getBeanDefinition());
+        // registerEventHandlerRegistrar(ehConfigBeanName, registry);
     }
 
-
-    /**
-     * Register a component of {@code componentType} through the given {@code registrationFunction}. The component to
-     * register will be a bean retrieved from the {@link ApplicationContext} tied to the {@link Configuration}.
-     *
-     * @param componentType        the type of the component to register
-     * @param registrationFunction the function to register the component to the {@link Configuration}
-     * @param <T>                  the type of the component
-     */
-    private <T> void registerComponent(Class<T> componentType, Consumer<Function<Configuration, T>> registrationFunction) {
-        findComponent(componentType).ifPresent(
-                componentName -> registrationFunction.accept(config -> getBean(componentName, config)));
-    }
-
-    private void registerCorrelationDataProviders(Configure configure) {
-        configure.configureCorrelationDataProviders(c -> {
+    private void registerCorrelationDataProviders(Configure configurer) {
+        configurer.configureCorrelationDataProviders(c -> {
             String[] correlationDataProviderBeans = beanFactory.getBeanNamesForType(CorrelationDataProvider.class);
-            return Arrays.stream(correlationDataProviderBeans)
-                    .map(n -> (CorrelationDataProvider) getBean(n, c))
-                    .collect(Collectors.toList());
+            return Arrays.stream(correlationDataProviderBeans).map(n -> (CorrelationDataProvider) getBean(n, c))
+                         .collect(Collectors.toList());
         });
     }
 
-    private void registerModuleConfigurations(Configure configure) {
-        String[] moduleConfigurations = beanFactory.getBeanNamesForType(ModuleConfiguration.class);
-        for (String moduleConfiguration : moduleConfigurations) {
-            configure.registerModule(new LazyRetrievedModuleConfiguration(
-                    () -> beanFactory.getBean(moduleConfiguration, ModuleConfiguration.class),
-                    beanFactory.getType(moduleConfiguration)));
+    @SuppressWarnings("unchecked")
+    private <T> T getBean(String beanName, Configuration configuration) {
+        return (T) configuration.getComponent(ApplicationContext.class).getBean(beanName);
+    }
+
+    // private void registerEventHandlerRegistrar(String ehConfigBeanName, BeanDefinitionRegistry registry) {
+    //     List<RuntimeBeanReference> beans = new ManagedList<>();
+    //     beanFactory.getBeanNamesIterator().forEachRemaining(bean -> {
+    //         if (!beanFactory.isFactoryBean(bean)) {
+    //             Class<?> beanType = beanFactory.getType(bean);
+    //             if (beanType != null && beanFactory.containsBeanDefinition(bean) &&
+    //                     beanFactory.getBeanDefinition(bean).isSingleton()) {
+    //                 boolean hasHandler = StreamSupport.stream(methodsOf(beanType).spliterator(), false)
+    //                                                   .map(m -> findAnnotationAttributes(m, MessageHandler.class)
+    //                                                           .orElse(null)).filter(Objects::nonNull).anyMatch(
+    //                                 attr -> EventMessage.class.isAssignableFrom((Class) attr.get("messageType")));
+    //                 if (hasHandler) {
+    //                     beans.add(new RuntimeBeanReference(bean));
+    //                 }
+    //             }
+    //         }
+    //     });
+    //     registry.registerBeanDefinition("eventHandlerRegistrar", genericBeanDefinition(EventHandlerRegistrar.class)
+    //             .addConstructorArgReference(TOWER_CONFIGURATION_BEAN).addConstructorArgReference(ehConfigBeanName)
+    //             .addPropertyValue("eventHandlers", beans).getBeanDefinition());
+    // }
+
+    private void registerModules(Configure configurer) {
+        registerConfigurerModules(configurer);
+        registerModuleConfigurations(configurer);
+    }
+
+    private void registerConfigurerModules(Configure configurer) {
+        String[] configurerModules = beanFactory.getBeanNamesForType(ConfigureModule.class);
+        for (String configurerModuleBeanName : configurerModules) {
+            ConfigureModule configureModule = beanFactory.getBean(configurerModuleBeanName, ConfigureModule.class);
+            configureModule.configureModule(configurer);
         }
     }
 
-    /**
-     * Register a component of {@code componentType} with {@code componentQualifier} through the given {@code
-     * registrationFunction}. The component to register will be a bean retrieved from the {@link ApplicationContext}
-     * tied to the {@link Configuration}.
-     *
-     * @param componentType        the type of the component to register
-     * @param componentQualifier   the qualifier of the component to register
-     * @param registrationFunction the function to register the component to the {@link Configuration}
-     * @param <T>                  the type of the component
-     */
-    private <T> void registerComponent(Class<T> componentType, String componentQualifier, Consumer<Function<Configuration, T>> registrationFunction) {
-        findComponent(componentType, componentQualifier).ifPresent(
-                componentName -> registrationFunction.accept(config -> getBean(componentName, config)));
+    private void registerModuleConfigurations(Configure configurer) {
+        String[] moduleConfigurations = beanFactory.getBeanNamesForType(ModuleConfiguration.class);
+        for (String moduleConfiguration : moduleConfigurations) {
+            configurer.registerModule(new LazyRetrievedModuleConfiguration(
+                    () -> beanFactory.getBean(moduleConfiguration, ModuleConfiguration.class)));
+        }
     }
 
-    private <T> Optional<String> findComponent(Class<T> componentType, String componentQualifier) {
-        return Stream.of(beanNamesForTypeIncludingAncestors(beanFactory, componentType))
-                .filter(bean -> isQualifierMatch(bean, beanFactory, componentQualifier))
-                .findFirst();
-    }
-
+    // @SuppressWarnings("unchecked")
+    // private void registerAggregateBeanDefinitions(Configure configurer, BeanDefinitionRegistry registry) {
+    //     String[] aggregates = beanFactory.getBeanNamesForAnnotation(Aggregate.class);
+    //     for (String aggregate : aggregates) {
+    //         Aggregate aggregateAnnotation = beanFactory.findAnnotationOnBean(aggregate, Aggregate.class);
+    //         Class<?> aggregateType = beanFactory.getType(aggregate);
+    //         AggregateConfigurer<?> aggregateConf = AggregateConfigurer.defaultConfiguration(aggregateType);
+    //         if ("".equals(aggregateAnnotation.repository())) {
+    //             String repositoryName = lcFirst(aggregateType.getSimpleName()) + "Repository";
+    //             String factoryName =
+    //                     aggregate.substring(0, 1).toLowerCase() + aggregate.substring(1) + "AggregateFactory";
+    //             if (beanFactory.containsBean(repositoryName)) {
+    //                 aggregateConf.configureRepository(c -> beanFactory.getBean(repositoryName, Repository.class));
+    //             } else {
+    //                 if (!registry.isBeanNameInUse(factoryName)) {
+    //                     registry.registerBeanDefinition(factoryName,
+    //                                                     genericBeanDefinition(SpringPrototypeAggregateFactory.class)
+    //                                                             .addPropertyValue("prototypeBeanName", aggregate)
+    //                                                             .getBeanDefinition());
+    //                 }
+    //                 aggregateConf
+    //                         .configureAggregateFactory(c -> beanFactory.getBean(factoryName, AggregateFactory
+    //                         .class));
+    //                 String triggerDefinition = aggregateAnnotation.snapshotTriggerDefinition();
+    //                 if (!"".equals(triggerDefinition)) {
+    //                     aggregateConf.configureSnapshotTrigger(
+    //                             c -> beanFactory.getBean(triggerDefinition, SnapshotTriggerDefinition.class));
+    //                 }
+    //                 if (AnnotationUtils.findAnnotation(aggregateType, "javax.persistence.Entity") != null) {
+    //                     aggregateConf.configureRepository(c -> new GenericJpaRepository(
+    //                             c.getComponent(EntityManagerProvider.class,
+    //                                            () -> beanFactory.getBean(EntityManagerProvider.class)),
+    //                                            aggregateType,
+    //                             c.eventBus(), c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
+    //                             c.parameterResolverFactory()));
+    //                 }
+    //             }
+    //         } else {
+    //             aggregateConf.configureRepository(
+    //                     c -> beanFactory.getBean(aggregateAnnotation.repository(), Repository.class));
+    //         }
+    //
+    //         if (!"".equals(aggregateAnnotation.commandTargetResolver())) {
+    //             aggregateConf.configureCommandTargetResolver(c -> beanFactory
+    //                     .getBean(aggregateAnnotation.commandTargetResolver(), CommandTargetResolver.class));
+    //         }
+    //
+    //         configurer.configureAggregate(aggregateConf);
+    //     }
+    // }
 
     /**
-     * Register a component of {@code componentType} with the given {@code configurer} through {@link
-     * Configure#registerComponent(Class, Function)}. The component to register will be a bean retrieved from the
-     * {@link ApplicationContext} tied to the {@link Configuration}.
+     * Return the given {@code string}, with its first character lowercase
      *
-     * @param componentType the type of the component to register
-     * @param configure     the {@link Configure} used to register the component with
-     * @param <T>           the type of the component
+     * @param string The input string
+     * @return The input string, with first character lowercase
      */
-    private <T> void registerComponent(Class<T> componentType, Configure configure) {
-        registerComponent(componentType, builder -> configure.registerComponent(componentType, builder), configure,
-                          null);
+    private String lcFirst(String string) {
+        return string.substring(0, 1).toLowerCase() + string.substring(1);
     }
 
-    /**
-     * Register a component of {@code componentType} through the given {@code registrationFunction}. The {@code
-     * initHandler} is used to initialize the component at the right point in time. The component to register will be a
-     * bean retrieved from the {@link ApplicationContext} tied to the {@link Configuration}.
-     *
-     * @param componentType        the type of the component to register
-     * @param registrationFunction the function to register the component to the {@link Configuration}
-     * @param configure            the {@link Configure} used to register the component with
-     * @param initHandler          the function used to initialize the registered component
-     * @param <T>                  the type of the component
-     */
-    private <T> void registerComponent(Class<T> componentType, Consumer<Function<Configuration, T>> registrationFunction, Configure configure, Consumer<Configuration> initHandler) {
-        findComponent(componentType).ifPresent(componentName -> {
-            registrationFunction.accept(config -> getBean(componentName, config));
-            if (initHandler != null) {
-                configure.onInitialize(c -> c.onStart(Integer.MIN_VALUE, () -> initHandler.accept(c)));
-            }
+    private <T> String findComponent(Class<T> componentType, BeanDefinitionRegistry registry,
+                                     Supplier<BeanDefinition> defaultBean) {
+        return findComponent(componentType).orElseGet(() -> {
+            BeanDefinition beanDefinition = defaultBean.get();
+            String beanName = BeanDefinitionReaderUtils.generateBeanName(beanDefinition, registry);
+            registry.registerBeanDefinition(beanName, beanDefinition);
+            return beanName;
         });
     }
 
+    private <T> Optional<String> findComponent(Class<T> componentType, String componentQualifier) {
+        return Stream.of(beanFactory.getBeanNamesForType(componentType))
+                     .filter(bean -> isQualifierMatch(bean, beanFactory, componentQualifier)).findFirst();
+    }
+
     private <T> Optional<String> findComponent(Class<T> componentType) {
-        String[] beans = beanNamesForTypeIncludingAncestors(beanFactory, componentType);
+        String[] beans = beanFactory.getBeanNamesForType(componentType);
         if (beans.length == 1) {
             return Optional.of(beans[0]);
         } else if (beans.length > 1) {
             for (String bean : beans) {
-                BeanDefinition beanDef = beanFactory.getMergedBeanDefinition(bean);
+                BeanDefinition beanDef = beanFactory.getBeanDefinition(bean);
                 if (beanDef.isPrimary()) {
                     return Optional.of(bean);
                 }
@@ -214,12 +258,16 @@ public class SpringTowerAutoConfiguration implements ImportBeanDefinitionRegistr
         return Optional.empty();
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> T getBean(String beanName, Configuration configuration) {
-        return (T) configuration.getComponent(ApplicationContext.class)
-                .getBean(beanName);
+    @Override
+    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+        this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
     }
 
+    /**
+     * Implementation of an {@link ImportSelector} that enables the import of the
+     * {@link SpringTowerAutoConfiguration} after
+     * all {@code @Configuration} beans have been processed.
+     */
     public static class ImportSelector implements DeferredImportSelector {
 
         @Override
@@ -233,35 +281,26 @@ public class SpringTowerAutoConfiguration implements ImportBeanDefinitionRegistr
 
         private final Supplier<ModuleConfiguration> delegateSupplier;
 
-        private final Class<?> moduleType;
-
         private ModuleConfiguration delegate;
 
-        LazyRetrievedModuleConfiguration(Supplier<ModuleConfiguration> delegateSupplier, Class<?> moduleType) {
+        LazyRetrievedModuleConfiguration(Supplier<ModuleConfiguration> delegateSupplier) {
             this.delegateSupplier = delegateSupplier;
-            this.moduleType = moduleType;
         }
 
         @Override
         public void initialize(Configuration config) {
-            getDelegate().initialize(config);
+            delegate = delegateSupplier.get();
+            delegate.initialize(config);
         }
 
         @Override
-        public ModuleConfiguration unwrap() {
-            return getDelegate();
+        public void start() {
+            delegate.start();
         }
 
         @Override
-        public boolean isType(Class<?> type) {
-            return type.isAssignableFrom(moduleType);
-        }
-
-        private ModuleConfiguration getDelegate() {
-            if (delegate == null) {
-                delegate = delegateSupplier.get();
-            }
-            return delegate;
+        public void shutdown() {
+            delegate.shutdown();
         }
 
     }

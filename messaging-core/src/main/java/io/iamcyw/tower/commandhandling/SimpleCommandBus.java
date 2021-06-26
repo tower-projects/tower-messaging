@@ -21,6 +21,7 @@ import io.iamcyw.tower.commandhandling.callbacks.NoOpCallback;
 import io.iamcyw.tower.common.MessagingConfigurationException;
 import io.iamcyw.tower.common.Registration;
 import io.iamcyw.tower.common.transaction.NoTransactionManager;
+import io.iamcyw.tower.common.transaction.Transaction;
 import io.iamcyw.tower.common.transaction.TransactionManager;
 import io.iamcyw.tower.messaging.*;
 import io.iamcyw.tower.messaging.unitofwork.DefaultUnitOfWork;
@@ -56,62 +57,38 @@ public class SimpleCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
 
-    private final TransactionManager transactionManager;
-
+    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions =
+            new ConcurrentHashMap<>();
+    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors
+            = new CopyOnWriteArrayList<>();
+    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
+            = new CopyOnWriteArrayList<>();
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
-
-    private final DuplicateCommandHandlerResolver duplicateCommandHandlerResolver;
-
-    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions = new ConcurrentHashMap<>();
-
-    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
-
-    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
-
-    private final CommandCallback<Object, Object> defaultCommandCallback;
-
-    private RollbackConfiguration rollbackConfiguration;
+    private final TransactionManager transactionManager;
+    private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
 
     /**
-     * Instantiate a {@link SimpleCommandBus} based on the fields contained in the {@link Builder}.
-     * <p>
-     * Will assert that the {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are not
-     * {@code null}, and will throw an {@link MessagingConfigurationException} if any of them is {@code null}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@link SimpleCommandBus} instance
+     * Initializes the SimpleCommandBus. This instance shall not manage any transactions or expose any monitoring
+     * information.
      */
-    protected SimpleCommandBus(Builder builder) {
-        builder.validate();
-        this.transactionManager = builder.transactionManager;
-        this.messageMonitor = builder.messageMonitor;
-        this.rollbackConfiguration = builder.rollbackConfiguration;
-        this.duplicateCommandHandlerResolver = builder.duplicateCommandHandlerResolver;
-        this.defaultCommandCallback = builder.defaultCommandCallback;
+    public SimpleCommandBus() {
+        this(NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE);
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link SimpleCommandBus}.
-     * <p>
-     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
-     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
-     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link DuplicateCommandHandlerResolver} defaults
-     * to {@link DuplicateCommandHandlerResolution#logAndOverride()}.
-     * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
-     * requirements</b>. Thus setting them to {@code null} will result in an {@link MessagingConfigurationException}.
+     * Initializes the SimpleCommandBus with the given {@code transactionManager} and {@code messageMonitor}
      *
-     * @return a Builder to be able to create a {@link SimpleCommandBus}
+     * @param transactionManager The transactionManager to manage transaction with
+     * @param messageMonitor     the message monitor to monitor the command bus
      */
-    public static Builder builder() {
-        return new Builder();
+    public SimpleCommandBus(TransactionManager transactionManager,
+                            MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+        this.transactionManager = transactionManager;
+        this.messageMonitor = messageMonitor;
     }
 
     @Override
-    public <C> void dispatch(CommandMessage<C> command) {
-        dispatch(command, defaultCommandCallback);
-    }
-
-    @Override
-    public <C, R> void dispatch(CommandMessage<C> command, final CommandCallback<? super C, ? super R> callback) {
+    public <C, R> void dispatch(CommandMessage<C> command, final CommandCallback<? super C, R> callback) {
         doDispatch(intercept(command), callback);
     }
 
@@ -119,7 +96,6 @@ public class SimpleCommandBus implements CommandBus {
      * Invokes all the dispatch interceptors.
      *
      * @param command The original command being dispatched
-     * @param <C>     The type of payload contained in the CommandMessage
      * @return The command to actually dispatch
      */
     @SuppressWarnings("unchecked")
@@ -139,18 +115,17 @@ public class SimpleCommandBus implements CommandBus {
      * @param <C>      The type of payload of the command
      * @param <R>      The type of result expected from the command handler
      */
-    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
+    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
 
-        Optional<MessageHandler<? super CommandMessage<?>>> optionalHandler = findCommandHandlerFor(command);
-        if (optionalHandler.isPresent()) {
-            handle(command, optionalHandler.get(), new MonitorAwareCallback<>(callback, monitorCallback));
-        } else {
+        MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command).orElseThrow(() -> {
             NoHandlerForCommandException exception = new NoHandlerForCommandException(
                     format("No handler was subscribed to command [%s]", command.getCommandName()));
             monitorCallback.reportFailure(exception);
-            callback.onResult(command, asCommandResultMessage(exception));
-        }
+            return exception;
+        });
+
+        handle(command, handler, new MonitorAwareCallback<>(callback, monitorCallback));
     }
 
     private Optional<MessageHandler<? super CommandMessage<?>>> findCommandHandlerFor(CommandMessage<?> command) {
@@ -166,36 +141,34 @@ public class SimpleCommandBus implements CommandBus {
      * @param <C>      The type of payload of the command
      * @param <R>      The type of result expected from the command handler
      */
-    protected <C, R> void handle(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler, CommandCallback<? super C, ? super R> callback) {
+    @SuppressWarnings({"unchecked"})
+    protected <C, R> void handle(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler, CommandCallback<? super C, R> callback) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling command [{}]", command.getCommandName());
         }
 
-        UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
-        unitOfWork.attachTransaction(transactionManager);
-        InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
+        try {
+            UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
+            Transaction transaction = transactionManager.startTransaction();
+            unitOfWork.onCommit(u -> transaction.commit());
+            unitOfWork.onRollback(u -> transaction.rollback());
+            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
 
-        CommandResultMessage<R> resultMessage = asCommandResultMessage(
-                unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration));
-        callback.onResult(command, resultMessage);
+            R result = (R) unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);
+
+            callback.onSuccess(command, result);
+        } catch (Exception e) {
+            callback.onFailure(command, e);
+        }
     }
 
     /**
      * Subscribe the given {@code handler} to commands with given {@code commandName}. If a subscription already
-     * exists for the given name, the configured {@link DuplicateCommandHandlerResolver} will resolve the command
-     * handler which should be subscribed.
+     * exists for the given name, then the new handler takes over the subscription.
      */
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
-        logger.debug("Subscribing command with name [{}]", commandName);
-        Assert.nonNull(handler, () -> "handler may not be null");
-        subscriptions.compute(commandName, (k, existingHandler) -> {
-            if (existingHandler == null || existingHandler == handler) {
-                return handler;
-            } else {
-                return duplicateCommandHandlerResolver.resolve(commandName, existingHandler, handler);
-            }
-        });
+        subscriptions.put(commandName, handler);
         return () -> subscriptions.remove(commandName, handler);
     }
 
@@ -226,125 +199,12 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     /**
-     * Sets the {@link RollbackConfiguration} that allows you to change when the {@link UnitOfWork} is rolled back. If
-     * not set the, {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} will be used, which triggers a rollback on
-     * all unchecked exceptions.
+     * Sets the RollbackConfiguration that allows you to change when the UnitOfWork is committed. If not set the
+     * RollbackOnUncheckedExceptionConfiguration will be used, which triggers a rollback on all unchecked exceptions.
      *
-     * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link UnitOfWork} should be
-     *                              rolled back
+     * @param rollbackConfiguration The RollbackConfiguration.
      */
     public void setRollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
         this.rollbackConfiguration = rollbackConfiguration;
     }
-
-    /**
-     * Builder class to instantiate a {@link SimpleCommandBus}.
-     * <p>
-     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
-     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
-     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link DuplicateCommandHandlerResolver} defaults
-     * to {@link DuplicateCommandHandlerResolution#logAndOverride()}.
-     * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
-     * requirements</b>. Thus setting them to {@code null} will result in an {@link MessagingConfigurationException}.
-     */
-    public static class Builder {
-
-        private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-
-        private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
-
-        private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
-
-        private DuplicateCommandHandlerResolver duplicateCommandHandlerResolver = DuplicateCommandHandlerResolution.logAndOverride();
-
-        private CommandCallback<Object, Object> defaultCommandCallback = LoggingCallback.INSTANCE;
-
-        /**
-         * Sets the {@link TransactionManager} used to manage transactions. Defaults to a {@link NoTransactionManager}.
-         *
-         * @param transactionManager a {@link TransactionManager} used to manage transactions
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder transactionManager(TransactionManager transactionManager) {
-            Assert.nonNull(transactionManager, () -> "TransactionManager may not be null");
-            this.transactionManager = transactionManager;
-            return this;
-        }
-
-        /**
-         * Sets the {@link MessageMonitor} of generic type {@link CommandMessage} used the to monitor the command bus.
-         * Defaults to a {@link NoOpMessageMonitor}.
-         *
-         * @param messageMonitor a {@link MessageMonitor} used the message monitor to monitor the command bus
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
-            Assert.nonNull(messageMonitor, () -> "MessageMonitor may not be null");
-            this.messageMonitor = messageMonitor;
-            return this;
-        }
-
-        /**
-         * Sets the {@link RollbackConfiguration} which allows you to specify when a {@link UnitOfWork} should be rolled
-         * back. Defaults to a {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, which triggers a rollback on all
-         * unchecked exceptions.
-         *
-         * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link UnitOfWork} should be
-         *                              rolled back
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
-            Assert.nonNull(rollbackConfiguration, () -> "RollbackConfiguration may not be null");
-            this.rollbackConfiguration = rollbackConfiguration;
-            return this;
-        }
-
-        /**
-         * Sets the {@link DuplicateCommandHandlerResolver} used to resolves the road to take when a duplicate command
-         * handler is subscribed. Defaults to {@link DuplicateCommandHandlerResolution#logAndOverride()}.
-         *
-         * @param duplicateCommandHandlerResolver a {@link DuplicateCommandHandlerResolver} used to resolves the road to
-         *                                        take when a duplicate command handler is subscribed
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder duplicateCommandHandlerResolver(DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
-            Assert.nonNull(duplicateCommandHandlerResolver, () -> "DuplicateCommandHandlerResolver may not be null");
-            this.duplicateCommandHandlerResolver = duplicateCommandHandlerResolver;
-            return this;
-        }
-
-        /**
-         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
-         * {@link #dispatch(CommandMessage)}. Defaults to a {@link LoggingCallback}. Passing {@code null} will result
-         * in a {@link NoOpCallback} being used.
-         *
-         * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder defaultCommandCallback(CommandCallback<Object, Object> defaultCommandCallback) {
-            this.defaultCommandCallback = getOrDefault(defaultCommandCallback, NoOpCallback.INSTANCE);
-            return this;
-        }
-
-        /**
-         * Initializes a {@link SimpleCommandBus} as specified through this Builder.
-         *
-         * @return a {@link SimpleCommandBus} as specified through this Builder
-         */
-        public SimpleCommandBus build() {
-            return new SimpleCommandBus(this);
-        }
-
-        /**
-         * Validate whether the fields contained in this Builder as set accordingly.
-         *
-         * @throws MessagingConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                         specifications
-         */
-        protected void validate() {
-            // No assertions required, kept for overriding
-        }
-
-    }
-
 }

@@ -8,4 +8,7 @@ dependencies {
     api("io.iamcyw.tower:tower-utils")
     api("io.iamcyw.tower:tower-exception")
     implementation("io.projectreactor:reactor-core")
+
+//    implementation("org.hibernate.javax.persistence:hibernate-jpa-2.1-api")
+    implementation("org.hibernate:hibernate-entitymanager")
 }

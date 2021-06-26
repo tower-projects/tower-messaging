@@ -17,38 +17,31 @@
 package io.iamcyw.tower.commandhandling;
 
 
+import io.iamcyw.tower.commandhandling.model.inspection.AggregateModel;
+import io.iamcyw.tower.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import io.iamcyw.tower.common.Registration;
-import io.iamcyw.tower.messaging.annotation.*;
+import io.iamcyw.tower.messaging.MessageHandler;
+import io.iamcyw.tower.messaging.annotation.ClasspathParameterResolverFactory;
+import io.iamcyw.tower.messaging.annotation.ParameterResolverFactory;
 import io.iamcyw.tower.utils.Assert;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.lang.String.format;
+public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMessage<?>>, SupportedCommandNamesAware {
 
-/**
- * Adapter that turns any {@link CommandHandler @CommandHandler} annotated bean into a {@link
- * MessageHandler} implementation. Each annotated method is subscribed
- * as a CommandHandler at the {@link CommandBus} for the command type specified by the parameter of that method.
- *
- * @author Allard Buijze
- * @see CommandHandler
- * @since 0.5
- */
-public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler {
+    private final Object target;
 
-    private final T target;
-    private final AnnotatedHandlerInspector<T> model;
+    private final AggregateModel<Object> modelInspector;
 
     /**
      * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a Command Bus.
      *
      * @param annotatedCommandHandler The object containing the @CommandHandler annotated methods
      */
-    public AnnotationCommandHandlerAdapter(T annotatedCommandHandler) {
+    public AnnotationCommandHandlerAdapter(Object annotatedCommandHandler) {
         this(annotatedCommandHandler, ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()));
     }
 
@@ -58,28 +51,12 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
      * @param annotatedCommandHandler  The object containing the @CommandHandler annotated methods
      * @param parameterResolverFactory The strategy for resolving handler method parameter values
      */
-    public AnnotationCommandHandlerAdapter(T annotatedCommandHandler,
-                                           ParameterResolverFactory parameterResolverFactory) {
-        this(annotatedCommandHandler,
-             parameterResolverFactory,
-             ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()));
-    }
-
-    /**
-     * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a Command Bus.
-     *
-     * @param annotatedCommandHandler  The object containing the @CommandHandler annotated methods
-     * @param parameterResolverFactory The strategy for resolving handler method parameter values
-     * @param handlerDefinition        The handler definition used to create concrete handlers
-     */
     @SuppressWarnings("unchecked")
-    public AnnotationCommandHandlerAdapter(T annotatedCommandHandler,
-                                           ParameterResolverFactory parameterResolverFactory,
-                                           HandlerDefinition handlerDefinition) {
+    public AnnotationCommandHandlerAdapter(Object annotatedCommandHandler,
+                                           ParameterResolverFactory parameterResolverFactory) {
         Assert.nonNull(annotatedCommandHandler, () -> "annotatedCommandHandler may not be null");
-        this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedCommandHandler.getClass(),
-                                                           parameterResolverFactory,
-                                                           handlerDefinition);
+        this.modelInspector = AnnotatedAggregateMetaModelFactory
+                .inspectAggregate((Class<Object>) annotatedCommandHandler.getClass(), parameterResolverFactory);
 
         this.target = annotatedCommandHandler;
     }
@@ -92,9 +69,8 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
      * @return A handle that can be used to unsubscribe
      */
     public Registration subscribe(CommandBus commandBus) {
-        Collection<Registration> subscriptions =
-                supportedCommandNames().stream().map(supportedCommand -> commandBus.subscribe(supportedCommand, this))
-                                       .collect(Collectors.toCollection(ArrayDeque::new));
+        Collection<Registration> subscriptions = supportedCommandNames().stream().map(supportedCommand -> commandBus
+                .subscribe(supportedCommand, this)).collect(Collectors.toCollection(ArrayDeque::new));
         return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
 
@@ -109,23 +85,13 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
      */
     @Override
     public Object handle(CommandMessage<?> command) throws Exception {
-        return model.getHandlers().stream()
-                    .filter(h -> h.canHandle(command)).findFirst()
-                    .orElseThrow(() -> new NoHandlerForCommandException(format("No handler available to handle command [%s]", command.getCommandName())))
-                    .handle(command, target);
+        return modelInspector.commandHandler(command.getCommandName()).handle(command, target);
     }
 
-    @Override
-    public boolean canHandle(CommandMessage<?> message) {
-        return model.getHandlers().stream().anyMatch(h -> h.canHandle(message));
-    }
 
     @Override
     public Set<String> supportedCommandNames() {
-        return model.getHandlers().stream()
-                    .map(h -> h.unwrap(CommandMessageHandlingMember.class).orElse(null))
-                    .filter(Objects::nonNull)
-                    .map(CommandMessageHandlingMember::commandName)
-                    .collect(Collectors.toSet());
+        return modelInspector.commandHandlers().keySet();
     }
+
 }

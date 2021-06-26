@@ -17,6 +17,7 @@
 package io.iamcyw.tower.messaging;
 
 
+import io.iamcyw.tower.serialization.SerializationAware;
 import io.iamcyw.tower.serialization.SerializedObject;
 import io.iamcyw.tower.serialization.Serializer;
 
@@ -24,11 +25,12 @@ import io.iamcyw.tower.serialization.Serializer;
  * Abstract implementation of a {@link Message} that delegates to an existing message. Extend this decorator class to
  * extend the message with additional features.
  */
-public abstract class MessageDecorator<T> implements Message<T> {
+public abstract class MessageDecorator<T> implements Message<T>, SerializationAware {
 
     private static final long serialVersionUID = 3969631713723578521L;
 
     private final Message<T> delegate;
+    private transient volatile SerializedObjectHolder serializedObjectHolder;
 
     /**
      * Initializes a new decorator with given {@code delegate} message. The decorator delegates to the delegate for
@@ -62,12 +64,25 @@ public abstract class MessageDecorator<T> implements Message<T> {
 
     @Override
     public <S> SerializedObject<S> serializePayload(Serializer serializer, Class<S> expectedRepresentation) {
-        return delegate.serializePayload(serializer, expectedRepresentation);
+        if (delegate instanceof SerializationAware) {
+            return ((SerializationAware) delegate).serializePayload(serializer, expectedRepresentation);
+        }
+        return serializedObjectHolder().serializePayload(serializer, expectedRepresentation);
     }
 
     @Override
     public <S> SerializedObject<S> serializeMetaData(Serializer serializer, Class<S> expectedRepresentation) {
-        return delegate.serializeMetaData(serializer, expectedRepresentation);
+        if (delegate instanceof SerializationAware) {
+            return ((SerializationAware) delegate).serializeMetaData(serializer, expectedRepresentation);
+        }
+        return serializedObjectHolder().serializeMetaData(serializer, expectedRepresentation);
+    }
+
+    private SerializedObjectHolder serializedObjectHolder() {
+        if (serializedObjectHolder == null) {
+            serializedObjectHolder = new SerializedObjectHolder(delegate);
+        }
+        return serializedObjectHolder;
     }
 
     /**
@@ -81,11 +96,12 @@ public abstract class MessageDecorator<T> implements Message<T> {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder().append(describeType())
+        StringBuilder sb = new StringBuilder()
+                .append(describeType())
                 .append("{");
         describeTo(sb);
         return sb.append("}")
-                .toString();
+                 .toString();
     }
 
     /**
@@ -100,14 +116,14 @@ public abstract class MessageDecorator<T> implements Message<T> {
      */
     protected void describeTo(StringBuilder stringBuilder) {
         stringBuilder.append("payload={")
-                .append(getPayload())
-                .append('}')
-                .append(", metadata={")
-                .append(getMetaData())
-                .append('}')
-                .append(", messageIdentifier='")
-                .append(getIdentifier())
-                .append('\'');
+                     .append(getPayload())
+                     .append('}')
+                     .append(", metadata={")
+                     .append(getMetaData())
+                     .append('}')
+                     .append(", messageIdentifier='")
+                     .append(getIdentifier())
+                     .append('\'');
     }
 
     /**
@@ -120,5 +136,4 @@ public abstract class MessageDecorator<T> implements Message<T> {
     protected String describeType() {
         return getClass().getSimpleName();
     }
-
 }

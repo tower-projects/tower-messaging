@@ -6,4 +6,5 @@ include 'messaging-config'
 
 include 'spring:messaging-boot-autoconfigure'
 include 'spring:messaging-spring'
+include 'spring:messaging-spring-boot-starter'
 

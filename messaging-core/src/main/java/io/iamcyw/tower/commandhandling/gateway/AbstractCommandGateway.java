@@ -25,6 +25,8 @@ import io.iamcyw.tower.common.Registration;
 import io.iamcyw.tower.messaging.MessageDispatchInterceptor;
 import io.iamcyw.tower.utils.Assert;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -45,18 +47,24 @@ public abstract class AbstractCommandGateway {
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
 
     /**
-     * Instantiate an {@link AbstractCommandGateway} based on the fields contained in the {@link Builder}.
-     * <p>
-     * Will assert that the {@link CommandBus} is not {@code null} and throws an {@link MessagingConfigurationException}
-     * if it is.
+     * Initialize the AbstractCommandGateway with given {@code commandBus}, {@code retryScheduler} and
+     * {@code commandDispatchInterceptors}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link AbstractCommandGateway} instance
+     * @param commandBus                  The command bus on which to dispatch events
+     * @param retryScheduler              The scheduler capable of performing retries of failed commands. May be
+     *                                    {@code null} when to prevent retries.
+     * @param messageDispatchInterceptors The interceptors to invoke when dispatching a command
      */
-    protected AbstractCommandGateway(Builder builder) {
-        builder.validate();
-        this.commandBus = builder.commandBus;
-        this.retryScheduler = builder.retryScheduler;
-        this.dispatchInterceptors = builder.dispatchInterceptors;
+    protected AbstractCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
+                                     List<MessageDispatchInterceptor<? super CommandMessage<?>>> messageDispatchInterceptors) {
+        Assert.nonNull(commandBus, () -> "commandBus may not be null");
+        this.commandBus = commandBus;
+        if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
+            this.dispatchInterceptors = new ArrayList<>(messageDispatchInterceptors);
+        } else {
+            this.dispatchInterceptors = Collections.emptyList();
+        }
+        this.retryScheduler = retryScheduler;
     }
 
     /**
@@ -66,9 +74,9 @@ public abstract class AbstractCommandGateway {
      * @param callback The callback to notify with the processing result
      * @param <R>      The type of response expected from the command
      */
-    protected <C, R> void send(C command, CommandCallback<? super C, ? super R> callback) {
+    protected <C, R> void send(C command, CommandCallback<? super C, R> callback) {
         CommandMessage<? extends C> commandMessage = processInterceptors(asCommandMessage(command));
-        CommandCallback<? super C, ? super R> commandCallback = callback;
+        CommandCallback<? super C, R> commandCallback = callback;
         if (retryScheduler != null) {
             commandCallback = new RetryingCallback<>(callback, retryScheduler, commandBus);
         }
@@ -88,18 +96,6 @@ public abstract class AbstractCommandGateway {
             CommandMessage<?> commandMessage = asCommandMessage(command);
             send(commandMessage, LoggingCallback.INSTANCE);
         }
-    }
-
-    /**
-     * Registers a command dispatch interceptor within a {@link CommandGateway}.
-     *
-     * @param interceptor To intercept command messages
-     * @return a registration which can be used to cancel the registration of given interceptor
-     */
-    protected Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> interceptor) {
-        dispatchInterceptors.add(interceptor);
-        return () -> dispatchInterceptors.remove(interceptor);
     }
 
     /**
@@ -124,80 +120,5 @@ public abstract class AbstractCommandGateway {
      */
     public CommandBus getCommandBus() {
         return commandBus;
-    }
-
-    /**
-     * Abstract Builder class to instantiate {@link AbstractCommandGateway} implementations.
-     * <p>
-     * The {@code dispatchInterceptors} are defaulted to an empty list.
-     * The {@link CommandBus} is a <b>hard requirement</b> and as such should be provided.
-     */
-    public abstract static class Builder {
-
-        private CommandBus commandBus;
-        private RetryScheduler retryScheduler;
-        private List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors =
-                new CopyOnWriteArrayList<>();
-
-        /**
-         * Sets the {@link CommandBus} used to dispatch commands.
-         *
-         * @param commandBus a {@link CommandBus} used to dispatch commands
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder commandBus(CommandBus commandBus) {
-            Assert.nonNull(commandBus, () -> "CommandBus may not be null");
-            this.commandBus = commandBus;
-            return this;
-        }
-
-        /**
-         * Sets the {@link RetryScheduler} capable of performing retries of failed commands. May be {@code null} when
-         * to prevent retries.
-         *
-         * @param retryScheduler a {@link RetryScheduler} capable of performing retries of failed commands
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder retryScheduler(RetryScheduler retryScheduler) {
-            this.retryScheduler = retryScheduler;
-            return this;
-        }
-
-        /**
-         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link CommandMessage}s.
-         * Are invoked when a command is being dispatched.
-         *
-         * @param dispatchInterceptors which are invoked when a command is being dispatched
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder dispatchInterceptors(
-                MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
-            return dispatchInterceptors(asList(dispatchInterceptors));
-        }
-
-        /**
-         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link CommandMessage}s.
-         * Are invoked when a command is being dispatched.
-         *
-         * @param dispatchInterceptors which are invoked when a command is being dispatched
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder dispatchInterceptors(
-                List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
-            this.dispatchInterceptors = dispatchInterceptors != null && !dispatchInterceptors.isEmpty()
-                    ? new CopyOnWriteArrayList<>(dispatchInterceptors)
-                    : new CopyOnWriteArrayList<>();
-            return this;
-        }
-
-        /**
-         * Validate whether the fields contained in this Builder as set accordingly.
-         *
-         * @throws MessagingConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        protected void validate() {
-            Assert.nonNull(commandBus,()->"The CommandBus is a hard requirement and should be provided");
-        }
     }
 }

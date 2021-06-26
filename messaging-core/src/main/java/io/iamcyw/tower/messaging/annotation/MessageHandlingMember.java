@@ -44,14 +44,12 @@ public interface MessageHandlingMember<T> {
      * <p>
      * In general, a handler with a higher priority will receive the message before (or instead of) handlers with a
      * lower priority. However, the priority value may not be the only indicator that is used to determine the order of
-     * invocation. For instance, a message processor may decide to ignore the priority value if one message handler is a
-     * more specific handler of the message than another handler.
+     * invocation. For instance, a message processor may decide to ignore the priority value if one message handler is
+     * a more specific handler of the message than another handler.
      *
      * @return Number indicating the priority of this handler over other handlers
      */
-    default int priority() {
-        return 0;
-    }
+    int priority();
 
     /**
      * Checks if this handler is capable of handling the given {@code message}.
@@ -60,29 +58,6 @@ public interface MessageHandlingMember<T> {
      * @return {@code true} if the handler is capable of handling the message, {@code false} otherwise
      */
     boolean canHandle(Message<?> message);
-
-    /**
-     * Checks if this handler is capable of handling messages with the given {@code payloadType}.
-     *
-     * @param payloadType The payloadType of a message that is to be handled
-     * @return {@code true} if the handler is capable of handling the message with given type, {@code false} otherwise
-     */
-    default boolean canHandleType(Class<?> payloadType) {
-        return true;
-    }
-
-    /**
-     * Checks if this handlers is capable of handling {@link Message} implementations of the given {@code messageType}.
-     * <p>
-     * It is recommended to suppress the raw type use validation of the {@code messageType} parameter when implementing
-     * this method, as usage of this method with a {@code Message} generic would required reflection or casting
-     * otherwise.
-     *
-     * @param messageType the {@link Message}'s type to check if it can be handled by this handler
-     * @return {@code true} if this handler can handle the given {@code messageType}, {@code false} otherwise
-     */
-    @SuppressWarnings("rawtypes")
-    boolean canHandleMessageType(Class<? extends Message> messageType);
 
     /**
      * Handles the given {@code message} by invoking the appropriate method on given {@code target}. This may result in
@@ -110,37 +85,11 @@ public interface MessageHandlingMember<T> {
     <HT> Optional<HT> unwrap(Class<HT> handlerType);
 
     /**
-     * Gets the declaring class of this Message Handling Member.
-     *
-     * @return the declaring class of this Message Handling Member
-     */
-    default Class<?> declaringClass() {
-        return unwrap(Member.class).map(Member::getDeclaringClass)
-                .orElseThrow(() -> new UnsupportedOperationException(
-                        "This implementation of MessageHandlingMember does not wrap a "
-                                + "java.lang.reflect.Member. Please provide a different way of "
-                                + "getting 'declaringClass' of this MessageHandlingMember."));
-    }
-
-    /**
-     * Returns the signature of the member. This may be used in logging or exceptions to demarcate the actual class
-     * member invoked. If this member does not have a signature, {@code "__unknown__"} is returned.
-     *
-     * @return the signature of the handling member
-     */
-    default String signature() {
-        return unwrap(Executable.class).map(Executable::toGenericString)
-                .orElse("__unknown__");
-    }
-
-    /**
      * Checks whether the method of the target entity contains the given {@code annotationType}.
      *
      * @param annotationType Annotation to check for on the target method
      * @return {@code true} if the annotation is present on the target method, {@code false} otherwise
-     * @deprecated in favor of {@link #attribute(String)}
      */
-    @Deprecated
     boolean hasAnnotation(Class<? extends Annotation> annotationType);
 
     /**
@@ -151,24 +100,6 @@ public interface MessageHandlingMember<T> {
      * @param annotationType The annotation to check for on the target method
      * @return An optional containing a map of the properties of the annotation, or an empty optional if the annotation
      * is missing on the method
-     * @deprecated in favor of {@link #attribute(String)}
      */
-    @Deprecated
     Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType);
-
-    /**
-     * Retrieve a single attributes for the given {@code attributeKey}. If this {@link MessageHandlingMember} does not
-     * hold a value referencing the {@code attributeKey}, an {@link Optional#empty()} is returned. Otherwise a non-empty
-     * {@link Optional} containing the attribute will be provided.
-     * <p>
-     * When using the method, consider checking the {@link HandlerAttributes} for a list of
-     * common handler attributes.
-     *
-     * @param attributeKey the key to retrieve an attribute for
-     * @return a non-empty {@link Optional} of the attribute referencing the given {@code attributeKey}. Otherwise an
-     * {@link Optional#empty()} will be returned
-     */
-    default <R> Optional<R> attribute(String attributeKey) {
-        return Optional.empty();
-    }
 }

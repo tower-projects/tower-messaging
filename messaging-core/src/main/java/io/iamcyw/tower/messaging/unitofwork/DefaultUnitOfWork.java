@@ -37,15 +37,6 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     private final MessageProcessingContext<T> processingContext;
 
     /**
-     * Initializes a Unit of Work (without starting it).
-     *
-     * @param message the message that will be processed in the context of the unit of work
-     */
-    public DefaultUnitOfWork(T message) {
-        processingContext = new MessageProcessingContext<>(message);
-    }
-
-    /**
      * Starts a new DefaultUnitOfWork instance, registering it a CurrentUnitOfWork. This methods returns the started
      * UnitOfWork instance.
      * <p>
@@ -61,6 +52,43 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
         return uow;
     }
 
+    /**
+     * Initializes a Unit of Work (without starting it).
+     *
+     * @param message the message that will be processed in the context of the unit of work
+     */
+    public DefaultUnitOfWork(T message) {
+        processingContext = new MessageProcessingContext<>(message);
+    }
+
+    @Override
+    public <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
+        if (phase() == Phase.NOT_STARTED) {
+            start();
+        }
+        Assert.state(phase() == Phase.STARTED, () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
+        R result;
+        try {
+            result = task.call();
+        } catch (Error | Exception e) {
+            if (rollbackConfiguration.rollBackOn(e)) {
+                rollback(e);
+            } else {
+                setExecutionResult(new ExecutionResult(e));
+                commit();
+            }
+            throw e;
+        }
+        setExecutionResult(new ExecutionResult(result));
+        commit();
+        return result;
+    }
+
+    @Override
+    protected void setRollbackCause(Throwable cause) {
+        setExecutionResult(new ExecutionResult(cause));
+    }
+
     @Override
     protected void notifyHandlers(Phase phase) {
         processingContext.notifyHandlers(this, phase);
@@ -68,8 +96,8 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
 
     @Override
     protected void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
-        Assert.state(!phase.isBefore(phase()),
-                     () -> "Cannot register a listener for phase: " + phase + " because the Unit of Work is already in a later phase: " + phase());
+        Assert.state(!phase.isBefore(phase()), () -> "Cannot register a listener for phase: " + phase
+                + " because the Unit of Work is already in a later phase: " + phase());
         processingContext.addHandler(phase, handler);
     }
 
@@ -85,41 +113,6 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     }
 
     @Override
-    public <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) {
-        if (phase() == Phase.NOT_STARTED) {
-            start();
-        }
-        Assert.state(phase() == Phase.STARTED,
-                     () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
-        R result;
-        ResultMessage<R> resultMessage;
-        try {
-            result = task.call();
-            if (result instanceof ResultMessage) {
-                //noinspection Duplicates
-                resultMessage = (ResultMessage<R>) result;
-            } else if (result instanceof Message) {
-                resultMessage = new GenericResultMessage<>(result, ((Message) result).getMetaData());
-            } else {
-                resultMessage = new GenericResultMessage<>(result);
-            }
-        } catch (Error | Exception e) {
-            resultMessage = asResultMessage(e);
-            if (rollbackConfiguration.rollBackOn(e)) {
-                rollback(e);
-                return resultMessage;
-            }
-        }
-        setExecutionResult(new ExecutionResult(resultMessage));
-        try {
-            commit();
-        } catch (Exception e) {
-            resultMessage = asResultMessage(e);
-        }
-        return resultMessage;
-    }
-
-    @Override
     public ExecutionResult getExecutionResult() {
         return processingContext.getExecutionResult();
     }
@@ -128,10 +121,4 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     protected void setExecutionResult(ExecutionResult executionResult) {
         processingContext.setExecutionResult(executionResult);
     }
-
-    @Override
-    protected void setRollbackCause(Throwable cause) {
-        setExecutionResult(new ExecutionResult(new GenericResultMessage<>(cause)));
-    }
-
 }

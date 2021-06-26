@@ -66,26 +66,25 @@ public class RetryingCallback<C, R> implements CommandCallback<C, R> {
     }
 
     @Override
-    public void onResult(CommandMessage<? extends C> commandMessage,
-                         CommandResultMessage<? extends R> commandResultMessage) {
-        if (commandResultMessage.isExceptional()) {
-            Throwable cause = commandResultMessage.exceptionResult();
-            history.add(simplify(cause));
-            try {
-                // We fail immediately when the exception is checked,
-                // or when it is a Deadlock Exception and we have an active unit of work.
-                if (!(cause instanceof RuntimeException)
-                        || (isCausedBy(cause, DeadlockException.class) && CurrentUnitOfWork.isStarted())
-                        || !retryScheduler.scheduleRetry(commandMessage, (RuntimeException) cause,
-                                                         new ArrayList<>(history),
-                                                         new RetryDispatch(commandMessage))) {
-                    delegate.onResult(commandMessage, commandResultMessage);
-                }
-            } catch (Exception e) {
-                delegate.onResult(commandMessage, asCommandResultMessage(e));
+    public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
+        delegate.onSuccess(commandMessage, result);
+    }
+
+    @Override
+    public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
+        history.add(simplify(cause));
+        try {
+            // we fail immediately when the exception is checked,
+            // or when it is a Deadlock Exception and we have an active unit of work
+            if (!(cause instanceof RuntimeException)
+                    || (isCausedBy(cause, DeadlockException.class) && CurrentUnitOfWork.isStarted())
+                    || !retryScheduler.scheduleRetry(commandMessage, (RuntimeException) cause,
+                                                     new ArrayList<>(history),
+                                                     new RetryDispatch(commandMessage))) {
+                delegate.onFailure(commandMessage, cause);
             }
-        } else {
-            delegate.onResult(commandMessage, commandResultMessage);
+        } catch (Exception e) {
+            delegate.onFailure(commandMessage, e);
         }
     }
 
@@ -119,7 +118,7 @@ public class RetryingCallback<C, R> implements CommandCallback<C, R> {
             try {
                 commandBus.dispatch(commandMessage, RetryingCallback.this);
             } catch (Exception e) {
-                RetryingCallback.this.onResult(commandMessage, asCommandResultMessage(e));
+                RetryingCallback.this.onFailure(commandMessage, e);
             }
         }
     }

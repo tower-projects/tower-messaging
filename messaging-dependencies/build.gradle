@@ -14,6 +14,10 @@ dependencies {
         api project(':messaging-config')
         api project(':spring:messaging-spring')
         api project(':spring:messaging-boot-autoconfigure')
+        api project(':spring:messaging-spring-boot-starter')
+
+//        api("org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.0.Final")
+//        api("org.hibernate:hibernate-entitymanager:5.1.0.Final")
     }
 }
 

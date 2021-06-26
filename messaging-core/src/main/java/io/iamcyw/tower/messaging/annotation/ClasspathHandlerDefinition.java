@@ -29,7 +29,7 @@ import static java.util.ServiceLoader.load;
  * ServiceLoader} mechanism to locate and initialize them.
  * <p/>
  * This means for this class to find implementations, their fully qualified class name has to be put into a file called
- * {@code META-INF/services/org.axonframework.messaging.annotation.HandlerDefinition}. For more details, see
+ * {@code META-INF/services/io.iamcyw.tower.messaging.annotation.HandlerDefinition}. For more details, see
  * {@link ServiceLoader}.
  *
  * @author Tyler Thrailkill

@@ -3,7 +3,6 @@ package io.iamcyw.tower.config;
 import io.iamcyw.tower.commandhandling.CommandBus;
 import io.iamcyw.tower.commandhandling.gateway.CommandGateway;
 import io.iamcyw.tower.messaging.Message;
-import io.iamcyw.tower.messaging.annotation.HandlerDefinition;
 import io.iamcyw.tower.messaging.annotation.ParameterResolverFactory;
 import io.iamcyw.tower.messaging.correlation.CorrelationDataProvider;
 import io.iamcyw.tower.monitoring.MessageMonitor;
@@ -13,7 +12,6 @@ import io.iamcyw.tower.queryhandling.QueryUpdateEmitter;
 import io.iamcyw.tower.serialization.Serializer;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
@@ -24,6 +22,7 @@ import java.util.function.Supplier;
  * components provided by this configuration, ensure that {@link #start()} has been invoked.
  */
 public interface Configuration {
+
 
     /**
      * Returns the Command Bus defined in this Configuration. Note that this Configuration should be started (see
@@ -70,7 +69,6 @@ public interface Configuration {
         return getComponent(QueryGateway.class);
     }
 
-
     /**
      * Returns the Component declared under the given {@code componentType}, typically the interface the component
      * implements.
@@ -116,7 +114,6 @@ public interface Configuration {
         return getComponent(Serializer.class);
     }
 
-
     /**
      * Returns the {@link Serializer} defined in this Configuration to be used for serializing Message payloads and
      * metadata.
@@ -152,116 +149,32 @@ public interface Configuration {
     }
 
     /**
-     * Returns the Handler Definition defined in this Configuration for the given {@code inspectedType}.
+     * Returns all modules that have been registered with this Configuration.
      *
-     * @param inspectedType The class to being inspected for handlers
-     * @return the Handler Definition defined in this Configuration
+     * @return all modules that have been registered with this Configuration
      */
-    HandlerDefinition handlerDefinition(Class<?> inspectedType);
-
+    List<ModuleConfiguration> getModules();
 
     /**
-     * Registers a {@code startHandler} to be executed in the default phase {@code 0} when this Configuration is
-     * started.
+     * Registers a handler to be executed when this Configuration is started.
      * <p>
      * The behavior for handlers that are registered when the Configuration is already started is undefined.
      *
-     * @param startHandler the handler to execute when the configuration is started
+     * @param startHandler The handler to execute when the configuration is started
      * @see #start()
+     * @see #onShutdown(Runnable)
      */
-    default void onStart(Runnable startHandler) {
-        onStart(0, startHandler);
-    }
+    void onStart(Runnable startHandler);
 
     /**
-     * Registers a {@code startHandler} to be executed in the given {@code phase} when this Configuration is started.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already started is undefined.
-     *
-     * @param phase        defines a {@code phase} in which the start handler will be invoked during {@link
-     *                     Configuration#start()}. When starting the configuration the given handlers are started in
-     *                     ascending order based on their {@code phase}
-     * @param startHandler the handler to execute when the configuration is started
-     * @see #start()
-     */
-    default void onStart(int phase, Runnable startHandler) {
-        onStart(phase, () -> {
-            try {
-                startHandler.run();
-                return CompletableFuture.completedFuture(null);
-            } catch (Exception e) {
-                CompletableFuture<?> exceptionResult = new CompletableFuture<>();
-                exceptionResult.completeExceptionally(e);
-                return exceptionResult;
-            }
-        });
-    }
-
-    /**
-     * Registers an asynchronous {@code startHandler} to be executed in the given {@code phase} when this Configuration
-     * is started.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already started is undefined.
-     *
-     * @param phase        defines a {@code phase} in which the start handler will be invoked during {@link
-     *                     Configuration#start()}. When starting the configuration the given handlers are started in
-     *                     ascending order based on their {@code phase}
-     * @param startHandler the handler to be executed asynchronously when the configuration is started
-     * @see #start()
-     */
-    void onStart(int phase, LifecycleHandler startHandler);
-
-    /**
-     * Registers a {@code shutdownHandler} to be executed in the default phase {@code 0} when the Configuration is shut
-     * down.
+     * Registers a handler to be executed when the Configuration is shut down.
      * <p>
      * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
      *
-     * @param shutdownHandler the handler to execute when the Configuration is shut down
+     * @param shutdownHandler The handler to execute when the Configuration is shut down
      * @see #shutdown()
+     * @see #onStart(Runnable)
      */
-    default void onShutdown(Runnable shutdownHandler) {
-        onShutdown(0, shutdownHandler);
-    }
-
-    /**
-     * Registers a {@code shutdownHandler} to be executed in the given {@code phase} when the Configuration is shut
-     * down.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
-     *
-     * @param phase           defines a phase in which the shutdown handler will be invoked during {@link
-     *                        Configuration#shutdown()}. When shutting down the configuration the given handlers are
-     *                        executing in descending order based on their {@code phase}
-     * @param shutdownHandler the handler to execute when the Configuration is shut down
-     * @see #shutdown()
-     */
-    default void onShutdown(int phase, Runnable shutdownHandler) {
-        onShutdown(phase, () -> {
-            try {
-                shutdownHandler.run();
-                return CompletableFuture.completedFuture(null);
-            } catch (Exception e) {
-                CompletableFuture<?> exceptionResult = new CompletableFuture<>();
-                exceptionResult.completeExceptionally(e);
-                return exceptionResult;
-            }
-        });
-    }
-
-    /**
-     * Registers an asynchronous {@code shutdownHandler} to be executed in the given {@code phase} when the
-     * Configuration is shut down.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
-     *
-     * @param phase           defines a phase in which the shutdown handler will be invoked during {@link
-     *                        Configuration#shutdown()}. When shutting down the configuration the given handlers are
-     *                        executing in descending order based on their {@code phase}
-     * @param shutdownHandler the handler to be executed asynchronously when the Configuration is shut down
-     * @see #shutdown()
-     */
-    void onShutdown(int phase, LifecycleHandler shutdownHandler);
-
+    void onShutdown(Runnable shutdownHandler);
 
 }

@@ -18,10 +18,14 @@ package io.iamcyw.tower.queryhandling.annotation;
 
 import io.iamcyw.tower.common.Registration;
 import io.iamcyw.tower.messaging.MessageHandler;
-import io.iamcyw.tower.messaging.annotation.*;
+import io.iamcyw.tower.messaging.annotation.AnnotatedHandlerInspector;
+import io.iamcyw.tower.messaging.annotation.ClasspathParameterResolverFactory;
+import io.iamcyw.tower.messaging.annotation.MessageHandlingMember;
+import io.iamcyw.tower.messaging.annotation.ParameterResolverFactory;
 import io.iamcyw.tower.queryhandling.*;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -29,89 +33,61 @@ import java.util.stream.Collectors;
  * Adapter that turns any {@link QueryHandler @QueryHandler} annotated bean into a {@link MessageHandler}
  * implementation. Each annotated method is subscribed as a QueryHandler at the {@link QueryBus} for the query type
  * specified by the parameter/return type of that method.
- *
  */
 public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, MessageHandler<QueryMessage<?, ?>> {
 
     private final T target;
+
     private final AnnotatedHandlerInspector<T> model;
 
     /**
      * Initializes the adapter, forwarding call to the given {@code target}.
      *
-     * @param target the instance with {@link QueryHandler} annotated methods
+     * @param target The instance with {@link QueryHandler} annotated methods
      */
     public AnnotationQueryHandlerAdapter(T target) {
         this(target, ClasspathParameterResolverFactory.forClass(target.getClass()));
     }
 
     /**
-     * Initializes the adapter, forwarding call to the given {@code target}, resolving parameters using the given {@code
-     * parameterResolverFactory}.
+     * Initializes the adapter, forwarding call to the given {@code target}, resolving parameters using the given
+     * {@code parameterResolverFactory}.
      *
-     * @param target                   the instance with {@link QueryHandler} annotated methods
-     * @param parameterResolverFactory the parameter resolver factory to resolve handler parameters with
-     */
-    public AnnotationQueryHandlerAdapter(T target, ParameterResolverFactory parameterResolverFactory) {
-        this(target,
-             parameterResolverFactory,
-             ClasspathHandlerDefinition.forClass(target.getClass()));
-    }
-
-    /**
-     * Initializes the adapter, forwarding call to the given {@code target}, resolving parameters using the given {@code
-     * parameterResolverFactory} and creating handlers using {@code handlerDefinition}.
-     *
-     * @param target                   the instance with {@link QueryHandler} annotated methods
-     * @param parameterResolverFactory the parameter resolver factory to resolve handler parameters with
-     * @param handlerDefinition        the handler definition used to create concrete handlers
+     * @param target                   The instance with {@link QueryHandler} annotated methods
+     * @param parameterResolverFactory The parameter resolver factory to resolve handler parameters with
      */
     @SuppressWarnings("unchecked")
-    public AnnotationQueryHandlerAdapter(T target,
-                                         ParameterResolverFactory parameterResolverFactory,
-                                         HandlerDefinition handlerDefinition) {
-        this.model = AnnotatedHandlerInspector.inspectType((Class<T>) target.getClass(),
-                                                           parameterResolverFactory,
-                                                           handlerDefinition);
+    public AnnotationQueryHandlerAdapter(T target, ParameterResolverFactory parameterResolverFactory) {
+        this.model = AnnotatedHandlerInspector.inspectType((Class<T>) target.getClass(), parameterResolverFactory);
         this.target = target;
     }
 
-    @Override
     public Registration subscribe(QueryBus queryBus) {
-        Collection<Registration> registrations = model.getHandlers(target.getClass())
-                                                      .map(handler -> handler.unwrap(QueryHandlingMember.class))
-                                                      .filter(Optional::isPresent)
-                                                      .map(Optional::get)
-                                                      .map(queryHandler -> queryBus.subscribe(
-                                                              queryHandler.getQueryName(),
-                                                              queryHandler.getResultType(),
-                                                              this
-                                                      ))
-                                                      .collect(Collectors.toList());
-
-        return () -> registrations.stream()
-                                  .map(Registration::cancel)
-                                  .reduce(Boolean::logicalOr)
-                                  .orElse(false);
+        Collection<Registration> registrationList = model.getHandlers().stream().map(m -> subscribe(queryBus, m))
+                                                         .filter(Objects::nonNull).collect(Collectors.toList());
+        return () -> registrationList.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
 
     @Override
     public Object handle(QueryMessage<?, ?> message) throws Exception {
-        MessageHandlingMember<? super T> handler =
-                model.getHandlers(target.getClass())
-                     .filter(m -> m.canHandle(message))
-                     .findFirst()
-                     .orElseThrow(() -> new NoHandlerForQueryException(
-                             "No suitable handler was found for the query of type " + message.getPayloadType().getName()
-                     ));
-
-        return model.chainedInterceptor(target.getClass())
-                    .handle(message, target, handler);
+        for (MessageHandlingMember<? super T> member : model.getHandlers()) {
+            if (member.canHandle(message)) {
+                return member.handle(message, target);
+            }
+        }
+        throw new NoHandlerForQueryException(
+                "No suitable handler was found for the query of type " + message.getPayloadType().getName());
     }
 
-    @Override
-    public boolean canHandle(QueryMessage<?, ?> message) {
-        return model.getHandlers(target.getClass())
-                    .anyMatch(handlingMember -> handlingMember.canHandle(message));
+    @SuppressWarnings("unchecked")
+    private Registration subscribe(QueryBus queryBus, MessageHandlingMember<? super T> m) {
+        Optional<QueryHandlingMember> unwrappedQueryMember = m.unwrap(QueryHandlingMember.class);
+        if (unwrappedQueryMember.isPresent()) {
+            QueryHandlingMember qhm = unwrappedQueryMember.get();
+            return queryBus.subscribe(qhm.getQueryName(), qhm.getResultType(), this);
+        }
+
+        return null;
     }
+
 }

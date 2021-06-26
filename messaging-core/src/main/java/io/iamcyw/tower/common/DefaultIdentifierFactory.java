@@ -34,8 +34,7 @@ public class DefaultIdentifierFactory extends IdentifierFactory {
      */
     @Override
     public String generateIdentifier() {
-        return UUID.randomUUID()
-                .toString();
+        return UUID.randomUUID().toString();
     }
 
 }

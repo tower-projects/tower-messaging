@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static io.iamcyw.tower.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Command Handler Callback that allows the dispatching thread to wait for the result of the callback, using the Future
@@ -31,20 +32,23 @@ import static io.iamcyw.tower.commandhandling.GenericCommandResultMessage.asComm
  *
  * @param <R> the type of result of the command handling
  * @param <C> The type of payload of the dispatched command
- * @author Allard Buijze
- * @since 0.6
  */
-public class FutureCallback<C, R> extends CompletableFuture<CommandResultMessage<? extends R>> implements CommandCallback<C, R> {
+public class FutureCallback<C, R> extends CompletableFuture<R> implements CommandCallback<C, R> {
 
     @Override
-    public void onResult(CommandMessage<? extends C> commandMessage, CommandResultMessage<? extends R> commandResultMessage) {
-        super.complete(commandResultMessage);
+    public void onSuccess(CommandMessage<? extends C> commandMessage, R executionResult) {
+        super.complete(executionResult);
+    }
+
+    @Override
+    public void onFailure(CommandMessage commandMessage, Throwable cause) {
+        super.completeExceptionally(requireNonNull(cause));
     }
 
     /**
      * Waits if necessary for the command handling to complete, and then returns its result.
      * <p/>
-     * Unlike {@link #get(long, TimeUnit)}, this method will throw the original exception. Only
+     * Unlike {@link #get(long, java.util.concurrent.TimeUnit)}, this method will throw the original exception. Only
      * checked exceptions are wrapped in a {@link CommandExecutionException}.
      * <p/>
      * If the thread is interrupted while waiting, the interrupt flag is set back on the thread, and {@code null}
@@ -52,19 +56,17 @@ public class FutureCallback<C, R> extends CompletableFuture<CommandResultMessage
      * method.
      *
      * @return the result of the command handler execution.
+     *
      * @see #get()
      */
-    public CommandResultMessage<? extends R> getResult() {
+    public R getResult() {
         try {
             return get();
         } catch (InterruptedException e) {
-            Thread.currentThread()
-                    .interrupt();
-            return new GenericCommandResultMessage<>((R) null);
+            Thread.currentThread().interrupt();
+            return null;
         } catch (ExecutionException e) {
-            return asCommandResultMessage(e.getCause());
-        } catch (Exception e) {
-            return asCommandResultMessage(e);
+            throw asRuntime(e);
         }
     }
 
@@ -72,28 +74,38 @@ public class FutureCallback<C, R> extends CompletableFuture<CommandResultMessage
      * Waits if necessary for at most the given time for the command handling to complete, and then retrieves its
      * result, if available.
      * <p/>
-     * Unlike {@link #get(long, TimeUnit)}, this method will report the original exception from
-     * within a CommandResultMessage, rather than throwing an {@link ExecutionException}.
+     * Unlike {@link #get(long, java.util.concurrent.TimeUnit)}, this method will throw the original exception. Only
+     * checked exceptions are wrapped in a {@link CommandExecutionException}.
      * <p/>
-     * If the timeout expired or the thread is interrupted before completion, the returned {@link CommandResultMessage}
-     * will contain an {@link InterruptedException} or {@link TimeoutException}. In case of
-     * an interrupt, the interrupt flag will have been set back on the thread.
+     * If the timeout expired or the thread is interrupted before completion, {@code null} is returned. In case of
+     * an interrupt, the interrupt flag will have been set back on the thread. To distinguish between an interrupt and
+     * a {@code null} result, use the {@link #isDone()}
      *
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the timeout argument
      * @return the result of the command handler execution.
      */
-    public CommandResultMessage<? extends R> getResult(long timeout, TimeUnit unit) {
+    public R getResult(long timeout, TimeUnit unit) {
         try {
             return get(timeout, unit);
         } catch (InterruptedException e) {
-            Thread.currentThread()
-                    .interrupt();
-            return new GenericCommandResultMessage<>(e);
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (TimeoutException e) {
+            return null;
         } catch (ExecutionException e) {
-            return asCommandResultMessage(e.getCause());
-        } catch (Exception e) {
-            return asCommandResultMessage(e);
+            throw asRuntime(e);
+        }
+    }
+
+    private RuntimeException asRuntime(Exception e) {
+        Throwable failure = e.getCause();
+        if (failure instanceof Error) {
+            throw (Error) failure;
+        } else if (failure instanceof RuntimeException) {
+            return (RuntimeException) failure;
+        } else {
+            return new CommandExecutionException("An exception occurred while executing a command", failure);
         }
     }
 
@@ -110,8 +122,7 @@ public class FutureCallback<C, R> extends CompletableFuture<CommandResultMessage
             get(timeout, unit);
             return true;
         } catch (InterruptedException e) {
-            Thread.currentThread()
-                    .interrupt();
+            Thread.currentThread().interrupt();
             return false;
         } catch (ExecutionException e) {
             return true;
@@ -119,5 +130,4 @@ public class FutureCallback<C, R> extends CompletableFuture<CommandResultMessage
             return false;
         }
     }
-
 }

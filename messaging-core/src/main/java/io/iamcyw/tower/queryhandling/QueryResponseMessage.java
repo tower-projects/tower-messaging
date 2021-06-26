@@ -17,6 +17,7 @@
 package io.iamcyw.tower.queryhandling;
 
 
+import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.messaging.ResultMessage;
 
 import java.util.Map;
@@ -27,7 +28,7 @@ import java.util.Map;
  *
  * @param <T> The type of object resulting from the query
  */
-public interface QueryResponseMessage<T> extends ResultMessage<T> {
+public interface QueryResponseMessage<T> extends Message<T> {
 
     /**
      * Returns a copy of this QueryResponseMessage with the given {@code metaData}. The payload remains unchanged.

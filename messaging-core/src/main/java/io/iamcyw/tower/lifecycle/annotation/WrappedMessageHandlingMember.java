@@ -63,24 +63,11 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
         return delegate.handle(message, target);
     }
 
-    @Override
-    public boolean canHandleType(Class<?> payloadType) {
-        return delegate.canHandleType(payloadType);
-    }
-
-    @Override
-    @SuppressWarnings("rawtypes")
-    public boolean canHandleMessageType(Class<? extends Message> messageType) {
-        return delegate.canHandleMessageType(messageType);
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
         if (handlerType.isInstance(this)) {
             return (Optional<HT>) Optional.of(this);
-        } else if (handlerType.isInstance(delegate)) {
-            return (Optional<HT>) Optional.of(delegate);
         }
         return delegate.unwrap(handlerType);
     }
@@ -93,10 +80,5 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     @Override
     public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
         return delegate.hasAnnotation(annotationType);
-    }
-
-    @Override
-    public <R> Optional<R> attribute(String attributeKey) {
-        return delegate.attribute(attributeKey);
     }
 }

@@ -22,14 +22,21 @@ package io.iamcyw.tower.commandhandling;
  * @param <R> the type of result of the command handling
  * @param <C> the type of payload of the command
  */
-@FunctionalInterface
 public interface CommandCallback<C, R> {
 
     /**
-     * Invoked when command handling execution is completed.
+     * Invoked when command handling execution was successful.
      *
-     * @param commandMessage       the {@link CommandMessage} that was dispatched
-     * @param commandResultMessage the {@link CommandResultMessage} of the command handling execution
+     * @param commandMessage The message that was dispatched
+     * @param result The result of the command handling execution, if any.
      */
-    void onResult(CommandMessage<? extends C> commandMessage, CommandResultMessage<? extends R> commandResultMessage);
+    void onSuccess(CommandMessage<? extends C> commandMessage, R result);
+
+    /**
+     * Invoked when command handling execution resulted in an error.
+     *
+     * @param commandMessage The message that was dispatched
+     * @param cause The exception raised during command handling
+     */
+    void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause);
 }

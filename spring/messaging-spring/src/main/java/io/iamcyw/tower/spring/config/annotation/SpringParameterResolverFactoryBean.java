@@ -34,14 +34,15 @@ import java.util.List;
  * Spring Beans, in addition to the default behavior defined by Axon.
  *
  * @see SpringBeanParameterResolverFactory
- * @see SpringBeanDependencyResolverFactory
  * @see ClasspathParameterResolverFactory
  */
 public class SpringParameterResolverFactoryBean implements FactoryBean<ParameterResolverFactory>,
         BeanClassLoaderAware, InitializingBean, ApplicationContextAware {
 
     private final List<ParameterResolverFactory> factories = new ArrayList<>();
+
     private ClassLoader classLoader;
+
     private ApplicationContext applicationContext;
 
     @Override
@@ -62,18 +63,19 @@ public class SpringParameterResolverFactoryBean implements FactoryBean<Parameter
     @Override
     public void afterPropertiesSet() {
         factories.add(ClasspathParameterResolverFactory.forClassLoader(classLoader));
-        factories.add(new SpringBeanDependencyResolverFactory(applicationContext));
-        factories.add(new SpringBeanParameterResolverFactory(applicationContext));
+        final SpringBeanParameterResolverFactory springBeanParameterResolverFactory =
+                new SpringBeanParameterResolverFactory();
+        springBeanParameterResolverFactory.setApplicationContext(applicationContext);
+        factories.add(springBeanParameterResolverFactory);
     }
 
     /**
-     * Defines any additional parameter resolver factories that need to be used to resolve parameters. By default, the
-     * ParameterResolverFactories found on the classpath, as well as a SpringBeanParameterResolverFactory are
+     * Defines any additional parameter resolver factories that need to be used to resolve parameters. By default,
+     * the ParameterResolverFactories found on the classpath, as well as a SpringBeanParameterResolverFactory are
      * registered.
      *
      * @param additionalFactories The extra factories to register
      * @see SpringBeanParameterResolverFactory
-     * @see SpringBeanDependencyResolverFactory
      * @see ClasspathParameterResolverFactory
      */
     public void setAdditionalFactories(List<ParameterResolverFactory> additionalFactories) {
@@ -89,4 +91,5 @@ public class SpringParameterResolverFactoryBean implements FactoryBean<Parameter
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
+
 }

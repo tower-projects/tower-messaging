@@ -31,78 +31,23 @@ public class LoggingQueryInvocationErrorHandler implements QueryInvocationErrorH
     private final Logger logger;
 
     /**
-     * Instantiate a {@link LoggingQueryInvocationErrorHandler} based on the fields contained in the {@link Builder}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@link LoggingQueryInvocationErrorHandler} instance
+     * Initialize the error handler to log to a logger registered for this class.
      */
-    protected LoggingQueryInvocationErrorHandler(Builder builder) {
-        builder.validate();
-        this.logger = builder.logger;
+    public LoggingQueryInvocationErrorHandler() {
+        this(LoggerFactory.getLogger(LoggingQueryInvocationErrorHandler.class));
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link LoggingQueryInvocationErrorHandler}.
-     * <p>
-     * The {@link Logger} is defaulted to a {@link LoggerFactory#getLogger(Class)} call using {@code
-     * LoggingQueryInvocationErrorHandler.class}.
+     * Initialize the error handler to use the given {@code logger} to log errors from query handlers.
      *
-     * @return a Builder to be able to create a {@link LoggingQueryInvocationErrorHandler}
+     * @param logger The logger to log errors with
      */
-    public static Builder builder() {
-        return new Builder();
+    public LoggingQueryInvocationErrorHandler(Logger logger) {
+        this.logger = logger;
     }
 
     @Override
     public void onError(Throwable error, QueryMessage<?, ?> queryMessage, MessageHandler messageHandler) {
         logger.warn("An error occurred while processing query message [{}]", queryMessage.getQueryName(), error);
     }
-
-    /**
-     * Builder class to instantiate a {@link LoggingQueryInvocationErrorHandler}.
-     * <p>
-     * The {@link Logger} is defaulted to a {@link LoggerFactory#getLogger(Class)} call using {@code
-     * LoggingQueryInvocationErrorHandler.class}.
-     */
-    public static class Builder {
-
-        private Logger logger = LoggerFactory.getLogger(LoggingQueryInvocationErrorHandler.class);
-
-        /**
-         * Sets the {@link Logger} to log errors with from query handlers. Defaults to the result of {@link
-         * LoggerFactory#getLogger(Class)}, using {@code LoggingQueryInvocationErrorHandler.class} as input. Defaults to
-         * a {@link LoggerFactory#getLogger(Class)} call, providing the {@link LoggingQueryInvocationErrorHandler}
-         * type.
-         *
-         * @param logger the {@link Logger} to log errors with from query handlers
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder logger(Logger logger) {
-            Assert.nonNull(logger, () -> I18ns.create()
-                    .content("Logger may not be null")
-                    .apply());
-            this.logger = logger;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link LoggingQueryInvocationErrorHandler} as specified through this Builder.
-         *
-         * @return a {@link LoggingQueryInvocationErrorHandler} as specified through this Builder
-         */
-        public LoggingQueryInvocationErrorHandler build() {
-            return new LoggingQueryInvocationErrorHandler(this);
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws MessagingConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                         specifications
-         */
-        protected void validate() throws MessagingConfigurationException {
-            // Kept to be overridden
-        }
-
-    }
-
 }

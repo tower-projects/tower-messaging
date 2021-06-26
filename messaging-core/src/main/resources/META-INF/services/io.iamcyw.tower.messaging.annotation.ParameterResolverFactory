@@ -1,0 +1,2 @@
+io.iamcyw.tower.commandhandling.CurrentUnitOfWorkParameterResolverFactory
+io.iamcyw.tower.messaging.annotation.DefaultParameterResolverFactory

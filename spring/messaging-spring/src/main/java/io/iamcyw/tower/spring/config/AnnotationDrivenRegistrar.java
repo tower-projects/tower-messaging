@@ -18,12 +18,12 @@ package io.iamcyw.tower.spring.config;
 
 import io.iamcyw.tower.spring.config.annotation.AnnotationCommandHandlerBeanPostProcessor;
 import io.iamcyw.tower.spring.config.annotation.AnnotationQueryHandlerBeanPostProcessor;
-import io.iamcyw.tower.spring.config.annotation.SpringContextHandlerDefinitionBuilder;
-import io.iamcyw.tower.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
+
+import static io.iamcyw.tower.spring.config.annotation.SpringContextParameterResolverFactoryBuilder.getBeanReference;
 
 /**
  * Spring @Configuration related class that adds Axon Annotation PostProcessors to the BeanDefinitionRegistry.
@@ -36,7 +36,6 @@ public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar 
     private static final String COMMAND_HANDLER_BEAN_NAME = "__axon-annotation-command-handler-bean-post-processor";
 
     private static final String QUERY_HANDLER_BEAN_NAME = "__axon-annotation-query-handler-bean-post-processor";
-
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
@@ -54,11 +53,7 @@ public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar 
     public void registerAnnotationCommandHandlerBeanPostProcessor(BeanDefinitionRegistry registry) {
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(AnnotationCommandHandlerBeanPostProcessor.class);
-        beanDefinition.getPropertyValues()
-                .add("parameterResolverFactory",
-                     SpringContextParameterResolverFactoryBuilder.getBeanReference(registry));
-        beanDefinition.getPropertyValues()
-                .add("handlerDefinition", SpringContextHandlerDefinitionBuilder.getBeanReference(registry));
+        beanDefinition.getPropertyValues().add("parameterResolverFactory", getBeanReference(registry));
 
         registry.registerBeanDefinition(COMMAND_HANDLER_BEAN_NAME, beanDefinition);
     }
@@ -66,11 +61,7 @@ public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar 
     public void registerAnnotationQueryHandlerBeanPostProcessor(BeanDefinitionRegistry registry) {
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(AnnotationQueryHandlerBeanPostProcessor.class);
-        beanDefinition.getPropertyValues()
-                .add("parameterResolverFactory",
-                     SpringContextParameterResolverFactoryBuilder.getBeanReference(registry));
-        beanDefinition.getPropertyValues()
-                .add("handlerDefinition", SpringContextHandlerDefinitionBuilder.getBeanReference(registry));
+        beanDefinition.getPropertyValues().add("parameterResolverFactory", getBeanReference(registry));
 
         registry.registerBeanDefinition(QUERY_HANDLER_BEAN_NAME, beanDefinition);
     }

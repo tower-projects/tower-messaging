@@ -54,8 +54,6 @@ public final class SpringContextParameterResolverFactoryBuilder {
             final ManagedList<BeanDefinition> factories = new ManagedList<>();
             factories.add(BeanDefinitionBuilder.genericBeanDefinition(ClasspathParameterResolverFactoryBean.class)
                                                .getBeanDefinition());
-            factories.add(BeanDefinitionBuilder.genericBeanDefinition(SpringBeanDependencyResolverFactory.class)
-                                               .getBeanDefinition());
             factories.add(BeanDefinitionBuilder.genericBeanDefinition(SpringBeanParameterResolverFactory.class)
                                                .getBeanDefinition());
             AbstractBeanDefinition def =
@@ -68,7 +66,8 @@ public final class SpringContextParameterResolverFactoryBuilder {
         return new RuntimeBeanReference(PARAMETER_RESOLVER_FACTORY_BEAN_NAME);
     }
 
-    private static class ClasspathParameterResolverFactoryBean implements BeanClassLoaderAware, InitializingBean, FactoryBean<ParameterResolverFactory> {
+    private static class ClasspathParameterResolverFactoryBean implements BeanClassLoaderAware, InitializingBean,
+            FactoryBean<ParameterResolverFactory> {
 
         private ClassLoader classLoader;
         private ParameterResolverFactory factory;

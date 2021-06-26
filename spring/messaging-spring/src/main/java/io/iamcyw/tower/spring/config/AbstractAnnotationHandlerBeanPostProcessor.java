@@ -17,11 +17,8 @@
 package io.iamcyw.tower.spring.config;
 
 import io.iamcyw.tower.common.MessagingConfigurationException;
-import io.iamcyw.tower.messaging.annotation.ClasspathHandlerDefinition;
 import io.iamcyw.tower.messaging.annotation.ClasspathParameterResolverFactory;
-import io.iamcyw.tower.messaging.annotation.HandlerDefinition;
 import io.iamcyw.tower.messaging.annotation.ParameterResolverFactory;
-import io.iamcyw.tower.utils.ReflectionUtils;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.IntroductionInfo;
 import org.springframework.aop.IntroductionInterceptor;
@@ -37,9 +34,6 @@ import org.springframework.util.ClassUtils;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.stream.StreamSupport;
-
-import static java.lang.reflect.Modifier.isAbstract;
 
 /**
  * Abstract bean post processor that finds candidates for proxying. Typically used to wrap annotated beans with their
@@ -50,11 +44,10 @@ import static java.lang.reflect.Modifier.isAbstract;
  * @author Allard Buijze
  * @since 0.4
  */
-public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I> implements BeanPostProcessor, BeanFactoryAware {
+public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I> implements BeanPostProcessor,
+        BeanFactoryAware {
 
     private ParameterResolverFactory parameterResolverFactory;
-
-    private HandlerDefinition handlerDefinition;
 
     private BeanFactory beanFactory;
 
@@ -71,8 +64,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      */
     @Override
     public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
-        if (beanName != null && !isNullBean(bean) && beanFactory.containsBean(beanName) && !beanFactory.isSingleton(
-                beanName)) {
+        if (beanFactory.containsBean(beanName) && !beanFactory.isSingleton(beanName)) {
             return bean;
         }
 
@@ -81,42 +73,24 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         if (parameterResolverFactory == null) {
             parameterResolverFactory = ClasspathParameterResolverFactory.forClassLoader(classLoader);
         }
-        if (handlerDefinition == null) {
-            handlerDefinition = ClasspathHandlerDefinition.forClassLoader(classLoader);
-        }
         if (isPostProcessingCandidate(targetClass)) {
-            T adapter = initializeAdapterFor(bean, parameterResolverFactory, handlerDefinition);
+            T adapter = initializeAdapterFor(bean, parameterResolverFactory);
             return createAdapterProxy(bean, adapter, getAdapterInterfaces(), true, classLoader);
-        } else if (!isInstance(bean, getAdapterInterfaces()) && isPostProcessingCandidate(
-                AopProxyUtils.ultimateTargetClass(bean))) {
+        } else if (!isInstance(bean, getAdapterInterfaces()) &&
+                isPostProcessingCandidate(AopProxyUtils.ultimateTargetClass(bean))) {
             // Java Proxy, find target and inspect that instance
             try {
-                Object targetBean = ((Advised) bean).getTargetSource()
-                        .getTarget();
+                Object targetBean = ((Advised) bean).getTargetSource().getTarget();
                 // we want to invoke the Java Proxy if possible, so we create a CGLib proxy that does that for us
                 Object proxyInvokingBean = createJavaProxyInvoker(bean, targetBean);
 
-                T adapter = initializeAdapterFor(proxyInvokingBean, parameterResolverFactory, handlerDefinition);
+                T adapter = initializeAdapterFor(proxyInvokingBean, parameterResolverFactory);
                 return createAdapterProxy(proxyInvokingBean, adapter, getAdapterInterfaces(), false, classLoader);
             } catch (Exception e) {
                 throw new MessagingConfigurationException("Unable to wrap annotated handler.", e);
             }
         }
         return bean;
-    }
-
-    /**
-     * Verify if the given {@code bean} is a {@link org.springframework.beans.factory.support.NullBean} instance.
-     * If this is the case, a call to {@link org.springframework.beans.factory.support.NullBean#equals} using {@code null} will return {@code true}.
-     * <p>
-     * {@link <a href="https://github.com/spring-cloud/spring-cloud-aws/blob/12c785a52d935d307f7caffe7894b04742229d17/spring-cloud-aws-autoconfigure/src/main/java/org/springframework/cloud/aws/autoconfigure/context/ContextStackAutoConfiguration.java#L80">NullBean example</a>}
-     *
-     * @param bean the {@link Object} to verify if it is a {@link org.springframework.beans.factory.support.NullBean}
-     * @return {@code true} if the given {@code bean} is of type {@link org.springframework.beans.factory.support.NullBean} and {@code false} otherwise
-     * @see org.springframework.beans.factory.support.NullBean#equals
-     */
-    private boolean isNullBean(final Object bean) {
-        return bean.equals(null);
     }
 
     private boolean isInstance(Object bean, Class<?>[] adapterInterfaces) {
@@ -141,8 +115,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         pf.addAdvice(new ProxyOrImplementationInvocationInterceptor(javaProxy, target));
         pf.setProxyTargetClass(true);
         pf.setExposeProxy(true);
-        return pf.getProxy(target.getClass()
-                                   .getClassLoader());
+        return pf.getProxy(target.getClass().getClassLoader());
     }
 
     /**
@@ -172,13 +145,13 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      * @param bean                     The bean that the EventListenerAdapter has to adapt
      * @param parameterResolverFactory The parameter resolver factory that provides the parameter resolvers for the
      *                                 annotated handlers
-     * @param handlerDefinition        The handler definition used to create concrete handlers
      * @return an event handler adapter for the given {@code bean}
      */
-    protected abstract T initializeAdapterFor(Object bean, ParameterResolverFactory parameterResolverFactory, HandlerDefinition handlerDefinition);
+    protected abstract T initializeAdapterFor(Object bean, ParameterResolverFactory parameterResolverFactory);
 
     @SuppressWarnings("unchecked")
-    private I createAdapterProxy(Object annotatedHandler, final T adapter, final Class<?>[] adapterInterface, boolean proxyTargetClass, ClassLoader classLoader) {
+    private I createAdapterProxy(Object annotatedHandler, final T adapter, final Class<?>[] adapterInterface,
+                                 boolean proxyTargetClass, ClassLoader classLoader) {
         ProxyFactory pf = new ProxyFactory(annotatedHandler);
         for (Class<?> iClass : adapterInterface) {
             pf.addAdvice(new AdapterIntroductionInterceptor(adapter, iClass));
@@ -199,21 +172,13 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         this.parameterResolverFactory = parameterResolverFactory;
     }
 
-    /**
-     * Sets the HandlerDefinition to create concrete handlers.
-     *
-     * @param handlerDefinition The handler definition used to create concrete handlers
-     */
-    public void setHandlerDefinition(HandlerDefinition handlerDefinition) {
-        this.handlerDefinition = handlerDefinition;
-    }
-
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
     }
 
-    private static final class ProxyOrImplementationInvocationInterceptor implements IntroductionInfo, IntroductionInterceptor {
+    private static final class ProxyOrImplementationInvocationInterceptor implements IntroductionInfo,
+            IntroductionInterceptor {
 
         private final Object proxy;
 
@@ -223,8 +188,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
         private ProxyOrImplementationInvocationInterceptor(Object proxy, Object implementation) {
             this.proxy = proxy;
-            this.proxyMethods = proxy.getClass()
-                    .getDeclaredMethods();
+            this.proxyMethods = proxy.getClass().getDeclaredMethods();
             this.interfaces = ClassUtils.getAllInterfaces(implementation);
         }
 
@@ -248,11 +212,9 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
             try {
                 // if the method is declared on the proxy, invoke it there
                 for (Method proxyMethod : proxyMethods) {
-                    if (proxyMethod.getName()
-                            .equals(invocation.getMethod()
-                                            .getName()) && Arrays.equals(proxyMethod.getParameterTypes(),
-                                                                         invocation.getMethod()
-                                                                                 .getParameterTypes())) {
+                    if (proxyMethod.getName().equals(invocation.getMethod().getName()) &&
+                            Arrays.equals(proxyMethod.getParameterTypes(),
+                                          invocation.getMethod().getParameterTypes())) {
                         return proxyMethod.invoke(proxy, invocation.getArguments());
                     }
                 }
@@ -288,12 +250,10 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
         @Override
         public Object invoke(MethodInvocation invocation) throws Exception {
-            Class<?> declaringClass = invocation.getMethod()
-                    .getDeclaringClass();
+            Class<?> declaringClass = invocation.getMethod().getDeclaringClass();
             try {
-                if (declaringClass.isAssignableFrom(adapterInterface) && genericParametersMatch(invocation, adapter)) {
-                    return invocation.getMethod()
-                            .invoke(adapter, invocation.getArguments());
+                if (declaringClass.isAssignableFrom(adapterInterface)) {
+                    return invocation.getMethod().invoke(adapter, invocation.getArguments());
                 }
                 return invocation.proceed();
             } catch (InvocationTargetException e) {
@@ -303,37 +263,6 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
                     throw (Error) e;
                 }
                 throw new InvocationTargetException(e);
-            }
-        }
-
-        private boolean genericParametersMatch(MethodInvocation invocation, Object adapter) {
-            try {
-                Method proxyMethod = invocation.getMethod();
-                Method methodOnAdapter = adapter.getClass()
-                        .getMethod(proxyMethod.getName(), proxyMethod.getParameterTypes());
-
-                if (!methodOnAdapter.isSynthetic()) {
-                    return true;
-                }
-
-                return StreamSupport.stream(ReflectionUtils.methodsOf(adapter.getClass())
-                                                    .spliterator(), false)
-                        .filter(m -> !m.isSynthetic())
-                        .filter(m -> !isAbstract(m.getModifiers()))
-                        .filter(m -> invocation.getMethod()
-                                .getName()
-                                .equals(m.getName()))
-                        .filter(m -> m.getParameterCount() == invocation.getArguments().length)
-                        .anyMatch(m -> {
-                            for (int i = 0; i < m.getParameterTypes().length; i++) {
-                                if (!m.getParameterTypes()[i].isInstance(invocation.getArguments()[i])) {
-                                    return false;
-                                }
-                            }
-                            return true;
-                        });
-            } catch (NoSuchMethodException e) {
-                return false;
             }
         }
 

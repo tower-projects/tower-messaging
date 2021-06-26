@@ -56,8 +56,8 @@ public interface ResultMessage<R> extends Message<R> {
      * @return the serialized exception as a {@link SerializedObject}
      */
     default <T> SerializedObject<T> serializeExceptionResult(Serializer serializer, Class<T> expectedRepresentation) {
-        return serializer.serialize(optionalExceptionResult().map(RemoteExceptionDescription::describing)
-                                            .orElse(null), expectedRepresentation);
+        return serializer.serialize(optionalExceptionResult().map(RemoteExceptionDescription::describing).orElse(null),
+                                    expectedRepresentation);
     }
 
     @Override
@@ -65,13 +65,5 @@ public interface ResultMessage<R> extends Message<R> {
 
     @Override
     ResultMessage<R> andMetaData(Map<String, ?> metaData);
-
-    @Override
-    default <S> SerializedObject<S> serializePayload(Serializer serializer, Class<S> expectedRepresentation) {
-        if (isExceptional()) {
-            return serializer.serialize(exceptionDetails().orElse(null), expectedRepresentation);
-        }
-        return serializer.serialize(getPayload(), expectedRepresentation);
-    }
 
 }

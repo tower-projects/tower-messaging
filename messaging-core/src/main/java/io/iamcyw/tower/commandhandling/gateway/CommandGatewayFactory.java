@@ -16,24 +16,27 @@
 
 package io.iamcyw.tower.commandhandling.gateway;
 
-import io.iamcyw.tower.commandhandling.*;
+import io.iamcyw.tower.commandhandling.CommandBus;
+import io.iamcyw.tower.commandhandling.CommandCallback;
+import io.iamcyw.tower.commandhandling.CommandExecutionException;
+import io.iamcyw.tower.commandhandling.CommandMessage;
 import io.iamcyw.tower.commandhandling.callbacks.FutureCallback;
-import io.iamcyw.tower.common.MessagingConfigurationException;
+import io.iamcyw.tower.common.annotation.AnnotationUtils;
 import io.iamcyw.tower.messaging.MessageDispatchInterceptor;
 import io.iamcyw.tower.messaging.MetaData;
 import io.iamcyw.tower.messaging.annotation.MetaDataValue;
-import io.iamcyw.tower.messaging.responsetypes.ResponseType;
 import io.iamcyw.tower.utils.Assert;
+import io.iamcyw.tower.utils.ReflectionUtils;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Stream;
 
 import static io.iamcyw.tower.commandhandling.GenericCommandMessage.asCommandMessage;
-import static io.iamcyw.tower.common.annotation.AnnotationUtils.findAnnotationAttributes;
+import static java.util.Arrays.asList;
 
 
 /**
@@ -75,47 +78,76 @@ import static io.iamcyw.tower.common.annotation.AnnotationUtils.findAnnotationAt
  * non-blocking and will return immediately after dispatching a command.
  * <p/>
  * This factory is thread safe once configured, and so are the gateways it creates.
- *
- * @author Allard Buijze
- * @since 2.0
  */
 public class CommandGatewayFactory {
 
     private final CommandBus commandBus;
+
     private final RetryScheduler retryScheduler;
+
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
 
     private final List<CommandCallback<?, ?>> commandCallbacks;
 
     /**
-     * Instantiate a {@link CommandGatewayFactory} based on the fields contained in the {@link Builder}.
-     * <p>
-     * Will assert that the {@link CommandBus} is not {@code null}, and will throw an
-     * {@link MessagingConfigurationException} if it is {@code null}.
+     * Initialize the factory sending Commands to the given {@code commandBus}, optionally intercepting them with
+     * given {@code dispatchInterceptors}.
+     * <p/>
+     * Note that the given {@code dispatchInterceptors} are applied only on commands sent through gateways that
+     * have been created using this factory.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link CommandGatewayFactory} instance
+     * @param commandBus           The CommandBus on which to dispatch the Command Messages
+     * @param dispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
-    protected CommandGatewayFactory(Builder builder) {
-        builder.validate();
-        this.commandBus = builder.commandBus;
-        this.retryScheduler = builder.retryScheduler;
-        if (builder.dispatchInterceptors != null && !builder.dispatchInterceptors.isEmpty()) {
-            this.dispatchInterceptors = new CopyOnWriteArrayList<>(builder.dispatchInterceptors);
+    @SafeVarargs
+    public CommandGatewayFactory(CommandBus commandBus,
+                                 MessageDispatchInterceptor<CommandMessage<?>>... dispatchInterceptors) {
+        this(commandBus, null, dispatchInterceptors);
+    }
+
+    /**
+     * Initialize the factory sending Commands to the given {@code commandBus}, optionally intercepting them with
+     * given {@code dispatchInterceptors}. The given {@code retryScheduler} will reschedule commands for
+     * dispatching if a previous attempt resulted in an exception.
+     * <p/>
+     * Note that the given {@code dispatchInterceptors} are applied only on commands sent through gateways that
+     * have been created using this factory.
+     *
+     * @param commandBus                  The CommandBus on which to dispatch the Command Messages
+     * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be {@code
+     *                                    null} to report failures without rescheduling
+     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
+     */
+    @SafeVarargs
+    public CommandGatewayFactory(CommandBus commandBus, RetryScheduler retryScheduler,
+                                 MessageDispatchInterceptor<CommandMessage<?>>... messageDispatchInterceptors) {
+        this(commandBus, retryScheduler, asList(messageDispatchInterceptors));
+    }
+
+    /**
+     * Initialize the factory sending Commands to the given {@code commandBus}, optionally intercepting them with
+     * given {@code dispatchInterceptors}. The given {@code retryScheduler} will reschedule commands for
+     * dispatching if a previous attempt resulted in an exception.
+     * <p/>
+     * Note that the given {@code dispatchInterceptors} are applied only on commands sent through gateways that
+     * have been created using this factory.
+     *
+     * @param commandBus                  The CommandBus on which to dispatch the Command Messages
+     * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be {@code
+     *                                    null} to report failures without rescheduling
+     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
+     */
+    public CommandGatewayFactory(CommandBus commandBus, RetryScheduler retryScheduler,
+                                 List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
+        Assert.nonNull(commandBus, () -> "commandBus may not be null");
+        this.retryScheduler = retryScheduler;
+        this.commandBus = commandBus;
+        if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
+            this.dispatchInterceptors = new CopyOnWriteArrayList<>(messageDispatchInterceptors);
         } else {
             this.dispatchInterceptors = new CopyOnWriteArrayList<>();
         }
         this.commandCallbacks = new CopyOnWriteArrayList<>();
-    }
-
-    /**
-     * Instantiate a Builder to be able to create a {@link CommandGatewayFactory}.
-     * <p>
-     * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
-     *
-     * @return a Builder to be able to create a {@link CommandGatewayFactory}
-     */
-    public static Builder builder() {
-        return new Builder();
     }
 
     /**
@@ -134,14 +166,9 @@ public class CommandGatewayFactory {
 
             final Class<?>[] arguments = gatewayMethod.getParameterTypes();
 
-            InvocationHandler dispatcher = DispatchOnInvocationHandler.builder()
-                                                                      .commandBus(commandBus)
-                                                                      .retryScheduler(retryScheduler)
-                                                                      .dispatchInterceptors(dispatchInterceptors)
-                                                                      .metaDataExtractors(extractors)
-                                                                      .commandCallbacks(commandCallbacks)
-                                                                      .forceCallbacks(true)
-                                                                      .build();
+            InvocationHandler dispatcher = new DispatchOnInvocationHandler(commandBus, retryScheduler,
+                                                                           dispatchInterceptors, extractors,
+                                                                           commandCallbacks, true);
 
             if (!Arrays.asList(CompletableFuture.class, Future.class, CompletionStage.class)
                        .contains(gatewayMethod.getReturnType())) {
@@ -149,60 +176,57 @@ public class CommandGatewayFactory {
                 if (arguments.length >= 3 && TimeUnit.class.isAssignableFrom(arguments[arguments.length - 1]) &&
                         (Long.TYPE.isAssignableFrom(arguments[arguments.length - 2]) ||
                                 Integer.TYPE.isAssignableFrom(arguments[arguments.length - 2]))) {
-                    dispatcher =
-                            wrapToReturnWithTimeoutInArguments(dispatcher, arguments.length - 2, arguments.length - 1);
+                    dispatcher = wrapToReturnWithTimeoutInArguments(dispatcher, arguments.length - 2,
+                                                                    arguments.length - 1);
                 } else {
-                    Map<String, Object> timeout =
-                            findAnnotationAttributes(gatewayMethod, Timeout.class).orElse(
-                                    findAnnotationAttributes(gatewayMethod.getDeclaringClass(), Timeout.class)
-                                            .orElse(null)
-                            );
+                    Timeout timeout = gatewayMethod.getAnnotation(Timeout.class);
+                    timeout = resolveTimeout(gatewayMethod, timeout);
                     if (timeout != null) {
-                        dispatcher = wrapToReturnWithFixedTimeout(dispatcher, (int) timeout.get("timeout"),
-                                                                  (TimeUnit) timeout.get("unit"));
+                        dispatcher = wrapToReturnWithFixedTimeout(dispatcher, timeout.value(), timeout.unit());
                     } else if (!Void.TYPE.equals(gatewayMethod.getReturnType()) ||
                             gatewayMethod.getExceptionTypes().length > 0) {
                         dispatcher = wrapToWaitForResult(dispatcher);
                     } else if (commandCallbacks.isEmpty() && !hasCallbackParameters(gatewayMethod)) {
                         // switch to fire-and-forget mode
-                        DispatchOnInvocationHandler fireAndForgetHandler =
-                                DispatchOnInvocationHandler.builder()
-                                                           .commandBus(commandBus)
-                                                           .retryScheduler(retryScheduler)
-                                                           .dispatchInterceptors(dispatchInterceptors)
-                                                           .metaDataExtractors(extractors)
-                                                           .commandCallbacks(commandCallbacks)
-                                                           .forceCallbacks(false)
-                                                           .build();
-                        dispatcher = wrapToFireAndForget(fireAndForgetHandler);
+                        dispatcher = wrapToFireAndForget(
+                                new DispatchOnInvocationHandler(commandBus, retryScheduler, dispatchInterceptors,
+                                                                extractors, commandCallbacks, false));
                     }
                 }
                 Class<?>[] declaredExceptions = gatewayMethod.getExceptionTypes();
+                if (!contains(declaredExceptions, TimeoutException.class)) {
+                    dispatcher = wrapToReturnNullOnTimeout(dispatcher);
+                }
+                if (!contains(declaredExceptions, InterruptedException.class)) {
+                    dispatcher = wrapToReturnNullOnInterrupted(dispatcher);
+                }
                 dispatcher = wrapUndeclaredExceptions(dispatcher, declaredExceptions);
             }
             dispatchers.put(gatewayMethod, dispatcher);
         }
 
-        GatewayInvocationHandler gatewayInvocationHandler =
-                GatewayInvocationHandler.builder()
-                                        .commandBus(commandBus)
-                                        .retryScheduler(retryScheduler)
-                                        .dispatchInterceptors(dispatchInterceptors)
-                                        .dispatchers(dispatchers)
-                                        .build();
-        return gatewayInterface.cast(Proxy.newProxyInstance(
-                gatewayInterface.getClassLoader(), new Class[]{gatewayInterface}, gatewayInvocationHandler
-        ));
+        return gatewayInterface
+                .cast(Proxy.newProxyInstance(gatewayInterface.getClassLoader(), new Class[]{gatewayInterface},
+                                             new GatewayInvocationHandler(dispatchers, commandBus, retryScheduler,
+                                                                          dispatchInterceptors)));
+    }
+
+    private Timeout resolveTimeout(Method gatewayMethod, Timeout timeout) {
+        return timeout == null ? gatewayMethod.getDeclaringClass().getAnnotation(Timeout.class) : timeout;
     }
 
     private boolean hasCallbackParameters(Method gatewayMethod) {
-        return Stream.of(gatewayMethod.getParameterTypes())
-                     .anyMatch(CommandCallback.class::isAssignableFrom);
+        for (Class<?> parameter : gatewayMethod.getParameterTypes()) {
+            if (CommandCallback.class.isAssignableFrom(parameter)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * Wraps the given {@code delegate} in an InvocationHandler that wraps exceptions not declared on the method
-     * in a {@link io.iamcyw.tower.commandhandling.CommandExecutionException}.
+     * in a {@link CommandExecutionException}.
      *
      * @param delegate           The delegate to invoke that potentially throws exceptions
      * @param declaredExceptions The exceptions declared on the method signature
@@ -212,6 +236,31 @@ public class CommandGatewayFactory {
     protected <R> InvocationHandler<R> wrapUndeclaredExceptions(final InvocationHandler<R> delegate,
                                                                 final Class<?>[] declaredExceptions) {
         return new WrapNonDeclaredCheckedExceptions<>(delegate, declaredExceptions);
+    }
+
+    /**
+     * Wrap the given {@code delegate} in an InvocationHandler that returns null when the
+     * {@code delegate}
+     * throws an InterruptedException.
+     *
+     * @param delegate The delegate to invoke, potentially throwing an InterruptedException when invoked
+     * @param <R>      The response type of the command handler
+     * @return an InvocationHandler that wraps returns null when an InterruptedException is thrown
+     */
+    protected <R> InvocationHandler<R> wrapToReturnNullOnInterrupted(final InvocationHandler<R> delegate) {
+        return new NullOnInterrupted<>(delegate);
+    }
+
+    /**
+     * Wrap the given {@code delegate} in an InvocationHandler that returns null when the
+     * {@code delegate} throws a TimeoutException.
+     *
+     * @param delegate The delegate to invoke, potentially throwing a TimeoutException when invoked
+     * @param <R>      The response type of the command handler
+     * @return an InvocationHandler that wraps returns null when a TimeoutException is thrown
+     */
+    protected <R> InvocationHandler<R> wrapToReturnNullOnTimeout(final InvocationHandler<R> delegate) {
+        return new NullOnTimeout<>(delegate);
     }
 
     /**
@@ -269,26 +318,28 @@ public class CommandGatewayFactory {
     }
 
     private boolean contains(Class<?>[] declaredExceptions, Class<?> exceptionClass) {
-        return Stream.of(declaredExceptions)
-                     .anyMatch(declaredException -> declaredException.isAssignableFrom(exceptionClass));
+        for (Class<?> declaredException : declaredExceptions) {
+            if (declaredException.isAssignableFrom(exceptionClass)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * Registers the {@code callback}, which is invoked for each sent command, unless Axon is able to detect that
      * the result of the command does not match the type accepted by the callback.
      * <p/>
-     * Axon will check the signature of the onResult() method and only invoke the callback if the actual result of the
+     * Axon will check the signature of the onSuccess() method and only invoke the callback if the actual result of the
      * command is an instance of that type. If Axon is unable to detect the type, the callback is always invoked,
-     * potentially causing {@link ClassCastException}.
+     * potentially causing {@link java.lang.ClassCastException}.
      *
-     * @param callback     The callback to register
-     * @param responseType The actual response type of the command
-     * @param <R>          The type of return value the callback is interested in
+     * @param callback The callback to register
+     * @param <R>      The type of return value the callback is interested in
      * @return this instance for further configuration
      */
-    public <C, R> CommandGatewayFactory registerCommandCallback(CommandCallback<C, R> callback,
-                                                                ResponseType<R> responseType) {
-        this.commandCallbacks.add(new TypeSafeCallbackWrapper<>(callback, responseType));
+    public <C, R> CommandGatewayFactory registerCommandCallback(CommandCallback<C, R> callback) {
+        this.commandCallbacks.add(new TypeSafeCallbackWrapper<>(callback));
         return this;
     }
 
@@ -311,8 +362,8 @@ public class CommandGatewayFactory {
             if (MetaData.class.isAssignableFrom(parameters[i].getType())) {
                 extractors.add(new MetaDataExtractor(i, null));
             } else {
-                Optional<Map<String, Object>> metaDataAnnotation =
-                        findAnnotationAttributes(parameters[i], MetaDataValue.class);
+                Optional<Map<String, Object>> metaDataAnnotation = AnnotationUtils
+                        .findAnnotationAttributes(parameters[i], MetaDataValue.class);
                 if (metaDataAnnotation.isPresent()) {
                     extractors.add(new MetaDataExtractor(i, (String) metaDataAnnotation.get().get("metaDataValue")));
                 }
@@ -340,28 +391,18 @@ public class CommandGatewayFactory {
          * @throws Exception any exceptions that occurred while processing the invocation
          */
         R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception;
+
     }
 
-    private static class GatewayInvocationHandler extends AbstractCommandGateway
-            implements java.lang.reflect.InvocationHandler {
+    private static class GatewayInvocationHandler extends AbstractCommandGateway implements java.lang.reflect.InvocationHandler {
 
         private final Map<Method, InvocationHandler> dispatchers;
 
-        protected GatewayInvocationHandler(Builder builder) {
-            super(builder);
-            this.dispatchers = builder.dispatchers;
-        }
-
-        /**
-         * Instantiate a Builder to be able to create a {@link GatewayInvocationHandler}.
-         * <p>
-         * The {@code dispatchInterceptors} are defaulted to an empty list.
-         * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
-         *
-         * @return a Builder to be able to create a {@link GatewayInvocationHandler}
-         */
-        public static Builder builder() {
-            return new Builder();
+        public GatewayInvocationHandler(Map<Method, InvocationHandler> dispatchers, CommandBus commandBus,
+                                        RetryScheduler retryScheduler,
+                                        List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
+            super(commandBus, retryScheduler, dispatchInterceptors);
+            this.dispatchers = new HashMap<>(dispatchers);
         }
 
         @Override
@@ -374,83 +415,25 @@ public class CommandGatewayFactory {
             }
         }
 
-        private static class Builder extends AbstractCommandGateway.Builder {
-
-            private Map<Method, InvocationHandler> dispatchers;
-
-            @Override
-            public Builder commandBus(CommandBus commandBus) {
-                super.commandBus(commandBus);
-                return this;
-            }
-
-            @Override
-            public Builder retryScheduler(RetryScheduler retryScheduler) {
-                super.retryScheduler(retryScheduler);
-                return this;
-            }
-
-            @Override
-            public Builder dispatchInterceptors(
-                    MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
-                super.dispatchInterceptors(dispatchInterceptors);
-                return this;
-            }
-
-            @Override
-            public Builder dispatchInterceptors(
-                    List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
-                super.dispatchInterceptors(dispatchInterceptors);
-                return this;
-            }
-
-            /**
-             * Sets the {@code dispatchers} containing the methods to delegate commands to.
-             *
-             * @param dispatchers {@code dispatchers} containing the methods to delegate commands to
-             * @return the current Builder instance, for fluent interfacing
-             */
-            public Builder dispatchers(Map<Method, InvocationHandler> dispatchers) {
-                this.dispatchers = new HashMap<>(dispatchers);
-                return this;
-            }
-
-            /**
-             * Initializes a {@link GatewayInvocationHandler} as specified through this Builder.
-             *
-             * @return a {@link GatewayInvocationHandler} as specified through this Builder
-             */
-            public GatewayInvocationHandler build() {
-                return new GatewayInvocationHandler(this);
-            }
-        }
     }
 
-    private static class DispatchOnInvocationHandler<C, R> extends AbstractCommandGateway
-            implements InvocationHandler<CompletableFuture<R>> {
+    private static class DispatchOnInvocationHandler<C, R> extends AbstractCommandGateway implements InvocationHandler<CompletableFuture<R>> {
 
         private final MetaDataExtractor[] metaDataExtractors;
+
         private final List<CommandCallback<? super C, ? super R>> commandCallbacks;
+
         private final boolean forceCallbacks;
 
-        @SuppressWarnings("unchecked")
-        protected DispatchOnInvocationHandler(Builder builder) {
-            super(builder);
-            this.metaDataExtractors = builder.metaDataExtractors; // NOSONAR
-            this.commandCallbacks = builder.commandCallbacks;
-            this.forceCallbacks = builder.forceCallbacks;
-        }
-
-        /**
-         * Instantiate a Builder to be able to create a {@link DispatchOnInvocationHandler}.
-         * <p>
-         * The {@code dispatchInterceptors} are defaulted to an empty list.
-         * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
-         *
-         * @return a Builder to be able to create a {@link DispatchOnInvocationHandler}
-         */
-        public static Builder builder() {
-            return new Builder();
+        protected DispatchOnInvocationHandler(CommandBus commandBus, RetryScheduler retryScheduler,
+                                              List<MessageDispatchInterceptor<? super CommandMessage<?>>> messageDispatchInterceptors,
+                                              MetaDataExtractor[] metaDataExtractors, // NOSONAR
+                                              List<CommandCallback<? super C, ? super R>> commandCallbacks,
+                                              boolean forceCallbacks) {
+            super(commandBus, retryScheduler, messageDispatchInterceptors);
+            this.metaDataExtractors = metaDataExtractors; // NOSONAR
+            this.commandCallbacks = commandCallbacks;
+            this.forceCallbacks = forceCallbacks;
         }
 
         @SuppressWarnings("unchecked")
@@ -478,98 +461,13 @@ public class CommandGatewayFactory {
                 }
                 callbacks.addAll(commandCallbacks);
                 send(command, new CompositeCallback(callbacks));
-                return future.thenCompose(reply -> {
-                    if (reply.isExceptional()) {
-                        CompletableFuture<R> r = new CompletableFuture<>();
-                        r.completeExceptionally(reply.exceptionResult());
-                        return r;
-                    }
-                    return CompletableFuture.completedFuture(reply.getPayload());
-                });
+                return future;
             } else {
                 sendAndForget(command);
                 return null;
             }
         }
 
-        private static class Builder<C, R> extends AbstractCommandGateway.Builder {
-
-            private MetaDataExtractor[] metaDataExtractors;
-            private List<CommandCallback<? super C, ? super R>> commandCallbacks;
-            private boolean forceCallbacks;
-
-            @Override
-            public Builder commandBus(CommandBus commandBus) {
-                super.commandBus(commandBus);
-                return this;
-            }
-
-            @Override
-            public Builder retryScheduler(RetryScheduler retryScheduler) {
-                super.retryScheduler(retryScheduler);
-                return this;
-            }
-
-            @Override
-            public Builder dispatchInterceptors(
-                    MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
-                super.dispatchInterceptors(dispatchInterceptors);
-                return this;
-            }
-
-            @Override
-            public Builder dispatchInterceptors(
-                    List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
-                super.dispatchInterceptors(dispatchInterceptors);
-                return this;
-            }
-
-            /**
-             * Sets the {@code metaDataExtractors}, used to extract any MetaData parameters and store them in the
-             * {@link CommandMessage}.
-             *
-             * @param metaDataExtractors an array of {@link MetaDataExtractor}
-             * @return the current Builder instance, for fluent interfacing
-             */
-            public Builder metaDataExtractors(MetaDataExtractor[] metaDataExtractors) {
-                this.metaDataExtractors = metaDataExtractors;
-                return this;
-            }
-
-            /**
-             * Sets the {@code commandCallbacks}, a {@link List} of type {@link CommandCallback}, which are called upon
-             * success and failure of handling a command.
-             *
-             * @param commandCallbacks the {@code commandCallbacks} which are called upon success and failure of
-             *                         handling a command
-             * @return the current Builder instance, for fluent interfacing
-             */
-            public Builder commandCallbacks(List<CommandCallback<? super C, ? super R>> commandCallbacks) {
-                this.commandCallbacks = commandCallbacks;
-                return this;
-            }
-
-            /**
-             * Toggles {@code forceCallbacks}, which will force a {@link CommandCallback} to be hit after handling a
-             * command.
-             *
-             * @param forceCallbacks a {@code boolean} specifying whether {@link CommandCallback}s should be made
-             * @return the current Builder instance, for fluent interfacing
-             */
-            public Builder forceCallbacks(boolean forceCallbacks) {
-                this.forceCallbacks = forceCallbacks;
-                return this;
-            }
-
-            /**
-             * Initializes a {@link DispatchOnInvocationHandler} as specified through this Builder.
-             *
-             * @return a {@link DispatchOnInvocationHandler} as specified through this Builder
-             */
-            public DispatchOnInvocationHandler build() {
-                return new DispatchOnInvocationHandler(this);
-            }
-        }
     }
 
     private static class CompositeCallback<C, R> implements CommandCallback<C, R> {
@@ -582,15 +480,25 @@ public class CommandGatewayFactory {
         }
 
         @Override
-        public void onResult(CommandMessage<? extends C> commandMessage,
-                             CommandResultMessage<? extends R> commandResultMessage) {
-            callbacks.forEach(callback -> callback.onResult(commandMessage, commandResultMessage));
+        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
+            for (CommandCallback<? super C, ? super R> callback : callbacks) {
+                callback.onSuccess(commandMessage, result);
+            }
         }
+
+        @Override
+        public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
+            for (CommandCallback<? super C, ? super R> callback : callbacks) {
+                callback.onFailure(commandMessage, cause);
+            }
+        }
+
     }
 
     private static final class WrapNonDeclaredCheckedExceptions<R> implements InvocationHandler<R> {
 
         private final Class<?>[] declaredExceptions;
+
         private final InvocationHandler<R> delegate;
 
         private WrapNonDeclaredCheckedExceptions(InvocationHandler<R> delegate, Class<?>[] declaredExceptions) {
@@ -603,25 +511,21 @@ public class CommandGatewayFactory {
             try {
                 return delegate.invoke(proxy, invokedMethod, args);
             } catch (ExecutionException e) {
-                throw (e.getCause() instanceof Exception ? asRuntimeIfNotDeclared((Exception) e.getCause()) : asRuntimeIfNotDeclared(e));
-            } catch (Exception e) {
-                throw asRuntimeIfNotDeclared(e) ;
+                Throwable cause = e.getCause();
+                if (cause instanceof RuntimeException) {
+                    throw (RuntimeException) cause;
+                }
+                for (Class<?> exception : declaredExceptions) {
+                    if (exception.isInstance(cause)) {
+                        throw cause instanceof Exception ? (Exception) cause : e;
+                    }
+                }
+                throw new CommandExecutionException(
+                        "Command execution resulted in a checked exception that was " + "not declared on the gateway",
+                        cause);
             }
         }
 
-        private Exception asRuntimeIfNotDeclared(Exception e) throws Exception {
-            if (e instanceof RuntimeException) {
-                return e;
-            }
-            for (Class<?> exception : declaredExceptions) {
-                if (exception.isInstance(e)) {
-                    throw e;
-                }
-            }
-            return new CommandExecutionException(
-                    "Command execution resulted in a checked exception that was " + "not declared on the gateway",
-                    e);
-        }
     }
 
     private static class NullOnTimeout<R> implements InvocationHandler<R> {
@@ -640,6 +544,7 @@ public class CommandGatewayFactory {
                 return null;
             }
         }
+
     }
 
     private static class NullOnInterrupted<R> implements InvocationHandler<R> {
@@ -659,12 +564,15 @@ public class CommandGatewayFactory {
                 return null;
             }
         }
+
     }
 
     private static class WaitForResultWithFixedTimeout<R> implements InvocationHandler<R> {
 
         private final InvocationHandler<CompletableFuture<R>> delegate;
+
         private final long timeout;
+
         private final TimeUnit timeUnit;
 
         private WaitForResultWithFixedTimeout(InvocationHandler<CompletableFuture<R>> delegate, long timeout,
@@ -678,12 +586,15 @@ public class CommandGatewayFactory {
         public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             return delegate.invoke(proxy, invokedMethod, args).get(timeout, timeUnit);
         }
+
     }
 
     private static class WaitForResultWithTimeoutInArguments<R> implements InvocationHandler<R> {
 
         private final InvocationHandler<CompletableFuture<R>> delegate;
+
         private final int timeoutIndex;
+
         private final int timeUnitIndex;
 
         private WaitForResultWithTimeoutInArguments(InvocationHandler<CompletableFuture<R>> delegate, int timeoutIndex,
@@ -705,6 +616,7 @@ public class CommandGatewayFactory {
             }
             return (Long) arg;
         }
+
     }
 
     private static class WaitForResult<R> implements InvocationHandler<R> {
@@ -719,6 +631,7 @@ public class CommandGatewayFactory {
         public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             return delegate.invoke(proxy, invokedMethod, args).get();
         }
+
     }
 
     private static class FireAndForget<R> implements InvocationHandler<R> {
@@ -734,11 +647,13 @@ public class CommandGatewayFactory {
             delegate.invoke(proxy, invokedMethod, args);
             return null;
         }
+
     }
 
     private static class MetaDataExtractor {
 
         private final int argumentIndex;
+
         private final String metaDataKey;
 
         private MetaDataExtractor(int argumentIndex, String metaDataKey) {
@@ -757,109 +672,43 @@ public class CommandGatewayFactory {
                 metaData.put(metaDataKey, parameterValue);
             }
         }
+
     }
 
-    private static class TypeSafeCallbackWrapper<C, R> implements CommandCallback<C, R> {
+    private static class TypeSafeCallbackWrapper<C, R> implements CommandCallback<C, Object> {
 
         private final CommandCallback<C, R> delegate;
-        private final ResponseType<R> parameterType;
+
+        private final Class<R> parameterType;
 
         @SuppressWarnings("unchecked")
-        public TypeSafeCallbackWrapper(CommandCallback<C, R> delegate, ResponseType<R> responseType) {
+        public TypeSafeCallbackWrapper(CommandCallback<C, R> delegate) {
             this.delegate = delegate;
-            parameterType = responseType;
+            Class discoveredParameterType = Object.class;
+            for (Method m : ReflectionUtils.methodsOf(delegate.getClass())) {
+                if (m.getGenericParameterTypes().length == 2 && m.getGenericParameterTypes()[1] != Object.class &&
+                        "onSuccess".equals(m.getName()) && Modifier.isPublic(m.getModifiers())) {
+                    discoveredParameterType = m.getParameterTypes()[1];
+                    if (discoveredParameterType != Object.class) {
+                        break;
+                    }
+                }
+            }
+            parameterType = discoveredParameterType;
         }
 
         @Override
-        public void onResult(CommandMessage<? extends C> commandMessage,
-                             CommandResultMessage<? extends R> commandResultMessage) {
-            if (commandResultMessage.isExceptional() || parameterType.matches(commandResultMessage.getPayloadType())) {
-                delegate.onResult(commandMessage, commandResultMessage);
+        public void onSuccess(CommandMessage<? extends C> commandMessage, Object result) {
+            if (parameterType.isInstance(result) || (!parameterType.isPrimitive() && result == null)) {
+                delegate.onSuccess(commandMessage, parameterType.cast(result));
             }
         }
+
+        @Override
+        public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
+            delegate.onFailure(commandMessage, cause);
+        }
+
     }
 
-    /**
-     * Builder class to instantiate a {@link CommandGatewayFactory}.
-     * <p>
-     * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
-     */
-    public static class Builder {
-
-        private CommandBus commandBus;
-        private RetryScheduler retryScheduler;
-        private List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
-
-        /**
-         * Sets the {@link CommandBus} on which to dispatch {@link CommandMessage}s.
-         *
-         * @param commandBus the {@link CommandBus} on which to dispatch {@link CommandMessage}s
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder commandBus(CommandBus commandBus) {
-            Assert.nonNull(commandBus, () -> "CommandBus may not be null");
-            this.commandBus = commandBus;
-            return this;
-        }
-
-        /**
-         * Sets the {@link RetryScheduler} which will decide whether to reschedule commands. May be {@code null} to
-         * report failures without rescheduling.
-         *
-         * @param retryScheduler the {@link RetryScheduler} which will decide whether to reschedule commands
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder retryScheduler(RetryScheduler retryScheduler) {
-            this.retryScheduler = retryScheduler;
-            return this;
-        }
-
-        /**
-         * Sets the {@link MessageDispatchInterceptor}s which are invoked before dispatching a {@link CommandMessage} on
-         * the {@link CommandBus}. Note that the given {@code dispatchInterceptors} are applied only on commands sent
-         * through gateways that have been created using this factory.
-         *
-         * @param dispatchInterceptors an array of {@link MessageDispatchInterceptor}s which are invoked before
-         *                             dispatching a {@link CommandMessage} on the {@link CommandBus}
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder dispatchInterceptors(
-                MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
-            return dispatchInterceptors(Arrays.asList(dispatchInterceptors));
-        }
-
-        /**
-         * Sets the {@link MessageDispatchInterceptor}s which are invoked before dispatching a {@link CommandMessage} on
-         * the {@link CommandBus}. Note that the given {@code dispatchInterceptors} are applied only on commands sent
-         * through gateways that have been created using this factory.
-         *
-         * @param dispatchInterceptors a {@link List} of {@link MessageDispatchInterceptor}s which are invoked before
-         *                             dispatching a {@link CommandMessage} on the {@link CommandBus}
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder dispatchInterceptors(
-                List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
-            this.dispatchInterceptors = dispatchInterceptors;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link CommandGatewayFactory} as specified through this Builder.
-         *
-         * @return a {@link CommandGatewayFactory} as specified through this Builder
-         */
-        public CommandGatewayFactory build() {
-            return new CommandGatewayFactory(this);
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws MessagingConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        protected void validate() throws MessagingConfigurationException {
-            Assert.nonNull(commandBus, () -> "The CommandBus is a hard requirement and should be provided");
-        }
-    }
 }

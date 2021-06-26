@@ -1,0 +1,3 @@
+io.iamcyw.tower.commandhandling.model.inspection.MethodCommandHandlerDefinition
+io.iamcyw.tower.queryhandling.annotation.MethodQueryMessageHandlerDefinition
+io.iamcyw.tower.commandhandling.model.inspection.MethodCommandHandlerInterceptorDefinition

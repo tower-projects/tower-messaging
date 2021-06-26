@@ -26,12 +26,11 @@ import java.util.Map;
  *
  * @param <U> type of incremental update
  */
-public interface SubscriptionQueryUpdateMessage<U> extends ResultMessage<U> {
+public interface SubscriptionQueryUpdateMessage<U> extends QueryResponseMessage<U> {
 
     @Override
     SubscriptionQueryUpdateMessage<U> withMetaData(Map<String, ?> metaData);
 
     @Override
     SubscriptionQueryUpdateMessage<U> andMetaData(Map<String, ?> metaData);
-
 }
