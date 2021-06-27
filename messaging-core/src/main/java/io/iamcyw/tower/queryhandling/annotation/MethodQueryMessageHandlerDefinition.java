@@ -17,11 +17,11 @@
 package io.iamcyw.tower.queryhandling.annotation;
 
 
-import io.iamcyw.tower.lifecycle.annotation.WrappedMessageHandlingMember;
 import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.messaging.annotation.HandlerEnhancerDefinition;
 import io.iamcyw.tower.messaging.annotation.MessageHandlingMember;
 import io.iamcyw.tower.messaging.annotation.UnsupportedHandlerException;
+import io.iamcyw.tower.messaging.annotation.WrappedMessageHandlingMember;
 import io.iamcyw.tower.queryhandling.QueryHandler;
 import io.iamcyw.tower.queryhandling.QueryMessage;
 
@@ -40,26 +40,20 @@ import static io.iamcyw.tower.utils.ReflectionUtils.unwrapIfType;
 /**
  * Definition of handlers that can handle {@link QueryMessage}s. These handlers are wrapped with a {@link
  * QueryHandlingMember} that exposes query-specific handler information.
- *
  */
 public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.annotationAttributes(QueryHandler.class)
-                       .map(attr -> (MessageHandlingMember<T>)
-                               new MethodQueryMessageHandlingMember<>(
-                                       original, attr
-                               )
-                       )
+                       .map(attr -> (MessageHandlingMember<T>) new MethodQueryMessageHandlingMember<>(original, attr))
                        .orElse(original);
     }
 
-    private static class MethodQueryMessageHandlingMember<T>
-            extends WrappedMessageHandlingMember<T>
-            implements QueryHandlingMember<T> {
+    private static class MethodQueryMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements QueryHandlingMember<T> {
 
         private final String queryName;
+
         private final Type resultType;
 
         public MethodQueryMessageHandlingMember(MessageHandlingMember<T> original, Map<String, Object> attr) {
@@ -71,17 +65,13 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
             }
             queryName = queryNameAttribute;
 
-            resultType = original.unwrap(Method.class)
-                                 .map(this::queryResultType)
-                                 .orElseThrow(() -> new UnsupportedHandlerException(
-                                         "@QueryHandler annotation can only be put on methods.",
-                                         original.unwrap(Member.class).orElse(null)
-                                 ));
+            resultType = original.unwrap(Method.class).map(this::queryResultType).orElseThrow(
+                    () -> new UnsupportedHandlerException("@QueryHandler annotation can only be put on methods.",
+                                                          original.unwrap(Member.class).orElse(null)));
             if (Void.TYPE.equals(resultType)) {
                 throw new UnsupportedHandlerException(
                         "@QueryHandler annotated methods must not declare void return type",
-                        original.unwrap(Member.class).orElse(null)
-                );
+                        original.unwrap(Member.class).orElse(null));
             }
         }
 
@@ -97,8 +87,7 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         private Type queryResultType(Method method) {
             if (Void.class.equals(method.getReturnType())) {
                 throw new UnsupportedHandlerException(
-                        "@QueryHandler annotated methods must not declare void return type", method
-                );
+                        "@QueryHandler annotated methods must not declare void return type", method);
             }
             return unwrapType(method.getGenericReturnType());
         }
@@ -120,10 +109,9 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
 
         @Override
         public boolean canHandle(Message<?> message) {
-            return super.canHandle(message)
-                    && message instanceof QueryMessage
-                    && queryName.equals(((QueryMessage<?, ?>) message).getQueryName())
-                    && ((QueryMessage<?, ?>) message).getResponseType().matches(resultType);
+            return super.canHandle(message) && message instanceof QueryMessage &&
+                    queryName.equals(((QueryMessage<?, ?>) message).getQueryName()) &&
+                    ((QueryMessage<?, ?>) message).getResponseType().matches(resultType);
         }
 
         @Override
@@ -134,5 +122,7 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         public Type getResultType() {
             return resultType;
         }
+
     }
+
 }

@@ -18,9 +18,6 @@ package io.iamcyw.tower.config;
 
 
 import io.iamcyw.tower.common.Registration;
-import io.iamcyw.tower.lifecycle.Phase;
-import io.iamcyw.tower.lifecycle.ShutdownHandler;
-import io.iamcyw.tower.lifecycle.StartHandler;
 import io.iamcyw.tower.utils.Assert;
 
 import java.util.function.BiFunction;
@@ -63,12 +60,6 @@ public class MessageHandlerRegistrar {
         this.handlerRegistration = null;
     }
 
-    /**
-     * Start the message handler registration process by building the message handler in the {@link
-     * Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS} phase. The specified {@code messageHandlerBuilder} is used for
-     * creation and registration is performed through the {@code messageHandlerSubscriber}.
-     */
-    @StartHandler(phase = Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS)
     public void start() {
         Configuration config = configurationSupplier.get();
         Object annotatedHandler = messageHandlerBuilder.apply(config);
@@ -76,11 +67,6 @@ public class MessageHandlerRegistrar {
         this.handlerRegistration = messageHandlerSubscriber.apply(config, annotatedHandler);
     }
 
-    /**
-     * Close the message handler registration initialized in phase {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS}
-     * through the {@link #start()} method.
-     */
-    @ShutdownHandler(phase = Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS)
     public void shutdown() {
         handlerRegistration.cancel();
     }

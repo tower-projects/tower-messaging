@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package io.iamcyw.tower.lifecycle.annotation;
+package io.iamcyw.tower.messaging.annotation;
 
 
 import io.iamcyw.tower.messaging.Message;
-import io.iamcyw.tower.messaging.annotation.MessageHandlingMember;
 
 import java.lang.annotation.Annotation;
 import java.util.Map;
@@ -81,4 +80,5 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
         return delegate.hasAnnotation(annotationType);
     }
+
 }

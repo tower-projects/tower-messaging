@@ -20,7 +20,7 @@ import io.iamcyw.tower.commandhandling.CommandHandler;
 import io.iamcyw.tower.commandhandling.CommandMessage;
 import io.iamcyw.tower.commandhandling.CommandMessageHandlingMember;
 import io.iamcyw.tower.common.MessagingConfigurationException;
-import io.iamcyw.tower.lifecycle.annotation.WrappedMessageHandlingMember;
+import io.iamcyw.tower.messaging.annotation.WrappedMessageHandlingMember;
 import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.messaging.annotation.HandlerEnhancerDefinition;
 import io.iamcyw.tower.messaging.annotation.MessageHandlingMember;
