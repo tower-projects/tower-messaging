@@ -47,4 +47,5 @@ public abstract class SystemTransientException extends SystemIllegalException {
     public SystemTransientException(String message, Throwable cause) {
         super(message, cause);
     }
+
 }

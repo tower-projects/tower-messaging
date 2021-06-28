@@ -44,8 +44,8 @@ public class SimpleSerializedObject<T> implements SerializedObject<T> {
      * @param serializedType The type description of the serialized object
      */
     public SimpleSerializedObject(T data, Class<T> dataType, SerializedType serializedType) {
-        Assert.nonNull(data, () -> "Data for a serialized object cannot be null");
-        Assert.nonNull(serializedType, () -> "The type identifier of the serialized object");
+        Assert.nonNull(data, "Data for a serialized object cannot be null");
+        Assert.nonNull(serializedType, "The type identifier of the serialized object");
         this.data = data;
         this.dataType = dataType;
         this.type = serializedType;
@@ -93,8 +93,8 @@ public class SimpleSerializedObject<T> implements SerializedObject<T> {
             return false;
         }
         SimpleSerializedObject<?> that = (SimpleSerializedObject<?>) o;
-        return Objects.equals(data, that.data) && Objects.equals(type, that.type) && Objects.equals(dataType,
-                                                                                                    that.dataType);
+        return Objects.equals(data, that.data) && Objects.equals(type, that.type) &&
+                Objects.equals(dataType, that.dataType);
     }
 
     @Override

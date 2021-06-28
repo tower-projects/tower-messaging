@@ -20,4 +20,5 @@ public @interface MetaDataValue {
      * {@code true}.
      */
     boolean required() default false;
+
 }

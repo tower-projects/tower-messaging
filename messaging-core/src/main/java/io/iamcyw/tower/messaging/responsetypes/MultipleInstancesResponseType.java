@@ -76,8 +76,8 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
     @Override
     public boolean matches(Type responseType) {
         Type unwrapped = unwrapIfType(responseType, Future.class);
-        return isIterableOfExpectedType(unwrapped) || isStreamOfExpectedType(unwrapped) || isGenericArrayOfExpectedType(
-                unwrapped) || isArrayOfExpectedType(unwrapped);
+        return isIterableOfExpectedType(unwrapped) || isStreamOfExpectedType(unwrapped) ||
+                isGenericArrayOfExpectedType(unwrapped) || isArrayOfExpectedType(unwrapped);
     }
 
     /**
@@ -104,7 +104,8 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
         }
 
         throw new IllegalArgumentException(
-                "Retrieved response [" + responseType + "] is not convertible to a List of " + "the expected response type [" + expectedResponseType + "]");
+                "Retrieved response [" + responseType + "] is not convertible to a List of " +
+                        "the expected response type [" + expectedResponseType + "]");
     }
 
     @SuppressWarnings("unchecked")
@@ -124,13 +125,12 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
 
         boolean canMatchContainedType = responseIterator.hasNext();
         if (!canMatchContainedType) {
-            logger.debug(
-                    "The given response is an Iterable without any contents, hence we cannot verify if the " + "contained type is assignable to the expected type.");
+            logger.debug("The given response is an Iterable without any contents, hence we cannot verify if the " +
+                                 "contained type is assignable to the expected type.");
             return true;
         }
 
-        return isAssignableFrom(responseIterator.next()
-                                        .getClass());
+        return isAssignableFrom(responseIterator.next().getClass());
     }
 
     @SuppressWarnings("unchecked") // Suppress cast to R, since in proper use of this function it is allowed

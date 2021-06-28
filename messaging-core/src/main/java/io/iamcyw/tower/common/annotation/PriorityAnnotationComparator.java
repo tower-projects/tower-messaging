@@ -52,8 +52,7 @@ public class PriorityAnnotationComparator<T> implements Comparator<T> {
 
     private int getPriority(AnnotatedElement annotatedElement) {
         return AnnotationUtils.findAnnotationAttributes(annotatedElement, Priority.class)
-                .map(m -> (int) m.get("priority"))
-                .orElse(Priority.NEUTRAL);
+                              .map(m -> (int) m.get("priority")).orElse(Priority.NEUTRAL);
     }
 
 }

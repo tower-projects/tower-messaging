@@ -51,4 +51,5 @@ public class NoHandlerForCommandException extends SystemTransientException {
     public NoHandlerForCommandException(CommandMessage<?> commandMessage) {
         this(format("No handler available to handle command [%s]", commandMessage.getCommandName()));
     }
+
 }

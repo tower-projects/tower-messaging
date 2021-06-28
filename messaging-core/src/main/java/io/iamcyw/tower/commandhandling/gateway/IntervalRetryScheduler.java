@@ -53,13 +53,6 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
         this.retryInterval = builder.retryInterval;
     }
 
-    @Override
-    protected long computeRetryInterval(CommandMessage commandMessage,
-                                        RuntimeException lastFailure,
-                                        List<Class<? extends Throwable>[]> failures) {
-        return retryInterval;
-    }
-
     /**
      * Instantiate a Builder to be able to create a {@link IntervalRetryScheduler}.
      * <p>
@@ -70,6 +63,12 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    protected long computeRetryInterval(CommandMessage commandMessage, RuntimeException lastFailure,
+                                        List<Class<? extends Throwable>[]> failures) {
+        return retryInterval;
     }
 
     /**
@@ -91,7 +90,7 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder retryInterval(int retryInterval) {
-            Assert.nonNull(retryInterval, () -> "The retryInterval must be a positive number");
+            Assert.nonNull(retryInterval, "The retryInterval must be a positive number");
             this.retryInterval = retryInterval;
             return this;
         }
@@ -104,5 +103,7 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
         public IntervalRetryScheduler build() {
             return new IntervalRetryScheduler(this);
         }
+
     }
+
 }

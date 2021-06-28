@@ -46,4 +46,5 @@ public class FixedValueParameterResolver<T> implements ParameterResolver<T> {
     public boolean matches(Message message) {
         return true;
     }
+
 }

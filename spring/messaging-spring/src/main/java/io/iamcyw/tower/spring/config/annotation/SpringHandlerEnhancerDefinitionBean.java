@@ -33,13 +33,14 @@ import java.util.Map;
 /**
  * Spring factory bean that creates a HandlerEnhancerDefinition instance that is capable of resolving parameter values
  * as Spring Beans, in addition to the default behavior defined by Axon.
- *
  */
 public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerEnhancerDefinition>,
         BeanClassLoaderAware, InitializingBean, ApplicationContextAware {
 
     private final List<HandlerEnhancerDefinition> enhancers = new ArrayList<>();
+
     private ClassLoader classLoader;
+
     private ApplicationContext applicationContext;
 
     /**
@@ -104,8 +105,9 @@ public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerE
 
     private void initialize() {
         enhancers.addAll(ClasspathHandlerEnhancerDefinition.forClassLoader(classLoader).getDelegates());
-        Map<String, HandlerEnhancerDefinition> enhancersFound = applicationContext.getBeansOfType(
-                HandlerEnhancerDefinition.class);
+        Map<String, HandlerEnhancerDefinition> enhancersFound = applicationContext
+                .getBeansOfType(HandlerEnhancerDefinition.class);
         enhancers.addAll(enhancersFound.values());
     }
+
 }

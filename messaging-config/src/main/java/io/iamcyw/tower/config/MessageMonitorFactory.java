@@ -35,4 +35,5 @@ public interface MessageMonitorFactory {
      * @return the Message Monitor for the component
      */
     MessageMonitor<Message<?>> create(Configuration configuration, Class<?> componentType, String componentName);
+
 }

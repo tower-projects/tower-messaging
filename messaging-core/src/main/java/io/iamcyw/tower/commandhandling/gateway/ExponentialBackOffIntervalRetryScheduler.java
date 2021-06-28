@@ -62,8 +62,7 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
     }
 
     @Override
-    protected long computeRetryInterval(CommandMessage commandMessage,
-                                        RuntimeException lastFailure,
+    protected long computeRetryInterval(CommandMessage commandMessage, RuntimeException lastFailure,
                                         List<Class<? extends Throwable>[]> failures) {
         final int retryCount = failures.size();
         return backoffFactor * (1L << (retryCount - 1));
@@ -87,7 +86,7 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder backoffFactor(long backoffFactor) {
-            Assert.nonNull(backoffFactor, () -> "The backoffFactor must be a positive number");
+            Assert.nonNull(backoffFactor, "The backoffFactor must be a positive number");
             this.backoffFactor = backoffFactor;
             return this;
         }
@@ -100,5 +99,7 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
         public ExponentialBackOffIntervalRetryScheduler build() {
             return new ExponentialBackOffIntervalRetryScheduler(this);
         }
+
     }
+
 }

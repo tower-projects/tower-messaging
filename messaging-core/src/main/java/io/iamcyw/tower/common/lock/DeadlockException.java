@@ -22,7 +22,6 @@ package io.iamcyw.tower.common.lock;
  * lock held by the current thread.
  * <p/>
  * It is typically safe to retry the operation when this exception occurs.
- *
  */
 public class DeadlockException extends LockAcquisitionFailedException {
 
@@ -36,4 +35,5 @@ public class DeadlockException extends LockAcquisitionFailedException {
     public DeadlockException(String message) {
         super(message);
     }
+
 }

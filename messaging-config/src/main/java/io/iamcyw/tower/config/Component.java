@@ -1,18 +1,19 @@
 package io.iamcyw.tower.config;
 
 import io.iamcyw.tower.utils.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.iamcyw.tower.utils.i18n.I18ns;
 
-import java.lang.invoke.MethodHandles;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Component<B> {
 
     private final String name;
+
     private final Supplier<Configuration> configuration;
+
     private Function<Configuration, ? extends B> builderFunction;
+
     private B instance;
 
     /**
@@ -36,7 +37,8 @@ public class Component<B> {
      * @param name            The name of the component
      * @param builderFunction The builder function of the component
      */
-    public Component(Supplier<Configuration> config, String name, Function<Configuration, ? extends B> builderFunction) {
+    public Component(Supplier<Configuration> config, String name,
+                     Function<Configuration, ? extends B> builderFunction) {
         this.configuration = config;
         this.name = name;
         this.builderFunction = builderFunction;
@@ -62,7 +64,9 @@ public class Component<B> {
      * @throws IllegalStateException when the component has already been retrieved using {@link #get()}.
      */
     public void update(Function<Configuration, ? extends B> builderFunction) {
-        Assert.state(instance == null, () -> "Cannot change " + name + ": it is already in use");
+        Assert.state(instance == null,
+                     I18ns.create().content("Cannot change {} : it is already in use").args(name).apply());
         this.builderFunction = builderFunction;
     }
+
 }

@@ -16,9 +16,6 @@
 
 package io.iamcyw.tower.commandhandling;
 
-import io.iamcyw.tower.commandhandling.callbacks.LoggingCallback;
-import io.iamcyw.tower.commandhandling.callbacks.NoOpCallback;
-import io.iamcyw.tower.common.MessagingConfigurationException;
 import io.iamcyw.tower.common.Registration;
 import io.iamcyw.tower.common.transaction.NoTransactionManager;
 import io.iamcyw.tower.common.transaction.Transaction;
@@ -30,7 +27,6 @@ import io.iamcyw.tower.messaging.unitofwork.RollbackConfigurationType;
 import io.iamcyw.tower.messaging.unitofwork.UnitOfWork;
 import io.iamcyw.tower.monitoring.MessageMonitor;
 import io.iamcyw.tower.monitoring.NoOpMessageMonitor;
-import io.iamcyw.tower.utils.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static io.iamcyw.tower.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
-import static io.iamcyw.tower.utils.CommonUtils.getOrDefault;
 import static java.lang.String.format;
 
 /**
@@ -59,12 +53,17 @@ public class SimpleCommandBus implements CommandBus {
 
     private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions =
             new ConcurrentHashMap<>();
-    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors
-            = new CopyOnWriteArrayList<>();
-    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
-            = new CopyOnWriteArrayList<>();
+
+    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors =
+            new CopyOnWriteArrayList<>();
+
+    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors =
+            new CopyOnWriteArrayList<>();
+
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
+
     private final TransactionManager transactionManager;
+
     private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
 
     /**
@@ -142,7 +141,8 @@ public class SimpleCommandBus implements CommandBus {
      * @param <R>      The type of result expected from the command handler
      */
     @SuppressWarnings({"unchecked"})
-    protected <C, R> void handle(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler, CommandCallback<? super C, R> callback) {
+    protected <C, R> void handle(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler,
+                                 CommandCallback<? super C, R> callback) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling command [{}]", command.getCommandName());
         }
@@ -180,7 +180,8 @@ public class SimpleCommandBus implements CommandBus {
      * @return handle to unregister the interceptor
      */
     @Override
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+    public Registration registerHandlerInterceptor(
+            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
     }
@@ -193,7 +194,8 @@ public class SimpleCommandBus implements CommandBus {
      * @return handle to unregister the interceptor
      */
     @Override
-    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+    public Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
@@ -207,4 +209,5 @@ public class SimpleCommandBus implements CommandBus {
     public void setRollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
         this.rollbackConfiguration = rollbackConfiguration;
     }
+
 }

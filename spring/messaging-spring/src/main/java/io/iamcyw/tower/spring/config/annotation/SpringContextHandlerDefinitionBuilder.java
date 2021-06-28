@@ -26,7 +26,6 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 /**
  * Creates and registers a bean definition for a Spring Context aware HandlerDefinition. It ensures that only
  * one such instance exists for each ApplicationContext.
- *
  */
 public final class SpringContextHandlerDefinitionBuilder {
 
@@ -44,18 +43,18 @@ public final class SpringContextHandlerDefinitionBuilder {
      */
     public static RuntimeBeanReference getBeanReference(BeanDefinitionRegistry registry) {
         if (!registry.containsBeanDefinition(HANDLER_DEFINITION_BEAN_NAME)) {
-            BeanDefinition definition = BeanDefinitionBuilder
-                    .genericBeanDefinition(SpringHandlerDefinitionBean.class).getBeanDefinition();
+            BeanDefinition definition = BeanDefinitionBuilder.genericBeanDefinition(SpringHandlerDefinitionBean.class)
+                                                             .getBeanDefinition();
             BeanDefinition enhancer = BeanDefinitionBuilder
                     .genericBeanDefinition(SpringHandlerEnhancerDefinitionBean.class).getBeanDefinition();
 
             AbstractBeanDefinition def = BeanDefinitionBuilder.genericBeanDefinition(MultiHandlerDefinition.class)
                                                               .addConstructorArgValue(definition)
-                                                              .addConstructorArgValue(enhancer)
-                                                              .getBeanDefinition();
+                                                              .addConstructorArgValue(enhancer).getBeanDefinition();
             def.setPrimary(true);
             registry.registerBeanDefinition(HANDLER_DEFINITION_BEAN_NAME, def);
         }
         return new RuntimeBeanReference(HANDLER_DEFINITION_BEAN_NAME);
     }
+
 }

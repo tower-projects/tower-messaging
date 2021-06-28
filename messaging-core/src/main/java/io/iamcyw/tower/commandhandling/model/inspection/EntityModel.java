@@ -79,4 +79,5 @@ public interface EntityModel<T> {
      * @return the class this model describes
      */
     Class<? extends T> entityClass();
+
 }

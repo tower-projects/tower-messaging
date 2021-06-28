@@ -51,4 +51,5 @@ public interface RetryScheduler {
      */
     boolean scheduleRetry(CommandMessage commandMessage, RuntimeException lastFailure,
                           List<Class<? extends Throwable>[]> failures, Runnable commandDispatch);
+
 }

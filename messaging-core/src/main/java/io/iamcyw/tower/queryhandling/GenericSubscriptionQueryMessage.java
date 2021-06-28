@@ -30,8 +30,7 @@ import java.util.Map;
  * @param <I> The type of initial response expected from this query
  * @param <U> The type of incremental updates expected from this query
  */
-public class GenericSubscriptionQueryMessage<Q, I, U> extends GenericQueryMessage<Q, I>
-        implements SubscriptionQueryMessage<Q, I, U> {
+public class GenericSubscriptionQueryMessage<Q, I, U> extends GenericQueryMessage<Q, I> implements SubscriptionQueryMessage<Q, I, U> {
 
     private final ResponseType<U> updateResponseType;
 
@@ -85,17 +84,14 @@ public class GenericSubscriptionQueryMessage<Q, I, U> extends GenericQueryMessag
 
     @Override
     public GenericSubscriptionQueryMessage<Q, I, U> withMetaData(Map<String, ?> metaData) {
-        return new GenericSubscriptionQueryMessage<>(getDelegate().withMetaData(metaData),
-                                                     getQueryName(),
-                                                     getResponseType(),
-                                                     updateResponseType);
+        return new GenericSubscriptionQueryMessage<>(getDelegate().withMetaData(metaData), getQueryName(),
+                                                     getResponseType(), updateResponseType);
     }
 
     @Override
     public GenericSubscriptionQueryMessage<Q, I, U> andMetaData(Map<String, ?> metaData) {
-        return new GenericSubscriptionQueryMessage<>(getDelegate().andMetaData(metaData),
-                                                     getQueryName(),
-                                                     getResponseType(),
-                                                     updateResponseType);
+        return new GenericSubscriptionQueryMessage<>(getDelegate().andMetaData(metaData), getQueryName(),
+                                                     getResponseType(), updateResponseType);
     }
+
 }

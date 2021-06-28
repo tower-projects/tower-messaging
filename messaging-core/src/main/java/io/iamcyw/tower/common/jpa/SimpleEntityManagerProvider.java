@@ -17,6 +17,7 @@
 package io.iamcyw.tower.common.jpa;
 
 import io.iamcyw.tower.utils.Assert;
+import io.iamcyw.tower.utils.i18n.I18ns;
 
 import javax.persistence.EntityManager;
 
@@ -35,7 +36,7 @@ public class SimpleEntityManagerProvider implements EntityManagerProvider {
      * @param entityManager the EntityManager to return on {@link #getEntityManager()}
      */
     public SimpleEntityManagerProvider(EntityManager entityManager) {
-        Assert.nonNull(entityManager, () -> "entityManager should not be null");
+        Assert.nonNull(entityManager, I18ns.create().content("entityManager should not be null").apply());
         this.entityManager = entityManager;
     }
 

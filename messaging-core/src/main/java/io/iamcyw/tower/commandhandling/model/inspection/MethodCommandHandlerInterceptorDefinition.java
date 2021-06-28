@@ -19,11 +19,11 @@ package io.iamcyw.tower.commandhandling.model.inspection;
 import io.iamcyw.tower.commandhandling.CommandMessage;
 import io.iamcyw.tower.commandhandling.model.CommandHandlerInterceptor;
 import io.iamcyw.tower.common.MessagingConfigurationException;
-import io.iamcyw.tower.messaging.annotation.WrappedMessageHandlingMember;
 import io.iamcyw.tower.messaging.InterceptorChain;
 import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.messaging.annotation.HandlerEnhancerDefinition;
 import io.iamcyw.tower.messaging.annotation.MessageHandlingMember;
+import io.iamcyw.tower.messaging.annotation.WrappedMessageHandlingMember;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;

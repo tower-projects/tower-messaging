@@ -30,8 +30,12 @@ import org.slf4j.LoggerFactory;
 public class LoggingDuplicateCommandHandlerResolver implements DuplicateCommandHandlerResolver {
 
     private static final Logger logger = LoggerFactory.getLogger(LoggingDuplicateCommandHandlerResolver.class);
+
     private static final LoggingDuplicateCommandHandlerResolver INSTANCE = new LoggingDuplicateCommandHandlerResolver();
 
+
+    private LoggingDuplicateCommandHandlerResolver() {
+    }
 
     /**
      * Returns an instance that logs duplicate registrations.
@@ -42,20 +46,15 @@ public class LoggingDuplicateCommandHandlerResolver implements DuplicateCommandH
         return INSTANCE;
     }
 
-    private LoggingDuplicateCommandHandlerResolver() {
-    }
-
     @Override
     public MessageHandler<? super CommandMessage<?>> resolve(String commandName,
                                                              MessageHandler<? super CommandMessage<?>> registeredHandler,
                                                              MessageHandler<? super CommandMessage<?>> candidateHandler) {
 
-        logger.warn("A duplicate command handler was found for command [{}]. "
-                            + "The handler in [{}] has been replaced by the handler in [{}].",
-                    commandName,
-                    registeredHandler.getTargetType().getName(),
-                    candidateHandler.getTargetType().getName()
-        );
+        logger.warn("A duplicate command handler was found for command [{}]. " +
+                            "The handler in [{}] has been replaced by the handler in [{}].", commandName,
+                    registeredHandler.getTargetType().getName(), candidateHandler.getTargetType().getName());
         return candidateHandler;
     }
+
 }

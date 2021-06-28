@@ -41,10 +41,7 @@ public class SimpleSerializedType implements SerializedType {
      * @param revisionNumber The revision of the serialized object's type
      */
     public SimpleSerializedType(String objectType, String revisionNumber) {
-        Assert.nonNull(objectType, () -> I18ns.create()
-                .key("common.object_null")
-                .args("objectType")
-                .apply());
+        Assert.nonNull(objectType, I18ns.create().key("common.object_null").args("objectType").apply());
         this.type = objectType;
         this.revisionId = revisionNumber;
     }

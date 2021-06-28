@@ -24,6 +24,7 @@ import io.iamcyw.tower.messaging.MessageHandler;
 import io.iamcyw.tower.messaging.annotation.ClasspathParameterResolverFactory;
 import io.iamcyw.tower.messaging.annotation.ParameterResolverFactory;
 import io.iamcyw.tower.utils.Assert;
+import io.iamcyw.tower.utils.i18n.I18ns;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -54,7 +55,8 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
     @SuppressWarnings("unchecked")
     public AnnotationCommandHandlerAdapter(Object annotatedCommandHandler,
                                            ParameterResolverFactory parameterResolverFactory) {
-        Assert.nonNull(annotatedCommandHandler, () -> "annotatedCommandHandler may not be null");
+        Assert.nonNull(annotatedCommandHandler,
+                       I18ns.create().content("annotatedCommandHandler may not be null").apply());
         this.modelInspector = AnnotatedAggregateMetaModelFactory
                 .inspectAggregate((Class<Object>) annotatedCommandHandler.getClass(), parameterResolverFactory);
 

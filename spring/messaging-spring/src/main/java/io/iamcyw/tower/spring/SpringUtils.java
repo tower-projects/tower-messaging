@@ -56,7 +56,8 @@ public class SpringUtils {
      *                    the given {@code beanName}.
      * @return True if the {@code qualifier} is found on the {@code beanName}; false if it is not found.
      */
-    public static boolean isQualifierMatch(String beanName, ConfigurableListableBeanFactory beanFactory, String qualifier) {
+    public static boolean isQualifierMatch(String beanName, ConfigurableListableBeanFactory beanFactory,
+                                           String qualifier) {
         if (!beanFactory.containsBean(beanName)) {
             return false;
         }
@@ -67,8 +68,8 @@ public class SpringUtils {
             // Check for Qualifier annotation on the FactoryMethod
             if (bd instanceof AnnotatedBeanDefinition) {
                 MethodMetadata factoryMethodMetadata = ((AnnotatedBeanDefinition) bd).getFactoryMethodMetadata();
-                Map<String, Object> qualifierAttributes = factoryMethodMetadata.getAnnotationAttributes(
-                        Qualifier.class.getName());
+                Map<String, Object> qualifierAttributes = factoryMethodMetadata
+                        .getAnnotationAttributes(Qualifier.class.getName());
                 if (qualifierAttributes != null && qualifier.equals(qualifierAttributes.get("value"))) {
                     return true;
                 }
@@ -78,9 +79,10 @@ public class SpringUtils {
             if (bd instanceof AbstractBeanDefinition) {
                 AbstractBeanDefinition abd = (AbstractBeanDefinition) bd;
                 AutowireCandidateQualifier candidate = abd.getQualifier(Qualifier.class.getName());
-                if ((candidate != null && qualifier.equals(
-                        candidate.getAttribute(AutowireCandidateQualifier.VALUE_KEY))) || qualifier.equals(
-                        beanName) || ObjectUtils.containsElement(beanFactory.getAliases(beanName), qualifier)) {
+                if ((candidate != null &&
+                        qualifier.equals(candidate.getAttribute(AutowireCandidateQualifier.VALUE_KEY))) ||
+                        qualifier.equals(beanName) ||
+                        ObjectUtils.containsElement(beanFactory.getAliases(beanName), qualifier)) {
                     return true;
                 }
             }

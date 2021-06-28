@@ -43,7 +43,9 @@ public class FailingDuplicateCommandHandlerResolver implements DuplicateCommandH
     }
 
     @Override
-    public MessageHandler<? super CommandMessage<?>> resolve(String commandName, MessageHandler<? super CommandMessage<?>> registeredHandler, MessageHandler<? super CommandMessage<?>> candidateHandler) {
+    public MessageHandler<? super CommandMessage<?>> resolve(String commandName,
+                                                             MessageHandler<? super CommandMessage<?>> registeredHandler,
+                                                             MessageHandler<? super CommandMessage<?>> candidateHandler) {
         throw new DuplicateCommandHandlerSubscriptionException(commandName, registeredHandler, candidateHandler);
     }
 

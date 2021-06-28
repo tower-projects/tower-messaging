@@ -18,7 +18,6 @@ package io.iamcyw.tower.commandhandling.model;
 
 
 import io.iamcyw.tower.commandhandling.CommandMessage;
-import io.iamcyw.tower.messaging.InterceptorChain;
 import io.iamcyw.tower.messaging.annotation.MessageHandler;
 
 import java.lang.annotation.*;
@@ -35,4 +34,5 @@ public @interface CommandHandlerInterceptor {
      * @return pattern used to filter command names
      */
     String commandNamePattern() default ".*";
+
 }

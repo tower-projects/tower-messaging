@@ -28,7 +28,6 @@ import java.lang.reflect.Parameter;
 /**
  * Factory for the default parameter resolvers. This factory is capable for providing parameter resolvers for Message,
  * MetaData and @MetaDataValue annotated parameters.
- *
  */
 @Priority(Priority.FIRST)
 public class DefaultParameterResolverFactory implements ParameterResolverFactory {
@@ -40,8 +39,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         if (Message.class.isAssignableFrom(parameterType)) {
             return new MessageParameterResolver(parameterType);
         }
-        MetaDataValue
-                metaDataValueAnnotation = AnnotationUtils
+        MetaDataValue metaDataValueAnnotation = AnnotationUtils
                 .findAnnotation(parameters[parameterIndex], MetaDataValue.class);
         if (metaDataValueAnnotation != null) {
             return new AnnotatedMetaDataParameterResolver(metaDataValueAnnotation, parameterType);
@@ -51,8 +49,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
         if (parameterIndex == 0) {
             Class<?> payloadType = (Class<?>) AnnotationUtils.findAnnotationAttributes(executable, MessageHandler.class)
-                                                             .map(attr -> attr.get("payloadType"))
-                                                             .orElse(Object.class);
+                                                             .map(attr -> attr.get("payloadType")).orElse(Object.class);
             if (payloadType.isAssignableFrom(parameterType)) {
                 return new PayloadParameterResolver(parameterType);
             }
@@ -63,6 +60,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
     private static class AnnotatedMetaDataParameterResolver implements ParameterResolver<Object> {
 
         private final MetaDataValue metaDataValue;
+
         private final Class parameterType;
 
         public AnnotatedMetaDataParameterResolver(MetaDataValue metaDataValue, Class parameterType) {
@@ -77,12 +75,11 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
 
         @Override
         public boolean matches(Message<?> message) {
-            return !(parameterType.isPrimitive() || metaDataValue.required())
-                    || (
-                    message.getMetaData().containsKey(metaDataValue.value())
-                            && parameterType.isInstance(message.getMetaData().get(metaDataValue.value()))
-            );
+            return !(parameterType.isPrimitive() || metaDataValue.required()) ||
+                    (message.getMetaData().containsKey(metaDataValue.value()) &&
+                            parameterType.isInstance(message.getMetaData().get(metaDataValue.value())));
         }
+
     }
 
     private static final class MetaDataParameterResolver implements ParameterResolver {
@@ -101,6 +98,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         public boolean matches(Message message) {
             return true;
         }
+
     }
 
     private static class MessageParameterResolver implements ParameterResolver {
@@ -120,5 +118,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         public boolean matches(Message message) {
             return parameterType.isInstance(message);
         }
+
     }
+
 }

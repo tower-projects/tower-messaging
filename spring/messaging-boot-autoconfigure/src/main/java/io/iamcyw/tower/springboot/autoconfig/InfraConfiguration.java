@@ -8,7 +8,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @ConditionalOnClass(SpringTowerAutoConfiguration.class)
-@AutoConfigureAfter({TowerAutoConfiguration.class, NoOpTransactionAutoConfiguration.class, TransactionAutoConfiguration.class})
+@AutoConfigureAfter(
+        {TowerAutoConfiguration.class, NoOpTransactionAutoConfiguration.class, TransactionAutoConfiguration.class})
 @Import(SpringTowerAutoConfiguration.ImportSelector.class)
 @AnnotationDriven
 @Configuration

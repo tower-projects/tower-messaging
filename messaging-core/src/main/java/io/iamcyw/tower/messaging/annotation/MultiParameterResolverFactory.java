@@ -27,11 +27,30 @@ import java.util.List;
 
 /**
  * ParameterResolverFactory instance that delegates to multiple other instances, in the order provided.
- *
  */
 public class MultiParameterResolverFactory implements ParameterResolverFactory {
 
     private final ParameterResolverFactory[] factories;
+
+    /**
+     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
+     * the given array are not reflected in the created instance.
+     *
+     * @param delegates The factories providing the parameter values to use
+     */
+    public MultiParameterResolverFactory(ParameterResolverFactory... delegates) {
+        this.factories = Arrays.copyOf(delegates, delegates.length);
+    }
+
+    /**
+     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
+     * the given List are not reflected in the created instance.
+     *
+     * @param delegates The list of factories providing the parameter values to use
+     */
+    public MultiParameterResolverFactory(List<ParameterResolverFactory> delegates) {
+        this.factories = delegates.toArray(new ParameterResolverFactory[0]);
+    }
 
     /**
      * Creates a MultiParameterResolverFactory instance with the given {@code delegates}, which are automatically
@@ -61,26 +80,6 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
      */
     public static MultiParameterResolverFactory ordered(List<ParameterResolverFactory> delegates) {
         return new MultiParameterResolverFactory(flatten(delegates));
-    }
-
-    /**
-     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
-     * the given array are not reflected in the created instance.
-     *
-     * @param delegates The factories providing the parameter values to use
-     */
-    public MultiParameterResolverFactory(ParameterResolverFactory... delegates) {
-        this.factories = Arrays.copyOf(delegates, delegates.length);
-    }
-
-    /**
-     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
-     * the given List are not reflected in the created instance.
-     *
-     * @param delegates The list of factories providing the parameter values to use
-     */
-    public MultiParameterResolverFactory(List<ParameterResolverFactory> delegates) {
-        this.factories = delegates.toArray(new ParameterResolverFactory[0]);
     }
 
     private static ParameterResolverFactory[] flatten(List<ParameterResolverFactory> factories) {
@@ -116,4 +115,5 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
         }
         return null;
     }
+
 }

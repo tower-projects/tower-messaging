@@ -17,8 +17,6 @@
 package io.iamcyw.tower.queryhandling;
 
 
-import io.iamcyw.tower.messaging.ResultMessage;
-
 import java.util.Map;
 
 /**
@@ -33,4 +31,5 @@ public interface SubscriptionQueryUpdateMessage<U> extends QueryResponseMessage<
 
     @Override
     SubscriptionQueryUpdateMessage<U> andMetaData(Map<String, ?> metaData);
+
 }

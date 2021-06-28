@@ -38,8 +38,8 @@ import java.util.Map;
 public @interface NoBeanOfType {
 
     /**
-     *  The class of the bean to find in the Spring context. If a bean with that type already exists the annotated
-     *  method will not also provide its bean.
+     * The class of the bean to find in the Spring context. If a bean with that type already exists the annotated
+     * method will not also provide its bean.
      */
     Class<?> value();
 
@@ -54,6 +54,7 @@ public @interface NoBeanOfType {
             Class<?> clazz = (Class<?>) attributes.get("value");
             return BeanFactoryUtils.beanNamesForTypeIncludingAncestors(context.getBeanFactory(), clazz).length == 0;
         }
+
     }
 
 }

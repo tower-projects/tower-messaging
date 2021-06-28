@@ -19,6 +19,7 @@ package io.iamcyw.tower.config;
 
 import io.iamcyw.tower.common.Registration;
 import io.iamcyw.tower.utils.Assert;
+import io.iamcyw.tower.utils.i18n.I18ns;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -53,7 +54,9 @@ public class MessageHandlerRegistrar {
      *                                 messageHandlerBuilder} their output to register the created message handler with
      *                                 the {@link Configuration}
      */
-    public MessageHandlerRegistrar(Supplier<Configuration> configSupplier, Function<Configuration, Object> messageHandlerBuilder, BiFunction<Configuration, Object, Registration> messageHandlerSubscriber) {
+    public MessageHandlerRegistrar(Supplier<Configuration> configSupplier,
+                                   Function<Configuration, Object> messageHandlerBuilder,
+                                   BiFunction<Configuration, Object, Registration> messageHandlerSubscriber) {
         this.configurationSupplier = configSupplier;
         this.messageHandlerBuilder = messageHandlerBuilder;
         this.messageHandlerSubscriber = messageHandlerSubscriber;
@@ -63,7 +66,7 @@ public class MessageHandlerRegistrar {
     public void start() {
         Configuration config = configurationSupplier.get();
         Object annotatedHandler = messageHandlerBuilder.apply(config);
-        Assert.nonNull(annotatedHandler, () -> "AnnotatedMessageHandler may not be null");
+        Assert.nonNull(annotatedHandler, I18ns.create().args("AnnotatedMessageHandler").apply());
         this.handlerRegistration = messageHandlerSubscriber.apply(config, annotatedHandler);
     }
 

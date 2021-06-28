@@ -45,8 +45,7 @@ public abstract class IdentifierFactory {
 
     static {
         logger.debug("Looking for IdentifierFactory implementation using the context class loader");
-        IdentifierFactory factory = locateFactories(Thread.currentThread()
-                                                            .getContextClassLoader(), "Context");
+        IdentifierFactory factory = locateFactories(Thread.currentThread().getContextClassLoader(), "Context");
         if (factory == null) {
             logger.debug("Looking for IdentifierFactory implementation using the IdentifierFactory class loader.");
             factory = locateFactories(IdentifierFactory.class.getClassLoader(), "IdentifierFactory");
@@ -55,23 +54,21 @@ public abstract class IdentifierFactory {
             factory = new DefaultIdentifierFactory();
             logger.debug("Using default UUID-based IdentifierFactory");
         } else {
-            logger.info("Found custom IdentifierFactory implementation: {}", factory.getClass()
-                    .getName());
+            logger.info("Found custom IdentifierFactory implementation: {}", factory.getClass().getName());
         }
         INSTANCE = factory;
     }
 
     private static IdentifierFactory locateFactories(ClassLoader classLoader, String classLoaderName) {
         IdentifierFactory found = null;
-        Iterator<IdentifierFactory> services = ServiceLoader.load(IdentifierFactory.class, classLoader)
-                .iterator();
+        Iterator<IdentifierFactory> services = ServiceLoader.load(IdentifierFactory.class, classLoader).iterator();
         if (services.hasNext()) {
             logger.debug("Found IdentifierFactory implementation using the {} Class Loader", classLoaderName);
             found = services.next();
             if (services.hasNext()) {
-                logger.warn(
-                        "More than one IdentifierFactory implementation was found using the {} " + "Class Loader. This may result in different selections being made after " + "restart of the application.",
-                        classLoaderName);
+                logger.warn("More than one IdentifierFactory implementation was found using the {} " +
+                                    "Class Loader. This may result in different selections being made after " +
+                                    "restart of the application.", classLoaderName);
             }
         }
         return found;

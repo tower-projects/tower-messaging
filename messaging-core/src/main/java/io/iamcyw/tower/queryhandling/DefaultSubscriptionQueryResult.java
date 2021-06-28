@@ -29,7 +29,9 @@ import reactor.core.publisher.Mono;
 public class DefaultSubscriptionQueryResult<I, U> implements SubscriptionQueryResult<I, U> {
 
     private final Mono<I> initialResult;
+
     private final Flux<U> updates;
+
     private final Registration registrationDelegate;
 
     /**
@@ -59,4 +61,5 @@ public class DefaultSubscriptionQueryResult<I, U> implements SubscriptionQueryRe
     public boolean cancel() {
         return registrationDelegate.cancel();
     }
+
 }

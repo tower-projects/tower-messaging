@@ -19,14 +19,11 @@ package io.iamcyw.tower.commandhandling.gateway;
 import io.iamcyw.tower.commandhandling.CommandBus;
 import io.iamcyw.tower.commandhandling.CommandCallback;
 import io.iamcyw.tower.commandhandling.CommandMessage;
-import io.iamcyw.tower.commandhandling.CommandResultMessage;
 import io.iamcyw.tower.common.lock.DeadlockException;
 import io.iamcyw.tower.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static io.iamcyw.tower.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
 /**
  * Callback implementation that will invoke a retry scheduler if a command results in a runtime exception.
@@ -43,8 +40,11 @@ import static io.iamcyw.tower.commandhandling.GenericCommandResultMessage.asComm
 public class RetryingCallback<C, R> implements CommandCallback<C, R> {
 
     private final CommandCallback<C, R> delegate;
+
     private final RetryScheduler retryScheduler;
+
     private final CommandBus commandBus;
+
     private final List<Class<? extends Throwable>[]> history;
 
     /**
@@ -56,9 +56,7 @@ public class RetryingCallback<C, R> implements CommandCallback<C, R> {
      * @param retryScheduler The scheduler that decides if and when a retry should be scheduled
      * @param commandBus     The commandBus on which the command must be dispatched
      */
-    public RetryingCallback(CommandCallback<C, R> delegate,
-                            RetryScheduler retryScheduler,
-                            CommandBus commandBus) {
+    public RetryingCallback(CommandCallback<C, R> delegate, RetryScheduler retryScheduler, CommandBus commandBus) {
         this.delegate = delegate;
         this.retryScheduler = retryScheduler;
         this.commandBus = commandBus;
@@ -76,11 +74,10 @@ public class RetryingCallback<C, R> implements CommandCallback<C, R> {
         try {
             // we fail immediately when the exception is checked,
             // or when it is a Deadlock Exception and we have an active unit of work
-            if (!(cause instanceof RuntimeException)
-                    || (isCausedBy(cause, DeadlockException.class) && CurrentUnitOfWork.isStarted())
-                    || !retryScheduler.scheduleRetry(commandMessage, (RuntimeException) cause,
-                                                     new ArrayList<>(history),
-                                                     new RetryDispatch(commandMessage))) {
+            if (!(cause instanceof RuntimeException) ||
+                    (isCausedBy(cause, DeadlockException.class) && CurrentUnitOfWork.isStarted()) || !retryScheduler
+                    .scheduleRetry(commandMessage, (RuntimeException) cause, new ArrayList<>(history),
+                                   new RetryDispatch(commandMessage))) {
                 delegate.onFailure(commandMessage, cause);
             }
         } catch (Exception e) {
@@ -89,8 +86,8 @@ public class RetryingCallback<C, R> implements CommandCallback<C, R> {
     }
 
     private boolean isCausedBy(Throwable exception, Class<? extends Throwable> causeType) {
-        return causeType.isInstance(exception)
-                || (exception.getCause() != null && isCausedBy(exception.getCause(), causeType));
+        return causeType.isInstance(exception) ||
+                (exception.getCause() != null && isCausedBy(exception.getCause(), causeType));
     }
 
     @SuppressWarnings("unchecked")
@@ -121,5 +118,7 @@ public class RetryingCallback<C, R> implements CommandCallback<C, R> {
                 RetryingCallback.this.onFailure(commandMessage, e);
             }
         }
+
     }
+
 }

@@ -21,7 +21,6 @@ package io.iamcyw.tower.messaging.annotation;
  * than regular members.
  *
  * @param <T> The type that the handler was declared on.
- *
  */
 public interface MessageInterceptingMember<T> extends MessageHandlingMember<T> {
 

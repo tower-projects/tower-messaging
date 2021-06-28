@@ -1,10 +1,7 @@
 package io.iamcyw.tower.messaging.unitofwork;
 
-import io.iamcyw.tower.common.transaction.Transaction;
-import io.iamcyw.tower.common.transaction.TransactionManager;
 import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.messaging.MetaData;
-import io.iamcyw.tower.messaging.ResultMessage;
 import io.iamcyw.tower.messaging.correlation.CorrelationDataProvider;
 
 import java.util.Map;
@@ -388,6 +385,7 @@ public interface UnitOfWork<T extends Message<?>> {
         CLOSED(false, true);
 
         private final boolean started;
+
         private final boolean reverseCallbackOrder;
 
         Phase(boolean started, boolean reverseCallbackOrder) {
@@ -437,4 +435,5 @@ public interface UnitOfWork<T extends Message<?>> {
             return ordinal() > phase.ordinal();
         }
     }
+
 }

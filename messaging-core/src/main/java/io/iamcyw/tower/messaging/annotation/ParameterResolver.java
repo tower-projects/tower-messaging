@@ -54,4 +54,5 @@ public interface ParameterResolver<T> {
     default Class<?> supportedPayloadType() {
         return Object.class;
     }
+
 }

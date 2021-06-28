@@ -19,6 +19,7 @@ package io.iamcyw.tower.monitoring;
 
 import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.utils.Assert;
+import io.iamcyw.tower.utils.i18n.I18ns;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,7 +52,7 @@ public class MultiMessageMonitor<T extends Message<?>> implements MessageMonitor
      * @param messageMonitors the list of event monitors to delegate to
      */
     public MultiMessageMonitor(List<MessageMonitor<? super T>> messageMonitors) {
-        Assert.nonNull(messageMonitors, () -> "MessageMonitor list may not be null");
+        Assert.nonNull(messageMonitors, I18ns.create().args("MessageMonitor list").build());
         this.messageMonitors = new ArrayList<>(messageMonitors);
     }
 
@@ -64,9 +65,8 @@ public class MultiMessageMonitor<T extends Message<?>> implements MessageMonitor
      */
     @Override
     public MonitorCallback onMessageIngested(T message) {
-        final List<MonitorCallback> monitorCallbacks = messageMonitors.stream()
-                .map(messageMonitor -> messageMonitor.onMessageIngested(message))
-                .collect(Collectors.toList());
+        final List<MonitorCallback> monitorCallbacks = messageMonitors.stream().map(messageMonitor -> messageMonitor
+                .onMessageIngested(message)).collect(Collectors.toList());
 
         return new MonitorCallback() {
             @Override
@@ -85,4 +85,5 @@ public class MultiMessageMonitor<T extends Message<?>> implements MessageMonitor
             }
         };
     }
+
 }

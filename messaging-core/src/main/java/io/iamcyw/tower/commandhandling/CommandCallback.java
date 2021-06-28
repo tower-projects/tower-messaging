@@ -28,7 +28,7 @@ public interface CommandCallback<C, R> {
      * Invoked when command handling execution was successful.
      *
      * @param commandMessage The message that was dispatched
-     * @param result The result of the command handling execution, if any.
+     * @param result         The result of the command handling execution, if any.
      */
     void onSuccess(CommandMessage<? extends C> commandMessage, R result);
 
@@ -36,7 +36,8 @@ public interface CommandCallback<C, R> {
      * Invoked when command handling execution resulted in an error.
      *
      * @param commandMessage The message that was dispatched
-     * @param cause The exception raised during command handling
+     * @param cause          The exception raised during command handling
      */
     void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause);
+
 }

@@ -27,9 +27,9 @@ import io.iamcyw.tower.messaging.MessageHandlerInterceptorSupport;
  * The mechanism that dispatches Command objects to their appropriate CommandHandler. CommandHandlers can subscribe and
  * unsubscribe to specific commands (identified by their {@link CommandMessage#getCommandName() name}) on the command
  * bus. Only a single handler may be subscribed for a single command name at any time.
- *
  */
-public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMessage<?>>, MessageDispatchInterceptorSupport<CommandMessage<?>> {
+public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMessage<?>>,
+        MessageDispatchInterceptorSupport<CommandMessage<?>> {
 
     /**
      * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name.
@@ -47,7 +47,8 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
 
     /**
      * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name.
-     * When the command is processed, one of the callback's methods is called, depending on the result of the processing.
+     * When the command is processed, one of the callback's methods is called, depending on the result of the
+     * processing.
      * <p/>
      * When the method returns, the only guarantee provided by the CommandBus implementation is that the command has
      * been successfully received. Implementations are highly recommended to perform basic validation of the command

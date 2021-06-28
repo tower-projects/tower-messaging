@@ -28,31 +28,21 @@ import java.util.function.ToIntFunction;
  * <ol type="1">
  * <li>The {@link MessageHandlingMember#priority()}, favoring the largest number</li>
  * <li>The class hierarchy of the {@link MessageHandlingMember#payloadType()}, favoring the most specific handler.</li>
- * <li>The parameter count on the actual message handling function, favoring the highest number as the most specific handler.</li>
+ * <li>The parameter count on the actual message handling function, favoring the highest number as the most specific
+ * handler.</li>
  * <li>As a final tie breaker, the {@link Executable#toGenericString()} of the actual message handling function</li>
  * </ol>
- *
  */
 public final class HandlerComparator {
 
-    private static final Comparator<MessageHandlingMember<?>> INSTANCE =
-            Comparator.comparingInt((ToIntFunction<MessageHandlingMember<?>>) MessageHandlingMember::priority)
-                      .reversed()
-                      .thenComparing(
-                              (Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType,
-                              HandlerComparator::compareHierarchy
-                      )
-                      .thenComparing(Comparator.comparingInt(
-                              (ToIntFunction<MessageHandlingMember<?>>) m -> m.unwrap(Executable.class)
-                                                                              .map(Executable::getParameterCount)
-                                                                              .orElse(1)
-                                     ).reversed()
-                      )
-                      .thenComparing(
-                              m -> m.unwrap(Executable.class)
-                                    .map(Executable::toGenericString)
-                                    .orElse(m.toString())
-                      );
+    private static final Comparator<MessageHandlingMember<?>> INSTANCE = Comparator
+            .comparingInt((ToIntFunction<MessageHandlingMember<?>>) MessageHandlingMember::priority).reversed()
+            .thenComparing((Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType,
+                           HandlerComparator::compareHierarchy).thenComparing(Comparator.comparingInt(
+                    (ToIntFunction<MessageHandlingMember<?>>) m -> m.unwrap(Executable.class)
+                                                                    .map(Executable::getParameterCount).orElse(1))
+                                                                                        .reversed())
+            .thenComparing(m -> m.unwrap(Executable.class).map(Executable::toGenericString).orElse(m.toString()));
 
     private HandlerComparator() {
         // Utility class
@@ -95,4 +85,5 @@ public final class HandlerComparator {
         }
         return depth;
     }
+
 }

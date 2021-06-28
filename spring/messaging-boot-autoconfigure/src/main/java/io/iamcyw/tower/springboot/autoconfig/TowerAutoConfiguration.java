@@ -19,9 +19,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 
 @org.springframework.context.annotation.Configuration
-@AutoConfigureAfter(
-        name = {"org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration", "org.axonframework" +
-                ".boot.autoconfig.JpaAutoConfiguration"})
+@AutoConfigureAfter(name = {"org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
+        "org.axonframework" + ".boot.autoconfig.JpaAutoConfiguration"})
 public class TowerAutoConfiguration {
 
 

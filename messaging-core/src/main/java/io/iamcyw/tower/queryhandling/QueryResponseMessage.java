@@ -18,7 +18,6 @@ package io.iamcyw.tower.queryhandling;
 
 
 import io.iamcyw.tower.messaging.Message;
-import io.iamcyw.tower.messaging.ResultMessage;
 
 import java.util.Map;
 

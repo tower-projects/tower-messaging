@@ -31,13 +31,15 @@ import static java.util.ServiceLoader.load;
  * This means for this class to find implementations, their fully qualified class name has to be put into a file called
  * {@code META-INF/services/org.axonframework.messaging.annotation.HandlerEnhancerDefinition}. For more details, see
  * {@link ServiceLoader}.
- *
  */
 public final class ClasspathHandlerEnhancerDefinition {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathHandlerEnhancerDefinition.class);
+
     private static final Object MONITOR = new Object();
-    private static final Map<ClassLoader, WeakReference<MultiHandlerEnhancerDefinition>> FACTORIES = new WeakHashMap<>();
+
+    private static final Map<ClassLoader, WeakReference<MultiHandlerEnhancerDefinition>> FACTORIES =
+            new WeakHashMap<>();
 
     private ClasspathHandlerEnhancerDefinition() {
         // not meant to be publicly instantiated
@@ -78,8 +80,11 @@ public final class ClasspathHandlerEnhancerDefinition {
     }
 
     private static MultiHandlerEnhancerDefinition findDelegates(ClassLoader classLoader) {
-        Iterator<HandlerEnhancerDefinition> iterator = load(HandlerEnhancerDefinition.class, classLoader == null ?
-                Thread.currentThread().getContextClassLoader() : classLoader).iterator();
+        Iterator<HandlerEnhancerDefinition> iterator = load(HandlerEnhancerDefinition.class,
+                                                            classLoader == null ? Thread.currentThread()
+                                                                                        .getContextClassLoader() :
+                                                                    classLoader)
+                .iterator();
         //noinspection WhileLoopReplaceableByForEach
         final List<HandlerEnhancerDefinition> enhancers = new ArrayList<>();
         while (iterator.hasNext()) {

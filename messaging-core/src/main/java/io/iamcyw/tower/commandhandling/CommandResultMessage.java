@@ -35,4 +35,5 @@ public interface CommandResultMessage<R> extends ResultMessage<R> {
 
     @Override
     CommandResultMessage<R> andMetaData(Map<String, ?> metaData);
+
 }

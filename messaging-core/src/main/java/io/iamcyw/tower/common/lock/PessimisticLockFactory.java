@@ -17,6 +17,7 @@
 package io.iamcyw.tower.common.lock;
 
 import io.iamcyw.tower.utils.Assert;
+import io.iamcyw.tower.utils.i18n.I18ns;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,9 +48,25 @@ public class PessimisticLockFactory implements LockFactory {
     private static final Set<PessimisticLockFactory> INSTANCES = synchronizedSet(newSetFromMap(new WeakHashMap<>()));
 
     private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<>();
+
     private final int acquireAttempts;
+
     private final int maximumQueued;
+
     private final int lockAttemptTimeout;
+
+    /**
+     * Creates an instance of the lock factory using the given {@code builder} containing the configuration properties
+     * to use.
+     *
+     * @param builder The building containing the configuration properties to use
+     */
+    protected PessimisticLockFactory(Builder builder) {
+        this.acquireAttempts = builder.acquireAttempts;
+        this.maximumQueued = builder.maximumQueued;
+        this.lockAttemptTimeout = builder.lockAttemptTimeout;
+        INSTANCES.add(this);
+    }
 
     private static Set<Thread> threadsWaitingForMyLocks(Thread owner) {
         return threadsWaitingForMyLocks(owner, INSTANCES);
@@ -58,15 +75,14 @@ public class PessimisticLockFactory implements LockFactory {
     private static Set<Thread> threadsWaitingForMyLocks(Thread owner, Set<PessimisticLockFactory> locksInUse) {
         try {
             Set<Thread> waitingThreads = new HashSet<>();
-            locksInUse.stream()
-                      .flatMap(lock -> lock.locks.values().stream())
-                      .filter(disposableLock -> disposableLock.isHeldBy(owner))
-                      .forEach(disposableLock -> disposableLock.queuedThreads().stream()
-                                                               .filter(waitingThreads::add)
-                                                               .forEach(thread -> waitingThreads.addAll(threadsWaitingForMyLocks(thread, locksInUse))));
+            locksInUse.stream().flatMap(lock -> lock.locks.values().stream())
+                      .filter(disposableLock -> disposableLock.isHeldBy(owner)).forEach(
+                    disposableLock -> disposableLock.queuedThreads().stream().filter(waitingThreads::add).forEach(
+                            thread -> waitingThreads.addAll(threadsWaitingForMyLocks(thread, locksInUse))));
             return waitingThreads;
         } catch (ConcurrentModificationException e) {
-            // the GC may be cleaning up entries form the WeakHashMap. Nothing we can do about it. Let's assume there are no threads waiting. A new attempt will reveil issues.
+            // the GC may be cleaning up entries form the WeakHashMap. Nothing we can do about it. Let's assume there
+            // are no threads waiting. A new attempt will reveil issues.
             return Collections.emptySet();
         }
     }
@@ -90,19 +106,6 @@ public class PessimisticLockFactory implements LockFactory {
     }
 
     /**
-     * Creates an instance of the lock factory using the given {@code builder} containing the configuration properties
-     * to use.
-     *
-     * @param builder The building containing the configuration properties to use
-     */
-    protected PessimisticLockFactory(Builder builder) {
-        this.acquireAttempts = builder.acquireAttempts;
-        this.maximumQueued = builder.maximumQueued;
-        this.lockAttemptTimeout = builder.lockAttemptTimeout;
-        INSTANCES.add(this);
-    }
-
-    /**
      * Obtain a lock for a resource identified by the given {@code identifier}. This method will block until a
      * lock was successfully obtained.
      * <p/>
@@ -115,7 +118,7 @@ public class PessimisticLockFactory implements LockFactory {
      */
     @Override
     public Lock obtainLock(String identifier) {
-        Assert.nonNull(identifier, () -> "Aggregate identifier may not be null");
+        Assert.nonNull(identifier, I18ns.create().args("Aggregate identifier").build());
         boolean lockObtained = false;
         DisposableLock lock = null;
         while (!lockObtained) {
@@ -144,6 +147,7 @@ public class PessimisticLockFactory implements LockFactory {
         public boolean isHeldBy(Thread thread) {
             return thread.equals(getOwner());
         }
+
     }
 
     /**
@@ -151,7 +155,9 @@ public class PessimisticLockFactory implements LockFactory {
      */
     public static class Builder {
         private int acquireAttempts = 6000;
+
         private int maximumQueued = Integer.MAX_VALUE;
+
         private int lockAttemptTimeout = 10;
 
         /**
@@ -167,14 +173,12 @@ public class PessimisticLockFactory implements LockFactory {
          * Defaults to 6000.
          *
          * @param acquireAttempts The number of attempts to acquire the lock
-         *
          * @return this Builder, for further configuration
          */
         public Builder acquireAttempts(int acquireAttempts) {
-            Assert.isTrue(
-                    acquireAttempts > 0 || acquireAttempts == -1,
-                    () -> "acquireAttempts needs to be a positive integer or -1, but was '" + acquireAttempts + "'"
-            );
+            Assert.isTrue(acquireAttempts > 0 || acquireAttempts == -1,
+                          I18ns.create().content("acquireAttempts needs to be a positive integer or -1, but was '{}'")
+                               .args(acquireAttempts).apply());
             this.acquireAttempts = acquireAttempts;
             return this;
         }
@@ -190,10 +194,9 @@ public class PessimisticLockFactory implements LockFactory {
          * @return this Builder, for further configuration
          */
         public Builder queueLengthThreshold(int maximumQueued) {
-            Assert.isTrue(
-                    maximumQueued > 0,
-                    () -> "queueLengthThreshold needs to be a positive integer, but was '" + maximumQueued + "'"
-            );
+            Assert.isTrue(maximumQueued > 0,
+                          I18ns.create().content("queueLengthThreshold needs to be a positive integer, but was '{}'")
+                               .args(maximumQueued).apply());
             this.maximumQueued = maximumQueued;
             return this;
         }
@@ -205,14 +208,12 @@ public class PessimisticLockFactory implements LockFactory {
          * Defaults to 10ms.
          *
          * @param lockAttemptTimeout The duration of a single aqcuisition attempt of the internal lock, in milliseconds
-         *
          * @return this Builder, for further configuration
          */
         public Builder lockAttemptTimeout(int lockAttemptTimeout) {
-            Assert.isTrue(
-                    lockAttemptTimeout >= 0,
-                    () -> "lockAttemptTimeout needs to be a non negative integer, but was '" + lockAttemptTimeout + "'"
-            );
+            Assert.isTrue(lockAttemptTimeout >= 0,
+                          I18ns.create().content("lockAttemptTimeout needs to be a non negative integer, but was '{}'")
+                               .args(lockAttemptTimeout).apply());
             this.lockAttemptTimeout = lockAttemptTimeout;
             return this;
         }
@@ -225,12 +226,15 @@ public class PessimisticLockFactory implements LockFactory {
         public PessimisticLockFactory build() {
             return new PessimisticLockFactory(this);
         }
+
     }
 
     private class DisposableLock implements Lock {
 
         private final String identifier;
+
         private final PubliclyOwnedReentrantLock lock;
+
         private volatile boolean isClosed = false;
 
         private DisposableLock(String identifier) {
@@ -254,7 +258,8 @@ public class PessimisticLockFactory implements LockFactory {
 
         public boolean lock() {
             if (lock.getQueueLength() >= maximumQueued) {
-                throw new LockAcquisitionFailedException("Failed to acquire lock for identifier " + identifier + ": too many queued threads.");
+                throw new LockAcquisitionFailedException(
+                        "Failed to acquire lock for identifier " + identifier + ": too many queued threads.");
             }
             try {
                 if (!lock.tryLock(0, TimeUnit.NANOSECONDS)) {
@@ -264,8 +269,8 @@ public class PessimisticLockFactory implements LockFactory {
                         checkForDeadlock();
                         if (attempts < 1) {
                             throw new LockAcquisitionFailedException(
-                                    "Failed to acquire lock for identifier(" + identifier + "), maximum attempts exceeded (" + acquireAttempts + ")"
-                            );
+                                    "Failed to acquire lock for identifier(" + identifier +
+                                            "), maximum attempts exceeded (" + acquireAttempts + ")");
                         }
                     } while (!lock.tryLock(lockAttemptTimeout, TimeUnit.MILLISECONDS));
                 }
@@ -285,8 +290,7 @@ public class PessimisticLockFactory implements LockFactory {
                 for (Thread thread : threadsWaitingForMyLocks(Thread.currentThread())) {
                     if (lock.isHeldBy(thread)) {
                         throw new DeadlockException(
-                                "An imminent deadlock was detected while attempting to acquire a lock"
-                        );
+                                "An imminent deadlock was detected while attempting to acquire a lock");
                     }
                 }
             }
@@ -315,4 +319,5 @@ public class PessimisticLockFactory implements LockFactory {
         }
 
     }
+
 }

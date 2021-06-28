@@ -19,7 +19,6 @@ package io.iamcyw.tower.messaging.annotation;
 /**
  * Interface describing objects that are capable of enhancing a {@link MessageHandler}, giving it additional
  * functionality.
- *
  */
 public interface HandlerEnhancerDefinition {
 
@@ -31,4 +30,5 @@ public interface HandlerEnhancerDefinition {
      * @return The enhanced message handler
      */
     <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original);
+
 }

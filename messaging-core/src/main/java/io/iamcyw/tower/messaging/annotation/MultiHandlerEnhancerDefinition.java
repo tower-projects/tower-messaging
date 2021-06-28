@@ -36,6 +36,26 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
     private final HandlerEnhancerDefinition[] enhancers;
 
     /**
+     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
+     * the given array are not reflected in the created instance.
+     *
+     * @param delegates The enhancers providing the parameter values to use
+     */
+    public MultiHandlerEnhancerDefinition(HandlerEnhancerDefinition... delegates) {
+        this.enhancers = Arrays.copyOf(delegates, delegates.length);
+    }
+
+    /**
+     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
+     * the given List are not reflected in the created instance.
+     *
+     * @param delegates The list of enhancers providing the parameter values to use
+     */
+    public MultiHandlerEnhancerDefinition(Collection<HandlerEnhancerDefinition> delegates) {
+        this.enhancers = delegates.toArray(new HandlerEnhancerDefinition[delegates.size()]);
+    }
+
+    /**
      * Creates a MultiHandlerEnhancerDefinition instance with the given {@code delegates}, which are automatically
      * ordered based on the {@link Priority @Priority} annotation on their respective classes.
      * Classes with the same Priority are kept in the order as provided in the {@code delegates}.
@@ -63,26 +83,6 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
      */
     public static MultiHandlerEnhancerDefinition ordered(List<HandlerEnhancerDefinition> delegates) {
         return new MultiHandlerEnhancerDefinition(flatten(delegates));
-    }
-
-    /**
-     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
-     * the given array are not reflected in the created instance.
-     *
-     * @param delegates The enhancers providing the parameter values to use
-     */
-    public MultiHandlerEnhancerDefinition(HandlerEnhancerDefinition... delegates) {
-        this.enhancers = Arrays.copyOf(delegates, delegates.length);
-    }
-
-    /**
-     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
-     * the given List are not reflected in the created instance.
-     *
-     * @param delegates The list of enhancers providing the parameter values to use
-     */
-    public MultiHandlerEnhancerDefinition(Collection<HandlerEnhancerDefinition> delegates) {
-        this.enhancers = delegates.toArray(new HandlerEnhancerDefinition[delegates.size()]);
     }
 
     private static HandlerEnhancerDefinition[] flatten(List<HandlerEnhancerDefinition> factories) {
@@ -115,4 +115,5 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
         }
         return resolver;
     }
+
 }

@@ -18,7 +18,6 @@ package io.iamcyw.tower.commandhandling.callbacks;
 
 import io.iamcyw.tower.commandhandling.CommandCallback;
 import io.iamcyw.tower.commandhandling.CommandMessage;
-import io.iamcyw.tower.commandhandling.CommandResultMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +31,7 @@ import org.slf4j.LoggerFactory;
 public class FailureLoggingCallback<C, R> implements CommandCallback<C, R> {
 
     private final CommandCallback<C, R> delegate;
+
     private final Logger logger;
 
     /**
@@ -63,8 +63,9 @@ public class FailureLoggingCallback<C, R> implements CommandCallback<C, R> {
 
     @Override
     public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
-        logger.warn("Command '{}' resulted in {}({})",
-                    commandMessage.getCommandName(), cause.getClass().getName(), cause.getMessage());
+        logger.warn("Command '{}' resulted in {}({})", commandMessage.getCommandName(), cause.getClass().getName(),
+                    cause.getMessage());
         delegate.onFailure(commandMessage, cause);
     }
+
 }

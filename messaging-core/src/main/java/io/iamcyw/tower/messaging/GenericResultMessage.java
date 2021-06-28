@@ -155,9 +155,10 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     @Override
     public R getPayload() {
         if (isExceptional()) {
-            throw new IllegalPayloadAccessException(
-                    "This result completed exceptionally, payload is not available. " + "Try calling 'exceptionResult' to see the cause of failure.",
-                    exception);
+            throw new IllegalPayloadAccessException("This result completed exceptionally, payload is not available. " +
+                                                            "Try calling 'exceptionResult' to see the cause of " +
+                                                            "failure.",
+                                                    exception);
         }
         return super.getPayload();
     }
@@ -172,18 +173,9 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
 
     @Override
     protected void describeTo(StringBuilder stringBuilder) {
-        stringBuilder.append("payload={")
-                .append(isExceptional() ? null : getPayload())
-                .append('}')
-                .append(", metadata={")
-                .append(getMetaData())
-                .append('}')
-                .append(", messageIdentifier='")
-                .append(getIdentifier())
-                .append('\'')
-                .append(", exception='")
-                .append(exception)
-                .append('\'');
+        stringBuilder.append("payload={").append(isExceptional() ? null : getPayload()).append('}')
+                     .append(", metadata={").append(getMetaData()).append('}').append(", messageIdentifier='")
+                     .append(getIdentifier()).append('\'').append(", exception='").append(exception).append('\'');
     }
 
     @Override

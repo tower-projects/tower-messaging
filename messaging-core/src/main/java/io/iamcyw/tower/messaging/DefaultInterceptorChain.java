@@ -29,16 +29,18 @@ import java.util.Iterator;
 public class DefaultInterceptorChain<T extends Message<?>> implements InterceptorChain {
 
     private final MessageHandler<? super T> handler;
+
     private final Iterator<? extends MessageHandlerInterceptor<? super T>> chain;
+
     private final UnitOfWork<? extends T> unitOfWork;
 
     /**
      * Initialize the default interceptor chain to dispatch the given {@code message}, through the
      * {@code chain}, to the {@code handler}.
      *
-     * @param unitOfWork    The UnitOfWork the message is executed in
-     * @param interceptors  The interceptors composing the chain
-     * @param handler       The handler for the message
+     * @param unitOfWork   The UnitOfWork the message is executed in
+     * @param interceptors The interceptors composing the chain
+     * @param handler      The handler for the message
      */
     public DefaultInterceptorChain(UnitOfWork<? extends T> unitOfWork,
                                    Iterable<? extends MessageHandlerInterceptor<? super T>> interceptors,
@@ -56,4 +58,5 @@ public class DefaultInterceptorChain<T extends Message<?>> implements Intercepto
             return handler.handle(unitOfWork.getMessage());
         }
     }
+
 }

@@ -56,8 +56,8 @@ public abstract class SystemNonTransientException extends SystemIllegalException
      * AxonNonTransientException, otherwise {@code false}
      */
     public static boolean isCauseOf(Throwable throwable) {
-        return throwable != null && (throwable instanceof SystemNonTransientException || isCauseOf(
-                throwable.getCause()));
+        return throwable != null &&
+                (throwable instanceof SystemNonTransientException || isCauseOf(throwable.getCause()));
     }
 
 }

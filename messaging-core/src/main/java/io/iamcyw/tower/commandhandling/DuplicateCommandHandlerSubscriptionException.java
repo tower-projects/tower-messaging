@@ -35,12 +35,13 @@ public class DuplicateCommandHandlerSubscriptionException extends SystemNonTrans
      * @param initialHandler   the initial {@link MessageHandler} for which a duplicate was encountered
      * @param duplicateHandler the duplicated {@link MessageHandler}
      */
-    public DuplicateCommandHandlerSubscriptionException(String commandName, MessageHandler<? super CommandMessage<?>> initialHandler, MessageHandler<? super CommandMessage<?>> duplicateHandler) {
+    public DuplicateCommandHandlerSubscriptionException(String commandName,
+                                                        MessageHandler<? super CommandMessage<?>> initialHandler,
+                                                        MessageHandler<? super CommandMessage<?>> duplicateHandler) {
         this(String.format(
-                "A duplicate Command Handler for command [%s] has been subscribed residing in class [%s]  that would override an identical handler in class [%s].",
-                commandName, duplicateHandler.getTargetType()
-                        .getName(), initialHandler.getTargetType()
-                        .getName()));
+                "A duplicate Command Handler for command [%s] has been subscribed residing in class [%s]  that would " +
+                        "override an identical handler in class [%s].",
+                commandName, duplicateHandler.getTargetType().getName(), initialHandler.getTargetType().getName()));
     }
 
     /**

@@ -30,12 +30,13 @@ import static java.util.ServiceLoader.load;
  * This means for this class to find implementations, their fully qualified class name has to be put into a file called
  * {@code META-INF/services/org.axonframework.messaging.annotation.ParameterResolverFactory}. For more details, see
  * {@link ServiceLoader}.
- *
  */
 public final class ClasspathParameterResolverFactory {
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ClasspathParameterResolverFactory.class);
+
     private static final Object monitor = new Object();
+
     private static final Map<ClassLoader, WeakReference<ParameterResolverFactory>> FACTORIES = new WeakHashMap<>();
 
     /**
@@ -80,8 +81,11 @@ public final class ClasspathParameterResolverFactory {
     }
 
     private static List<ParameterResolverFactory> findDelegates(ClassLoader classLoader) {
-        Iterator<ParameterResolverFactory> iterator = load(ParameterResolverFactory.class, classLoader == null ?
-                Thread.currentThread().getContextClassLoader() : classLoader).iterator();
+        Iterator<ParameterResolverFactory> iterator = load(ParameterResolverFactory.class,
+                                                           classLoader == null ? Thread.currentThread()
+                                                                                       .getContextClassLoader() :
+                                                                   classLoader)
+                .iterator();
         //noinspection WhileLoopReplaceableByForEach
         final List<ParameterResolverFactory> factories = new ArrayList<>();
         while (iterator.hasNext()) {
@@ -99,4 +103,5 @@ public final class ClasspathParameterResolverFactory {
         }
         return factories;
     }
+
 }

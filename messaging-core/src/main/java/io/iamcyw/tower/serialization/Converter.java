@@ -63,8 +63,7 @@ public interface Converter {
      */
     @SuppressWarnings("unchecked")
     default <T> SerializedObject<T> convert(SerializedObject<?> original, Class<T> targetType) {
-        if (original.getContentType()
-                .equals(targetType)) {
+        if (original.getContentType().equals(targetType)) {
             return (SerializedObject<T>) original;
         }
         return new SimpleSerializedObject<>(convert(original.getData(), original.getContentType(), targetType),

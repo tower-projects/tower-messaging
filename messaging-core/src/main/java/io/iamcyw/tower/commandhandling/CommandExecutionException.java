@@ -51,4 +51,5 @@ public class CommandExecutionException extends HandlerExecutionException {
     public CommandExecutionException(String message, Throwable cause, Object details) {
         super(message, cause, details);
     }
+
 }

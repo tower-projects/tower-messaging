@@ -41,4 +41,5 @@ public class MockException extends RuntimeException {
     public StackTraceElement[] getStackTrace() {
         return new StackTraceElement[]{};
     }
+
 }

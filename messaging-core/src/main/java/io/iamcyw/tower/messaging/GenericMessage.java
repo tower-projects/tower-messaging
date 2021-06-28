@@ -19,8 +19,6 @@ package io.iamcyw.tower.messaging;
 
 import io.iamcyw.tower.common.IdentifierFactory;
 import io.iamcyw.tower.messaging.unitofwork.CurrentUnitOfWork;
-import io.iamcyw.tower.serialization.SerializedObject;
-import io.iamcyw.tower.serialization.Serializer;
 
 import java.util.Map;
 
@@ -33,8 +31,11 @@ import java.util.Map;
 public class GenericMessage<T> extends AbstractMessage<T> {
 
     private static final long serialVersionUID = 7937214711724527316L;
+
     private final MetaData metaData;
+
     private final Class<T> payloadType;
+
     private final T payload;
 
     /**
@@ -130,4 +131,5 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     protected Message<T> withMetaData(MetaData metaData) {
         return new GenericMessage<>(this, metaData);
     }
+
 }

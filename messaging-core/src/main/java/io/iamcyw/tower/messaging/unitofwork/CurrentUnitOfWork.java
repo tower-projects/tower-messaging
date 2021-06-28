@@ -43,8 +43,7 @@ public abstract class CurrentUnitOfWork {
      * @return whether a UnitOfWork has already been started.
      */
     public static boolean isStarted() {
-        return CURRENT.get() != null && !CURRENT.get()
-                .isEmpty();
+        return CURRENT.get() != null && !CURRENT.get().isEmpty();
     }
 
     /**
@@ -89,8 +88,7 @@ public abstract class CurrentUnitOfWork {
         if (isEmpty()) {
             throw new IllegalStateException("No UnitOfWork is currently started for this thread.");
         }
-        return CURRENT.get()
-                .peek();
+        return CURRENT.get().peek();
     }
 
     private static boolean isEmpty() {
@@ -118,8 +116,7 @@ public abstract class CurrentUnitOfWork {
         if (CURRENT.get() == null) {
             CURRENT.set(new LinkedList<>());
         }
-        CURRENT.get()
-                .push(unitOfWork);
+        CURRENT.get().push(unitOfWork);
     }
 
     /**
@@ -134,12 +131,9 @@ public abstract class CurrentUnitOfWork {
         if (!isStarted()) {
             throw new IllegalStateException("Could not clear this UnitOfWork. There is no UnitOfWork active.");
         }
-        if (CURRENT.get()
-                .peek() == unitOfWork) {
-            CURRENT.get()
-                    .pop();
-            if (CURRENT.get()
-                    .isEmpty()) {
+        if (CURRENT.get().peek() == unitOfWork) {
+            CURRENT.get().pop();
+            if (CURRENT.get().isEmpty()) {
                 CURRENT.remove();
             }
         } else {
@@ -156,8 +150,7 @@ public abstract class CurrentUnitOfWork {
      * @see UnitOfWork#getCorrelationData()
      */
     public static MetaData correlationData() {
-        return CurrentUnitOfWork.map(UnitOfWork::getCorrelationData)
-                .orElse(MetaData.emptyInstance());
+        return CurrentUnitOfWork.map(UnitOfWork::getCorrelationData).orElse(MetaData.emptyInstance());
     }
 
 }

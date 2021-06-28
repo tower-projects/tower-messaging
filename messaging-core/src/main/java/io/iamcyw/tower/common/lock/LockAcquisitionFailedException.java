@@ -22,7 +22,6 @@ import io.iamcyw.tower.common.SystemTransientException;
 /**
  * Exception indicating that a lock could not be obtained. Typically, operations failing with this exception can be
  * retried without any intervention.
- *
  */
 public class LockAcquisitionFailedException extends SystemTransientException {
 
@@ -46,4 +45,5 @@ public class LockAcquisitionFailedException extends SystemTransientException {
     public LockAcquisitionFailedException(String message) {
         super(message);
     }
+
 }

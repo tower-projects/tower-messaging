@@ -30,7 +30,6 @@ import java.lang.annotation.*;
  * The annotated method's first parameter is the command handled by that method. Optionally, the command handler may
  * specify a second parameter of type {@link UnitOfWork}. The active Unit of Work will be
  * passed if that parameter is supplied.
- *
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -62,4 +61,5 @@ public @interface CommandHandler {
      * @return the payload type expected by this handler
      */
     Class<?> payloadType() default Object.class;
+
 }

@@ -36,9 +36,9 @@ public interface MessageHandlerInterceptorMemberChain<T> {
      * @param message The message to pass through the interceptor chain
      * @param target  The target instance to invoke the interceptors and handlers on
      * @param handler The actual handler to invoke once all interceptors have received the message
-     *
      * @return the result as returned by the handlers or interceptors
      * @throws Exception any exception thrown by the handler or any of the interceptors
      */
     Object handle(Message<?> message, T target, MessageHandlingMember<? super T> handler) throws Exception;
+
 }

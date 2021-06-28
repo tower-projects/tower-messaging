@@ -83,19 +83,17 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
         } else if (beansFound.length > 1) {
             final AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
             if (beanFactory instanceof ConfigurableListableBeanFactory) {
-                Optional<ParameterResolver<?>> resolver = findQualifiedBean(
-                        beansFound, (ConfigurableListableBeanFactory) beanFactory, parameters, parameterIndex
-                );
+                Optional<ParameterResolver<?>> resolver = findQualifiedBean(beansFound,
+                                                                            (ConfigurableListableBeanFactory) beanFactory,
+                                                                            parameters, parameterIndex);
                 if (resolver.isPresent()) {
                     return resolver.get();
                 }
             }
             if (logger.isWarnEnabled()) {
                 logger.warn(
-                        "{} beans of type {} found, but none was marked as primary and parameter lacks @Qualifier. "
-                                + "Ignoring this parameter.",
-                        beansFound.length, parameterType.getSimpleName()
-                );
+                        "{} beans of type {} found, but none was marked as primary and parameter lacks @Qualifier. " +
+                                "Ignoring this parameter.", beansFound.length, parameterType.getSimpleName());
             }
             return null;
         } else {
@@ -105,12 +103,11 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
 
     private Optional<ParameterResolver<?>> findQualifiedBean(String[] beansFound,
                                                              ConfigurableListableBeanFactory clBeanFactory,
-                                                             Parameter[] parameters,
-                                                             int parameterIndex) {
+                                                             Parameter[] parameters, int parameterIndex) {
         final Parameter parameter = parameters[parameterIndex];
         // find @Qualifier matching candidate
-        final Optional<Map<String, Object>> qualifier =
-                AnnotationUtils.findAnnotationAttributes(parameter, Qualifier.class);
+        final Optional<Map<String, Object>> qualifier = AnnotationUtils
+                .findAnnotationAttributes(parameter, Qualifier.class);
         if (qualifier.isPresent()) {
             for (String bean : beansFound) {
                 if (SpringUtils.isQualifierMatch(bean, clBeanFactory, (String) qualifier.get().get("qualifier"))) {
@@ -136,6 +133,7 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
     private static class SpringBeanParameterResolver implements ParameterResolver<Object> {
 
         private final AutowireCapableBeanFactory beanFactory;
+
         private final String beanName;
 
         public SpringBeanParameterResolver(AutowireCapableBeanFactory beanFactory, String beanName) {
@@ -152,5 +150,7 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
         public boolean matches(Message<?> message) {
             return true;
         }
+
     }
+
 }

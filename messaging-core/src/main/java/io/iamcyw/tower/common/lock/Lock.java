@@ -21,7 +21,6 @@ package io.iamcyw.tower.common.lock;
  * <p/>
  * This lock is a {@link AutoCloseable} resource, so will be released automatically if declared in a {@code
  * try}-with-resources block.
- *
  */
 public interface Lock extends AutoCloseable {
 
@@ -47,4 +46,5 @@ public interface Lock extends AutoCloseable {
      * @return true if the lock is still valid, or false if it has been released
      */
     boolean isHeld();
+
 }

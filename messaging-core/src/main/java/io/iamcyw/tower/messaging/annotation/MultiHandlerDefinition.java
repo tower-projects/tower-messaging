@@ -33,7 +33,42 @@ import java.util.*;
 public class MultiHandlerDefinition implements HandlerDefinition {
 
     private final List<HandlerDefinition> handlerDefinitions;
+
     private final HandlerEnhancerDefinition handlerEnhancerDefinition;
+
+    /**
+     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
+     * the given array are not reflected in the created instance.
+     *
+     * @param delegates The handlerDefinitions providing the parameter values to use
+     */
+    public MultiHandlerDefinition(HandlerDefinition... delegates) {
+        this(Arrays.asList(delegates));
+    }
+
+    /**
+     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
+     * the given list are not reflected in the created instance.
+     *
+     * @param delegates The handlerDefinitions providing the parameter values to use
+     */
+    public MultiHandlerDefinition(List<HandlerDefinition> delegates) {
+        this(delegates,
+             ClasspathHandlerEnhancerDefinition.forClassLoader(Thread.currentThread().getContextClassLoader()));
+    }
+
+    /**
+     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
+     * the given List are not reflected in the created instance.
+     *
+     * @param delegates                 The list of handlerDefinitions providing the parameter values to use
+     * @param handlerEnhancerDefinition The enhancer used to wrap the delegates
+     */
+    public MultiHandlerDefinition(List<HandlerDefinition> delegates,
+                                  HandlerEnhancerDefinition handlerEnhancerDefinition) {
+        this.handlerDefinitions = flatten(delegates);
+        this.handlerEnhancerDefinition = handlerEnhancerDefinition;
+    }
 
     /**
      * Creates a MultiHandlerDefinition instance with the given {@code delegates}, which are automatically ordered
@@ -105,40 +140,6 @@ public class MultiHandlerDefinition implements HandlerDefinition {
         return new MultiHandlerDefinition(delegates, handlerEnhancerDefinition);
     }
 
-    /**
-     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
-     * the given array are not reflected in the created instance.
-     *
-     * @param delegates The handlerDefinitions providing the parameter values to use
-     */
-    public MultiHandlerDefinition(HandlerDefinition... delegates) {
-        this(Arrays.asList(delegates));
-    }
-
-    /**
-     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
-     * the given list are not reflected in the created instance.
-     *
-     * @param delegates The handlerDefinitions providing the parameter values to use
-     */
-    public MultiHandlerDefinition(List<HandlerDefinition> delegates) {
-        this(delegates,
-             ClasspathHandlerEnhancerDefinition.forClassLoader(Thread.currentThread().getContextClassLoader()));
-    }
-
-    /**
-     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
-     * the given List are not reflected in the created instance.
-     *
-     * @param delegates                 The list of handlerDefinitions providing the parameter values to use
-     * @param handlerEnhancerDefinition The enhancer used to wrap the delegates
-     */
-    public MultiHandlerDefinition(List<HandlerDefinition> delegates,
-                                  HandlerEnhancerDefinition handlerEnhancerDefinition) {
-        this.handlerDefinitions = flatten(delegates);
-        this.handlerEnhancerDefinition = handlerEnhancerDefinition;
-    }
-
     private static List<HandlerDefinition> flatten(List<HandlerDefinition> handlerDefinitions) {
         List<HandlerDefinition> flattened = new ArrayList<>(handlerDefinitions.size());
         for (HandlerDefinition handlerDefinition : handlerDefinitions) {
@@ -171,8 +172,7 @@ public class MultiHandlerDefinition implements HandlerDefinition {
     }
 
     @Override
-    public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType,
-                                                                Executable executable,
+    public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType, Executable executable,
                                                                 ParameterResolverFactory parameterResolverFactory) {
         Optional<MessageHandlingMember<T>> handler = Optional.empty();
         for (HandlerDefinition handlerDefinition : handlerDefinitions) {
@@ -183,4 +183,5 @@ public class MultiHandlerDefinition implements HandlerDefinition {
         }
         return handler;
     }
+
 }

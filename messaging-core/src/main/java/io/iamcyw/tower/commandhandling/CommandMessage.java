@@ -59,4 +59,5 @@ public interface CommandMessage<T> extends Message<T> {
      */
     @Override
     CommandMessage<T> andMetaData(Map<String, ?> metaData);
+
 }

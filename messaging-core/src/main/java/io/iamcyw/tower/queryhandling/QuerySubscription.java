@@ -92,8 +92,8 @@ class QuerySubscription<R> {
             return false;
         }
         final QuerySubscription<?> other = (QuerySubscription<?>) obj;
-        return Objects.equals(this.responseType, other.responseType) && Objects.equals(this.queryHandler,
-                                                                                       other.queryHandler);
+        return Objects.equals(this.responseType, other.responseType) &&
+                Objects.equals(this.queryHandler, other.queryHandler);
     }
 
 }

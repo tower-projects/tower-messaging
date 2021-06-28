@@ -21,6 +21,7 @@ import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.monitoring.MessageMonitor;
 import io.iamcyw.tower.monitoring.NoOpMessageMonitor;
 import io.iamcyw.tower.utils.Assert;
+import io.iamcyw.tower.utils.i18n.I18ns;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -34,37 +35,41 @@ class MessageMonitorFactoryBuilder {
 
     // Comparator to ensure the keys are processed in a reasonably stable order in #getFactoryForType
     // Added comparing on the class' classloader as a class can be loaded multiple times by different classloaders
-    private final Comparator<Class<?>> classComparator =
-            Comparator.comparing((Function<Class<?>, String>) Class::getName)
-                      .thenComparingInt((Class<?> c) -> c.getClassLoader().hashCode());
+    private final Comparator<Class<?>> classComparator = Comparator
+            .comparing((Function<Class<?>, String>) Class::getName)
+            .thenComparingInt((Class<?> c) -> c.getClassLoader().hashCode());
 
     private final Map<String, SortedMap<Class<?>, MessageMonitorFactory>> forNameFactories = new HashMap<>();
+
     private final SortedMap<Class<?>, MessageMonitorFactory> forTypeFactories = new TreeMap<>(classComparator);
+
     private MessageMonitorFactory defaultFactory = (configuration, type, name) -> NoOpMessageMonitor.instance();
+
     private boolean built = false;
 
-    MessageMonitorFactoryBuilder add(Class<?> componentType, String componentName, MessageMonitorFactory messageMonitorFactory) {
+    MessageMonitorFactoryBuilder add(Class<?> componentType, String componentName,
+                                     MessageMonitorFactory messageMonitorFactory) {
         assertNotBuilt();
-        Assert.nonNull(componentType, () -> "componentType may not be null");
-        Assert.nonNull(componentName, () -> "componentName may not be null");
-        Assert.nonNull(messageMonitorFactory, () -> "messageMonitorFactory may not be null");
-        Map<Class<?>, MessageMonitorFactory> mapByType =
-                forNameFactories.computeIfAbsent(componentName, (name) -> new TreeMap<>(classComparator));
+        Assert.nonNull(componentType, I18ns.create().args("componentType").apply());
+        Assert.nonNull(componentName, I18ns.create().args("componentName").apply());
+        Assert.nonNull(messageMonitorFactory, I18ns.create().args("messageMonitorFactory").apply());
+        Map<Class<?>, MessageMonitorFactory> mapByType = forNameFactories
+                .computeIfAbsent(componentName, (name) -> new TreeMap<>(classComparator));
         mapByType.put(componentType, messageMonitorFactory);
         return this;
     }
 
     MessageMonitorFactoryBuilder add(Class<?> componentType, MessageMonitorFactory messageMonitorFactory) {
         assertNotBuilt();
-        Assert.nonNull(componentType, () -> "componentType may not be null");
-        Assert.nonNull(messageMonitorFactory, () -> "messageMonitorFactory may not be null");
+        Assert.nonNull(componentType, I18ns.create().args("componentType").apply());
+        Assert.nonNull(messageMonitorFactory, I18ns.create().args("messageMonitorFactory").apply());
         forTypeFactories.put(componentType, messageMonitorFactory);
         return this;
     }
 
     MessageMonitorFactoryBuilder add(MessageMonitorFactory defaultFactory) {
         assertNotBuilt();
-        Assert.nonNull(defaultFactory, () -> "defaultFactory may not be null");
+        Assert.nonNull(defaultFactory, I18ns.create().args("defaultFactory").apply());
         this.defaultFactory = defaultFactory;
         return this;
     }
@@ -119,6 +124,7 @@ class MessageMonitorFactoryBuilder {
     }
 
     private void assertNotBuilt() {
-        Assert.isFalse(built, () -> "this builder has already been built");
+        Assert.isFalse(built, "this builder has already been built");
     }
+
 }

@@ -19,13 +19,11 @@ package io.iamcyw.tower.commandhandling.callbacks;
 
 import io.iamcyw.tower.commandhandling.CommandCallback;
 import io.iamcyw.tower.commandhandling.CommandMessage;
-import io.iamcyw.tower.commandhandling.CommandResultMessage;
 
 /**
  * Callback that does absolutely nothing when invoked. For performance reasons, an instance of this callback can be
  * obtained using {@code NoOpCallback.INSTANCE}. A generics-compatible alternative is provided by
  * {@code NoOpCallback.&lt;C&gt;instance()}.
- *
  */
 public final class NoOpCallback implements CommandCallback<Object, Object> {
 
@@ -51,4 +49,5 @@ public final class NoOpCallback implements CommandCallback<Object, Object> {
     @Override
     public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
     }
+
 }

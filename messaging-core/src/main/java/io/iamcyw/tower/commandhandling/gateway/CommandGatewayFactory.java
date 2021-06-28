@@ -27,6 +27,7 @@ import io.iamcyw.tower.messaging.MetaData;
 import io.iamcyw.tower.messaging.annotation.MetaDataValue;
 import io.iamcyw.tower.utils.Assert;
 import io.iamcyw.tower.utils.ReflectionUtils;
+import io.iamcyw.tower.utils.i18n.I18ns;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -139,7 +140,7 @@ public class CommandGatewayFactory {
      */
     public CommandGatewayFactory(CommandBus commandBus, RetryScheduler retryScheduler,
                                  List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
-        Assert.nonNull(commandBus, () -> "commandBus may not be null");
+        Assert.nonNull(commandBus, I18ns.create().args("commandBus").build());
         this.retryScheduler = retryScheduler;
         this.commandBus = commandBus;
         if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {

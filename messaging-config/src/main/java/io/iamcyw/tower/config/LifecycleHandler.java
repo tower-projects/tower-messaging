@@ -20,7 +20,6 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Functional interface towards a lifecycle handler used during start up or shutdown of an application.
- *
  */
 @FunctionalInterface
 public interface LifecycleHandler {
@@ -32,4 +31,5 @@ public interface LifecycleHandler {
      * @return a {@link CompletableFuture} of unknown type which enables chaining several {@link LifecycleHandler} calls
      */
     CompletableFuture<?> run();
+
 }

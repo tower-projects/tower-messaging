@@ -28,12 +28,14 @@ import io.iamcyw.tower.monitoring.MessageMonitor;
 public class MonitorAwareCallback<C, R> implements CommandCallback<C, R> {
 
     private final CommandCallback<C, R> delegate;
+
     private final MessageMonitor.MonitorCallback messageMonitorCallback;
 
     /**
-     * Initialize a callback wrapped around the {@code delegate} which will notify a Message Monitor for the given {@code messageMonitorCallback}.
+     * Initialize a callback wrapped around the {@code delegate} which will notify a Message Monitor for the given
+     * {@code messageMonitorCallback}.
      *
-     * @param delegate the CommandCallback which is being wrapped, may be {@code null}
+     * @param delegate               the CommandCallback which is being wrapped, may be {@code null}
      * @param messageMonitorCallback the callback for the Message Monitor
      */
     public MonitorAwareCallback(CommandCallback<C, R> delegate, MessageMonitor.MonitorCallback messageMonitorCallback) {

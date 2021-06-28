@@ -17,7 +17,6 @@
 package io.iamcyw.tower.messaging.unitofwork;
 
 import io.iamcyw.tower.messaging.ExecutionException;
-import io.iamcyw.tower.messaging.ResultMessage;
 
 import java.util.Objects;
 
@@ -79,8 +78,10 @@ public class ExecutionResult {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         ExecutionResult that = (ExecutionResult) o;
         return Objects.equals(result, that.result);
     }
@@ -94,4 +95,5 @@ public class ExecutionResult {
     public String toString() {
         return String.format("ExecutionResult containing [%s]", result);
     }
+
 }

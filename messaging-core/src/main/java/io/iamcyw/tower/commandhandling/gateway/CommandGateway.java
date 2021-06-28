@@ -19,10 +19,7 @@ package io.iamcyw.tower.commandhandling.gateway;
 import io.iamcyw.tower.commandhandling.CommandBus;
 import io.iamcyw.tower.commandhandling.CommandCallback;
 import io.iamcyw.tower.commandhandling.CommandExecutionException;
-import io.iamcyw.tower.commandhandling.CommandMessage;
 import io.iamcyw.tower.messaging.Message;
-import io.iamcyw.tower.messaging.MessageDispatchInterceptorSupport;
-import io.iamcyw.tower.messaging.MetaData;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -65,8 +62,7 @@ public interface CommandGateway {
      * @param command The command to dispatch
      * @param <R>     The type of result expected from command execution
      * @return the result of command execution, or {@code null} if the thread was interrupted while waiting for
-     *         the command to execute
-     *
+     * the command to execute
      * @throws CommandExecutionException when an exception occurred while processing the command
      */
     <R> R sendAndWait(Object command);
@@ -89,8 +85,7 @@ public interface CommandGateway {
      * @param unit    The unit in which {@code timeout} is expressed
      * @param <R>     The type of result expected from command execution
      * @return the result of command execution, or {@code null} if the thread was interrupted while waiting for
-     *         the command to execute
-     *
+     * the command to execute
      * @throws CommandExecutionException when an exception occurred while processing the command
      */
     <R> R sendAndWait(Object command, long timeout, TimeUnit unit);
@@ -107,4 +102,5 @@ public interface CommandGateway {
      * @return a {@link CompletableFuture} which is resolved when the command is executed
      */
     <R> CompletableFuture<R> send(Object command);
+
 }

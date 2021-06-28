@@ -17,16 +17,13 @@
 package io.iamcyw.tower.messaging.unitofwork;
 
 
-import io.iamcyw.tower.messaging.GenericResultMessage;
 import io.iamcyw.tower.messaging.Message;
-import io.iamcyw.tower.messaging.ResultMessage;
 import io.iamcyw.tower.utils.Assert;
+import io.iamcyw.tower.utils.i18n.I18ns;
 
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
-import static io.iamcyw.tower.messaging.GenericResultMessage.asResultMessage;
 
 
 /**
@@ -35,6 +32,15 @@ import static io.iamcyw.tower.messaging.GenericResultMessage.asResultMessage;
 public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<T> {
 
     private final MessageProcessingContext<T> processingContext;
+
+    /**
+     * Initializes a Unit of Work (without starting it).
+     *
+     * @param message the message that will be processed in the context of the unit of work
+     */
+    public DefaultUnitOfWork(T message) {
+        processingContext = new MessageProcessingContext<>(message);
+    }
 
     /**
      * Starts a new DefaultUnitOfWork instance, registering it a CurrentUnitOfWork. This methods returns the started
@@ -52,21 +58,13 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
         return uow;
     }
 
-    /**
-     * Initializes a Unit of Work (without starting it).
-     *
-     * @param message the message that will be processed in the context of the unit of work
-     */
-    public DefaultUnitOfWork(T message) {
-        processingContext = new MessageProcessingContext<>(message);
-    }
-
     @Override
     public <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
         if (phase() == Phase.NOT_STARTED) {
             start();
         }
-        Assert.state(phase() == Phase.STARTED, () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
+        Assert.state(phase() == Phase.STARTED,
+                     I18ns.create().content("The UnitOfWork has an incompatible phase: ").args(phase()).apply());
         R result;
         try {
             result = task.call();
@@ -96,8 +94,9 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
 
     @Override
     protected void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
-        Assert.state(!phase.isBefore(phase()), () -> "Cannot register a listener for phase: " + phase
-                + " because the Unit of Work is already in a later phase: " + phase());
+        Assert.state(!phase.isBefore(phase()), I18ns.create().content(
+                "Cannot register a listener for phase: {} because the Unit of Work is already in a later phase: {}")
+                                                    .args(phase, phase()).apply());
         processingContext.addHandler(phase, handler);
     }
 
@@ -121,4 +120,5 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     protected void setExecutionResult(ExecutionResult executionResult) {
         processingContext.setExecutionResult(executionResult);
     }
+
 }

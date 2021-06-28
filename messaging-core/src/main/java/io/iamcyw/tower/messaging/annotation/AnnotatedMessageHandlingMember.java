@@ -34,9 +34,13 @@ import java.util.Optional;
 public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<T> {
 
     private final Class<?> payloadType;
+
     private final int parameterCount;
+
     private final ParameterResolver<?>[] parameterResolvers;
+
     private final Executable executable;
+
     private final Class<? extends Message> messageType;
 
     /**
@@ -177,4 +181,5 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     public String toString() {
         return getClass().getSimpleName() + " " + executable.toGenericString();
     }
+
 }

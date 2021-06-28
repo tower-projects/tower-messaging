@@ -15,9 +15,6 @@
  */
 package io.iamcyw.tower.spring.config.annotation;
 
-import io.iamcyw.tower.common.annotation.AnnotationUtils;
-import io.iamcyw.tower.messaging.MessageHandler;
-import io.iamcyw.tower.messaging.annotation.HandlerDefinition;
 import io.iamcyw.tower.messaging.annotation.ParameterResolverFactory;
 import io.iamcyw.tower.queryhandling.QueryHandler;
 import io.iamcyw.tower.queryhandling.QueryHandlerAdapter;
@@ -53,7 +50,8 @@ public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationH
     }
 
     @Override
-    protected AnnotationQueryHandlerAdapter initializeAdapterFor(Object o, ParameterResolverFactory parameterResolverFactory) {
+    protected AnnotationQueryHandlerAdapter initializeAdapterFor(Object o,
+                                                                 ParameterResolverFactory parameterResolverFactory) {
         return new AnnotationQueryHandlerAdapter<>(o, parameterResolverFactory);
     }
 
@@ -70,5 +68,7 @@ public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationH
                 result.set(true);
             }
         }
+
     }
+
 }

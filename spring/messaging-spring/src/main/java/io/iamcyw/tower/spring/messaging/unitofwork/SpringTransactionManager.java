@@ -35,7 +35,8 @@ public class SpringTransactionManager implements TransactionManager {
      * @param transactionManager    The transaction manager to use
      * @param transactionDefinition The definition for transactions to create
      */
-    public SpringTransactionManager(PlatformTransactionManager transactionManager, TransactionDefinition transactionDefinition) {
+    public SpringTransactionManager(PlatformTransactionManager transactionManager,
+                                    TransactionDefinition transactionDefinition) {
         Assert.notNull(transactionManager, () -> "transactionManager may not be null");
         this.transactionManager = transactionManager;
         this.transactionDefinition = transactionDefinition;

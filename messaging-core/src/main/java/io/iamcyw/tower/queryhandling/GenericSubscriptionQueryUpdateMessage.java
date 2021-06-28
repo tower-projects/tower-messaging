@@ -17,7 +17,10 @@
 package io.iamcyw.tower.queryhandling;
 
 
-import io.iamcyw.tower.messaging.*;
+import io.iamcyw.tower.messaging.GenericMessage;
+import io.iamcyw.tower.messaging.Message;
+import io.iamcyw.tower.messaging.MessageDecorator;
+import io.iamcyw.tower.messaging.MetaData;
 
 import java.util.Map;
 
@@ -26,22 +29,9 @@ import java.util.Map;
  *
  * @param <U> type of incremental update
  */
-public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U>
-        implements SubscriptionQueryUpdateMessage<U> {
+public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U> implements SubscriptionQueryUpdateMessage<U> {
 
     private static final long serialVersionUID = 5872479410321475147L;
-
-    /**
-     * Creates {@link GenericSubscriptionQueryUpdateMessage} from provided object which represents incremental update.
-     *
-     * @param o   incremental update
-     * @param <T> type of the {@link GenericSubscriptionQueryUpdateMessage}
-     * @return created message
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> GenericSubscriptionQueryUpdateMessage<T> from(Object o) {
-        return new GenericSubscriptionQueryUpdateMessage<>((T) o);
-    }
 
     /**
      * Initializes {@link GenericSubscriptionQueryUpdateMessage} with incremental update.
@@ -62,6 +52,18 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U
         super(delegate);
     }
 
+    /**
+     * Creates {@link GenericSubscriptionQueryUpdateMessage} from provided object which represents incremental update.
+     *
+     * @param o   incremental update
+     * @param <T> type of the {@link GenericSubscriptionQueryUpdateMessage}
+     * @return created message
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> GenericSubscriptionQueryUpdateMessage<T> from(Object o) {
+        return new GenericSubscriptionQueryUpdateMessage<>((T) o);
+    }
+
     @Override
     public SubscriptionQueryUpdateMessage<U> withMetaData(Map<String, ?> metaData) {
         return new GenericSubscriptionQueryUpdateMessage<>(getDelegate().withMetaData(metaData));
@@ -76,4 +78,5 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U
     protected String describeType() {
         return "GenericSubscriptionQueryUpdateMessage";
     }
+
 }

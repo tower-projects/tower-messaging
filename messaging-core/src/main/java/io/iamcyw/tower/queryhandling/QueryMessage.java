@@ -32,8 +32,10 @@ public interface QueryMessage<T, R> extends Message<T> {
     /**
      * Extracts the {@code queryName} from the given {@code payloadOrMessage}, with three possible outcomes:
      * <ul>
-     * <li>The {@code payloadOrMessage} is an instance of {@link QueryMessage} - {@link QueryMessage#getQueryName()} is returned.</li>
-     * <li>The {@code payloadOrMessage} is an instance of {@link Message} - the name of {@link Message#getPayloadType()} is returned.</li>
+     * <li>The {@code payloadOrMessage} is an instance of {@link QueryMessage} - {@link QueryMessage#getQueryName()}
+     * is returned.</li>
+     * <li>The {@code payloadOrMessage} is an instance of {@link Message} - the name of
+     * {@link Message#getPayloadType()} is returned.</li>
      * <li>The {@code payloadOrMessage} is the query payload - {@link Class#getName()} is returned.</li>
      * </ul>
      *
@@ -45,11 +47,9 @@ public interface QueryMessage<T, R> extends Message<T> {
         if (payloadOrMessage instanceof QueryMessage) {
             return ((QueryMessage<?, ?>) payloadOrMessage).getQueryName();
         } else if (payloadOrMessage instanceof Message) {
-            return ((Message<?>) payloadOrMessage).getPayloadType()
-                    .getName();
+            return ((Message<?>) payloadOrMessage).getPayloadType().getName();
         }
-        return payloadOrMessage.getClass()
-                .getName();
+        return payloadOrMessage.getClass().getName();
     }
 
     /**

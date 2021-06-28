@@ -17,17 +17,9 @@
 package io.iamcyw.tower.messaging.annotation;
 
 
-import io.iamcyw.tower.messaging.Message;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.util.Collections.emptySet;
-import static java.util.Collections.emptySortedSet;
 
 /**
  * Inspector for a message handling target of type {@code T} that uses annotations on the target to inspect the
@@ -38,9 +30,13 @@ import static java.util.Collections.emptySortedSet;
 public class AnnotatedHandlerInspector<T> {
 
     private final Class<T> inspectedType;
+
     private final ParameterResolverFactory parameterResolverFactory;
+
     private final Map<Class<?>, AnnotatedHandlerInspector> registry;
+
     private final List<AnnotatedHandlerInspector<? super T>> superClassInspectors;
+
     private final List<MessageHandlingMember<? super T>> handlers;
 
     private AnnotatedHandlerInspector(Class<T> inspectedType,
@@ -85,7 +81,8 @@ public class AnnotatedHandlerInspector<T> {
                                                                     ParameterResolverFactory parameterResolverFactory,
                                                                     Map<Class<?>, AnnotatedHandlerInspector> registry) {
         if (!registry.containsKey(inspectedType)) {
-            registry.put(inspectedType, AnnotatedHandlerInspector.initialize(inspectedType, parameterResolverFactory, registry));
+            registry.put(inspectedType,
+                         AnnotatedHandlerInspector.initialize(inspectedType, parameterResolverFactory, registry));
         }
         //noinspection unchecked
         return registry.get(inspectedType);
@@ -102,8 +99,8 @@ public class AnnotatedHandlerInspector<T> {
         if (inspectedType.getSuperclass() != null && !Object.class.equals(inspectedType.getSuperclass())) {
             parents.add(createInspector(inspectedType.getSuperclass(), parameterResolverFactory, registry));
         }
-        AnnotatedHandlerInspector<T> inspector =
-                new AnnotatedHandlerInspector<>(inspectedType, parents, parameterResolverFactory, registry);
+        AnnotatedHandlerInspector<T> inspector = new AnnotatedHandlerInspector<>(inspectedType, parents,
+                                                                                 parameterResolverFactory, registry);
         inspector.initializeMessageHandlers(parameterResolverFactory);
         return inspector;
     }
@@ -115,12 +112,14 @@ public class AnnotatedHandlerInspector<T> {
         ServiceLoader.load(HandlerEnhancerDefinition.class).forEach(wrapperDefinitions::add);
         for (Method method : inspectedType.getDeclaredMethods()) {
             definitions.forEach(definition -> definition.createHandler(inspectedType, method, parameterResolverFactory)
-                                                        .ifPresent(handler -> registerHandler(wrapped(handler, wrapperDefinitions))));
+                                                        .ifPresent(handler -> registerHandler(
+                                                                wrapped(handler, wrapperDefinitions))));
         }
         for (Constructor<?> constructor : inspectedType.getDeclaredConstructors()) {
             definitions.forEach(
                     definition -> definition.createHandler(inspectedType, constructor, parameterResolverFactory)
-                                            .ifPresent(handler -> registerHandler(wrapped(handler, wrapperDefinitions))));
+                                            .ifPresent(
+                                                    handler -> registerHandler(wrapped(handler, wrapperDefinitions))));
         }
         superClassInspectors.forEach(sci -> handlers.addAll(sci.getHandlers()));
         handlers.sort(HandlerComparator.instance());
@@ -146,7 +145,7 @@ public class AnnotatedHandlerInspector<T> {
      * by Axon to inspect child entities of an aggregate.
      *
      * @param entityType the type of the handler to inspect
-     * @param <C> the handler's type
+     * @param <C>        the handler's type
      * @return a new inspector for the given type
      */
     public <C> AnnotatedHandlerInspector<C> inspect(Class<? extends C> entityType) {
@@ -161,4 +160,5 @@ public class AnnotatedHandlerInspector<T> {
     public List<MessageHandlingMember<? super T>> getHandlers() {
         return handlers;
     }
+
 }

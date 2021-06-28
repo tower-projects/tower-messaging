@@ -16,14 +16,15 @@
 
 package io.iamcyw.tower.commandhandling.callbacks;
 
-import io.iamcyw.tower.commandhandling.*;
+import io.iamcyw.tower.commandhandling.CommandCallback;
+import io.iamcyw.tower.commandhandling.CommandExecutionException;
+import io.iamcyw.tower.commandhandling.CommandMessage;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static io.iamcyw.tower.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -56,7 +57,6 @@ public class FutureCallback<C, R> extends CompletableFuture<R> implements Comman
      * method.
      *
      * @return the result of the command handler execution.
-     *
      * @see #get()
      */
     public R getResult() {
@@ -130,4 +130,5 @@ public class FutureCallback<C, R> extends CompletableFuture<R> implements Comman
             return false;
         }
     }
+
 }

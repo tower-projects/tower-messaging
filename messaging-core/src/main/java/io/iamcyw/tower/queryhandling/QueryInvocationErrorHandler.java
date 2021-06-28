@@ -25,7 +25,6 @@ import io.iamcyw.tower.messaging.MessageHandler;
  * invoker. Query Bus implementation may choose to implement point-to-point queries as scatter-gather, and only
  * reporting the first answer returned. In that case, this handler is invoked, and any propagated exceptions may or may
  * not be reported to the sender of the query.
- *
  */
 public interface QueryInvocationErrorHandler {
 
@@ -44,4 +43,5 @@ public interface QueryInvocationErrorHandler {
      * @param messageHandler The handler that reported the exception
      */
     void onError(Throwable error, QueryMessage<?, ?> queryMessage, MessageHandler messageHandler);
+
 }

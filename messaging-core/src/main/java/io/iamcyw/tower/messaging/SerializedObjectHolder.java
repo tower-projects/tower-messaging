@@ -65,8 +65,7 @@ public class SerializedObjectHolder {
                 serializedPayload.put(serializer, serialized);
                 return serialized;
             } else {
-                return serializer.getConverter()
-                        .convert(existingForm, expectedRepresentation);
+                return serializer.getConverter().convert(existingForm, expectedRepresentation);
             }
         }
     }
@@ -80,8 +79,7 @@ public class SerializedObjectHolder {
                 serializedMetaData.put(serializer, serialized);
                 return serialized;
             } else {
-                return serializer.getConverter()
-                        .convert(existingForm, expectedRepresentation);
+                return serializer.getConverter().convert(existingForm, expectedRepresentation);
             }
         }
     }

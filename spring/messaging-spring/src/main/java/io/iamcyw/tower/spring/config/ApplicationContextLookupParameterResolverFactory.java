@@ -30,13 +30,14 @@ import java.util.List;
 /**
  * FactoryBean implementation that create a ParameterResolverFactory, which auto-detects beans implementing
  * ParameterResolverFactory beans in the application context.
- *
  */
 public class ApplicationContextLookupParameterResolverFactory implements FactoryBean<ParameterResolverFactory>,
         ApplicationContextAware, InitializingBean {
 
     private final List<ParameterResolverFactory> factories;
+
     private volatile ParameterResolverFactory parameterResolverFactory;
+
     private ApplicationContext applicationContext;
 
     /**
@@ -74,4 +75,5 @@ public class ApplicationContextLookupParameterResolverFactory implements Factory
         factories.addAll(applicationContext.getBeansOfType(ParameterResolverFactory.class).values());
         parameterResolverFactory = MultiParameterResolverFactory.ordered(factories);
     }
+
 }

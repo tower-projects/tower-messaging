@@ -20,7 +20,6 @@ import io.iamcyw.tower.common.Registration;
 
 /**
  * Describes a class capable of subscribing to the query bus.
- *
  */
 public interface QueryHandlerAdapter {
 
@@ -31,4 +30,5 @@ public interface QueryHandlerAdapter {
      * @return a {@link Registration} to unsubscribe this {@link QueryHandlerAdapter}
      */
     Registration subscribe(QueryBus queryBus);
+
 }

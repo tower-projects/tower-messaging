@@ -22,7 +22,9 @@ class MavenPublishingConvention {
             if (project.hasProperty("aliRepositoryUsername") && project.hasProperty("aliRepositoryPassword")) {
                 val username = project.property("aliRepositoryUsername")
                 val password = project.property("aliRepositoryPassword")
-                val url = if (project.version.toString().endsWith(suffix = "-SNAPSHOT", ignoreCase = true)) project.property("alisnapshotRepository") else project.property("aliRepository")
+                val url = if (project.version.toString()
+                        .endsWith(suffix = "-SNAPSHOT", ignoreCase = true)
+                ) project.property("alisnapshotRepository") else project.property("aliRepository")
 
                 publishing.repositories.maven {
                     this.url = URI.create(url.toString())

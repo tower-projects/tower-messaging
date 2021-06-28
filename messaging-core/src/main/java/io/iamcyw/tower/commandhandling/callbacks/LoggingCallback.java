@@ -18,7 +18,6 @@ package io.iamcyw.tower.commandhandling.callbacks;
 
 import io.iamcyw.tower.commandhandling.CommandCallback;
 import io.iamcyw.tower.commandhandling.CommandMessage;
-import io.iamcyw.tower.commandhandling.CommandResultMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,12 +29,12 @@ import org.slf4j.LoggerFactory;
  */
 public class LoggingCallback implements CommandCallback<Object, Object> {
 
-    private static final Logger logger = LoggerFactory.getLogger(LoggingCallback.class);
-
     /**
      * The singleton instance for this callback
      */
     public static final LoggingCallback INSTANCE = new LoggingCallback();
+
+    private static final Logger logger = LoggerFactory.getLogger(LoggingCallback.class);
 
     private LoggingCallback() {
     }
@@ -49,4 +48,5 @@ public class LoggingCallback implements CommandCallback<Object, Object> {
     public void onFailure(CommandMessage<?> message, Throwable cause) {
         logger.warn("Command resulted in exception: {}", message.getCommandName(), cause);
     }
+
 }

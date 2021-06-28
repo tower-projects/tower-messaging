@@ -31,7 +31,8 @@ import java.util.concurrent.Callable;
  * InterceptorChain}
  */
 @Priority(Priority.FIRST)
-public class InterceptorChainParameterResolverFactory implements ParameterResolverFactory, ParameterResolver<InterceptorChain> {
+public class InterceptorChainParameterResolverFactory implements ParameterResolverFactory,
+        ParameterResolver<InterceptorChain> {
 
     private static final String INTERCEPTOR_CHAIN_EMITTER_KEY = InterceptorChain.class.getName();
 
@@ -48,7 +49,8 @@ public class InterceptorChainParameterResolverFactory implements ParameterResolv
      * @return The response from the invocation of given {@code action}
      * @throws Exception any exception that occurs while invoking given {@code action}
      */
-    public static <R> R callWithInterceptorChain(InterceptorChain interceptorChain, Callable<R> action) throws Exception {
+    public static <R> R callWithInterceptorChain(InterceptorChain interceptorChain,
+                                                 Callable<R> action) throws Exception {
         InterceptorChain previous = CURRENT.get();
         CURRENT.set(interceptorChain);
         try {
@@ -80,18 +82,19 @@ public class InterceptorChainParameterResolverFactory implements ParameterResolv
             return interceptorChain;
         }
         return CurrentUnitOfWork.map(uow -> (InterceptorChain) uow.getResource(INTERCEPTOR_CHAIN_EMITTER_KEY))
-                .orElseThrow(() -> new IllegalStateException("InterceptorChain should have been injected"));
+                                .orElseThrow(
+                                        () -> new IllegalStateException("InterceptorChain should have been injected"));
     }
 
     @Override
     public boolean matches(Message<?> message) {
-        return CURRENT.get() != null || CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get()
-                .resources()
-                .containsKey(INTERCEPTOR_CHAIN_EMITTER_KEY);
+        return CURRENT.get() != null || CurrentUnitOfWork.isStarted() &&
+                CurrentUnitOfWork.get().resources().containsKey(INTERCEPTOR_CHAIN_EMITTER_KEY);
     }
 
     @Override
-    public ParameterResolver<InterceptorChain> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<InterceptorChain> createInstance(Executable executable, Parameter[] parameters,
+                                                              int parameterIndex) {
         if (InterceptorChain.class.equals(parameters[parameterIndex].getType())) {
             return this;
         }

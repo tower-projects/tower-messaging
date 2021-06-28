@@ -56,8 +56,7 @@ public class RemoteExceptionDescription implements Serializable {
     }
 
     private static List<String> createDescription(Throwable exception, List<String> descriptions) {
-        descriptions.add(exception.getClass()
-                                 .getName() + DELIMITER + exception.getMessage());
+        descriptions.add(exception.getClass().getName() + DELIMITER + exception.getMessage());
         Throwable cause = exception.getCause();
         return cause != null ? createDescription(cause, descriptions) : descriptions;
     }

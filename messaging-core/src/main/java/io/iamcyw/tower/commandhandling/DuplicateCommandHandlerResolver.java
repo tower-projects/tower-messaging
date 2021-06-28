@@ -21,7 +21,6 @@ import io.iamcyw.tower.messaging.MessageHandler;
 /**
  * Functional interface towards resolving the occurrence of a duplicate command handler being subscribed.
  * As such it ingests two {@link MessageHandler} instances and returns another one as the resolution.
- *
  */
 @FunctionalInterface
 public interface DuplicateCommandHandlerResolver {
@@ -32,12 +31,15 @@ public interface DuplicateCommandHandlerResolver {
      *
      * @param commandName       The name of the Command for which the duplicate was detected
      * @param registeredHandler the {@link MessageHandler} previously registered with the Command Bus
-     * @param candidateHandler  the {@link MessageHandler} that is newly registered and conflicts with the existing registration
-     * @return the resolved {@link MessageHandler}. Could be the {@code registeredHandler}, the {@code candidateHandler} or
+     * @param candidateHandler  the {@link MessageHandler} that is newly registered and conflicts with the existing
+     *                          registration
+     * @return the resolved {@link MessageHandler}. Could be the {@code registeredHandler}, the {@code
+     * candidateHandler} or
      * another handler entirely
      * @throws RuntimeException when registration should fail
      */
     MessageHandler<? super CommandMessage<?>> resolve(String commandName,
                                                       MessageHandler<? super CommandMessage<?>> registeredHandler,
                                                       MessageHandler<? super CommandMessage<?>> candidateHandler);
+
 }

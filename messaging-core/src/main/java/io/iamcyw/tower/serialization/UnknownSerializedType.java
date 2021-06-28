@@ -19,11 +19,11 @@ package io.iamcyw.tower.serialization;
 /**
  * Class representing a serialized object of which there is no class available in the current class loader. This
  * class provides access to the raw underlying data, as well as any format supported by the serializer.
- *
  */
 public class UnknownSerializedType {
 
     private final Serializer serializer;
+
     private final SerializedObject<?> serializedObject;
 
     /**
@@ -72,4 +72,5 @@ public class UnknownSerializedType {
     public SerializedType serializedType() {
         return serializedObject.getType();
     }
+
 }

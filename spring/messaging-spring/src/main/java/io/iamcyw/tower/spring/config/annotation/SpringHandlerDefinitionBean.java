@@ -39,11 +39,13 @@ import java.util.Map;
  * @see ClasspathHandlerDefinition
  * @since 3.3
  */
-public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinition>,
-        BeanClassLoaderAware, InitializingBean, ApplicationContextAware {
+public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinition>, BeanClassLoaderAware,
+        InitializingBean, ApplicationContextAware {
 
     private final List<HandlerDefinition> definitions = new ArrayList<>();
+
     private ClassLoader classLoader;
+
     private ApplicationContext applicationContext;
 
     /**
@@ -110,4 +112,5 @@ public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinitio
         Map<String, HandlerDefinition> definitionsFound = applicationContext.getBeansOfType(HandlerDefinition.class);
         definitions.addAll(definitionsFound.values());
     }
+
 }

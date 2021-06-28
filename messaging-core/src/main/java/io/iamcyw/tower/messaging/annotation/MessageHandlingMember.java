@@ -19,8 +19,6 @@ package io.iamcyw.tower.messaging.annotation;
 import io.iamcyw.tower.messaging.Message;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Member;
 import java.util.Map;
 import java.util.Optional;
 
@@ -102,4 +100,5 @@ public interface MessageHandlingMember<T> {
      * is missing on the method
      */
     Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType);
+
 }

@@ -32,4 +32,5 @@ public interface CommandHandlerInterceptorHandlingMember<T> extends MessageHandl
      * @return {@code true} if interceptor chain should be invoked automatically
      */
     boolean shouldInvokeInterceptorChain();
+
 }

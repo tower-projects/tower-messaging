@@ -33,7 +33,6 @@ import org.springframework.util.ClassUtils;
 /**
  * Creates and registers a bean definition for a Spring Context aware ParameterResolverFactory. It ensures that only one
  * such instance exists for each ApplicationContext.
- *
  */
 public final class SpringContextParameterResolverFactoryBuilder {
 
@@ -56,10 +55,9 @@ public final class SpringContextParameterResolverFactoryBuilder {
                                                .getBeanDefinition());
             factories.add(BeanDefinitionBuilder.genericBeanDefinition(SpringBeanParameterResolverFactory.class)
                                                .getBeanDefinition());
-            AbstractBeanDefinition def =
-                    BeanDefinitionBuilder.genericBeanDefinition(ApplicationContextLookupParameterResolverFactory.class)
-                                         .addConstructorArgValue(factories)
-                                         .getBeanDefinition();
+            AbstractBeanDefinition def = BeanDefinitionBuilder
+                    .genericBeanDefinition(ApplicationContextLookupParameterResolverFactory.class)
+                    .addConstructorArgValue(factories).getBeanDefinition();
             def.setPrimary(true);
             registry.registerBeanDefinition(PARAMETER_RESOLVER_FACTORY_BEAN_NAME, def);
         }
@@ -70,6 +68,7 @@ public final class SpringContextParameterResolverFactoryBuilder {
             FactoryBean<ParameterResolverFactory> {
 
         private ClassLoader classLoader;
+
         private ParameterResolverFactory factory;
 
         @Override
@@ -96,5 +95,7 @@ public final class SpringContextParameterResolverFactoryBuilder {
         public void setBeanClassLoader(ClassLoader classLoader) {
             this.classLoader = classLoader == null ? ClassUtils.getDefaultClassLoader() : classLoader;
         }
+
     }
+
 }

@@ -31,16 +31,6 @@ public enum NullLockFactory implements LockFactory {
      */
     INSTANCE;
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * This implementation does nothing.
-     */
-    @Override
-    public Lock obtainLock(String identifier) {
-        return NO_LOCK;
-    }
-
     private static final Lock NO_LOCK = new Lock() {
         @Override
         public void release() {
@@ -51,5 +41,15 @@ public enum NullLockFactory implements LockFactory {
             return true;
         }
     };
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * This implementation does nothing.
+     */
+    @Override
+    public Lock obtainLock(String identifier) {
+        return NO_LOCK;
+    }
 
 }

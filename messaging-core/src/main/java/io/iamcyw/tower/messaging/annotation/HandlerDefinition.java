@@ -22,7 +22,6 @@ import java.util.Optional;
 /**
  * Interface that describes an object capable of inspecting a method to determine if the method is suitable for message
  * handling. If the method is suitable the definition returns a {@link MessageHandler} instance to invoke the method.
- *
  */
 public interface HandlerDefinition {
 
@@ -36,7 +35,7 @@ public interface HandlerDefinition {
      * @param <T>                      The type of the declaring object
      * @return An optional containing the handler if the method is suitable, or an empty Nullable otherwise
      */
-    <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType,
-                                                         Executable executable,
+    <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType, Executable executable,
                                                          ParameterResolverFactory parameterResolverFactory);
+
 }

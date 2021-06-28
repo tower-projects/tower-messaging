@@ -33,4 +33,5 @@ public interface LockFactory {
      * @return a handle to release the lock.
      */
     Lock obtainLock(String identifier);
+
 }

@@ -224,11 +224,7 @@ public class MetaData implements Map<String, Object>, Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        values.forEach((k, v) -> sb.append(", '")
-                .append(k)
-                .append("'->'")
-                .append(v)
-                .append('\''));
+        values.forEach((k, v) -> sb.append(", '").append(k).append("'->'").append(v).append('\''));
         int skipInitialListingAppendString = 2;
         // Only skip if the StringBuilder actual has a field, as otherwise we'll receive an IndexOutOfBoundsException
         return values.isEmpty() ? sb.toString() : sb.substring(skipInitialListingAppendString);
@@ -280,9 +276,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      * @return a MetaData instance containing the given {@code keys} if these were already present
      */
     public MetaData subset(String... keys) {
-        return MetaData.from(Stream.of(keys)
-                                     .filter(this::containsKey)
-                                     .collect(new MetaDataCollector(this::get)));
+        return MetaData.from(Stream.of(keys).filter(this::containsKey).collect(new MetaDataCollector(this::get)));
     }
 
     /**

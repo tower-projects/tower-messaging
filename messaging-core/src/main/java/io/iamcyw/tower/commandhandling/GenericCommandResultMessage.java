@@ -34,39 +34,6 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     private static final long serialVersionUID = 9013948836930094183L;
 
     /**
-     * Returns the given {@code commandResult} as a {@link CommandResultMessage} instance. If {@code commandResult}
-     * already implements {@link CommandResultMessage}, it is returned as-is. If {@code commandResult} implements {@link
-     * Message}, payload and meta data will be used to construct new {@link GenericCommandResultMessage}. Otherwise, the
-     * given {@code commandResult} is wrapped into a {@link GenericCommandResultMessage} as its payload.
-     *
-     * @param commandResult the command result to be wrapped as {@link CommandResultMessage}
-     * @param <T>           The type of the payload contained in returned Message
-     * @return a Message containing given {@code commandResult} as payload, or {@code commandResult} if already
-     * implements {@link CommandResultMessage}
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> CommandResultMessage<T> asCommandResultMessage(Object commandResult) {
-        if (commandResult instanceof CommandResultMessage) {
-            return (CommandResultMessage<T>) commandResult;
-        } else if (commandResult instanceof Message) {
-            Message<T> commandResultMessage = (Message<T>) commandResult;
-            return new GenericCommandResultMessage<>(commandResultMessage);
-        }
-        return new GenericCommandResultMessage<>((T) commandResult);
-    }
-
-    /**
-     * Creates a Command Result Message with the given {@code exception} result.
-     *
-     * @param exception the Exception describing the cause of an error
-     * @param <T> the type of payload
-     * @return a message containing exception result
-     */
-    public static <T> CommandResultMessage<T> asCommandResultMessage(Throwable exception) {
-        return new GenericCommandResultMessage<>(exception);
-    }
-
-    /**
      * Creates a Command Result Message with the given {@code commandResult} as the payload.
      *
      * @param commandResult the payload for the Message
@@ -124,6 +91,39 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
         super(delegate, exception);
     }
 
+    /**
+     * Returns the given {@code commandResult} as a {@link CommandResultMessage} instance. If {@code commandResult}
+     * already implements {@link CommandResultMessage}, it is returned as-is. If {@code commandResult} implements {@link
+     * Message}, payload and meta data will be used to construct new {@link GenericCommandResultMessage}. Otherwise, the
+     * given {@code commandResult} is wrapped into a {@link GenericCommandResultMessage} as its payload.
+     *
+     * @param commandResult the command result to be wrapped as {@link CommandResultMessage}
+     * @param <T>           The type of the payload contained in returned Message
+     * @return a Message containing given {@code commandResult} as payload, or {@code commandResult} if already
+     * implements {@link CommandResultMessage}
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> CommandResultMessage<T> asCommandResultMessage(Object commandResult) {
+        if (commandResult instanceof CommandResultMessage) {
+            return (CommandResultMessage<T>) commandResult;
+        } else if (commandResult instanceof Message) {
+            Message<T> commandResultMessage = (Message<T>) commandResult;
+            return new GenericCommandResultMessage<>(commandResultMessage);
+        }
+        return new GenericCommandResultMessage<>((T) commandResult);
+    }
+
+    /**
+     * Creates a Command Result Message with the given {@code exception} result.
+     *
+     * @param exception the Exception describing the cause of an error
+     * @param <T>       the type of payload
+     * @return a message containing exception result
+     */
+    public static <T> CommandResultMessage<T> asCommandResultMessage(Throwable exception) {
+        return new GenericCommandResultMessage<>(exception);
+    }
+
     @Override
     public GenericCommandResultMessage<R> withMetaData(Map<String, ?> metaData) {
         Throwable exception = optionalExceptionResult().orElse(null);
@@ -140,4 +140,5 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     protected String describeType() {
         return "GenericCommandResultMessage";
     }
+
 }

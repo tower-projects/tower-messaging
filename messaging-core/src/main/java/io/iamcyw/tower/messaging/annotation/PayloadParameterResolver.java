@@ -51,4 +51,5 @@ public class PayloadParameterResolver implements ParameterResolver {
     public Class<?> supportedPayloadType() {
         return payloadType;
     }
+
 }

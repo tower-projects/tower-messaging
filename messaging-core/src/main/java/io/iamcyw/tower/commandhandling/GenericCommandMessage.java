@@ -33,24 +33,8 @@ import java.util.Map;
  */
 public class GenericCommandMessage<T> extends MessageDecorator<T> implements CommandMessage<T> {
     private static final long serialVersionUID = 3282528436414939876L;
-    private final String commandName;
 
-    /**
-     * Returns the given command as a CommandMessage. If {@code command} already implements CommandMessage, it is
-     * returned as-is. Otherwise, the given {@code command} is wrapped into a GenericCommandMessage as its
-     * payload.
-     *
-     * @param command the command to wrap as CommandMessage
-     * @return a CommandMessage containing given {@code command} as payload, or {@code command} if it already implements
-     * CommandMessage.
-     */
-    @SuppressWarnings("unchecked")
-    public static <C> CommandMessage<C> asCommandMessage(Object command) {
-        if (CommandMessage.class.isInstance(command)) {
-            return (CommandMessage<C>) command;
-        }
-        return new GenericCommandMessage<>((C) command, MetaData.emptyInstance());
-    }
+    private final String commandName;
 
     /**
      * Create a CommandMessage with the given {@code command} as payload and empty metaData
@@ -83,6 +67,23 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
         this.commandName = commandName;
     }
 
+    /**
+     * Returns the given command as a CommandMessage. If {@code command} already implements CommandMessage, it is
+     * returned as-is. Otherwise, the given {@code command} is wrapped into a GenericCommandMessage as its
+     * payload.
+     *
+     * @param command the command to wrap as CommandMessage
+     * @return a CommandMessage containing given {@code command} as payload, or {@code command} if it already implements
+     * CommandMessage.
+     */
+    @SuppressWarnings("unchecked")
+    public static <C> CommandMessage<C> asCommandMessage(Object command) {
+        if (CommandMessage.class.isInstance(command)) {
+            return (CommandMessage<C>) command;
+        }
+        return new GenericCommandMessage<>((C) command, MetaData.emptyInstance());
+    }
+
     @Override
     public String getCommandName() {
         return commandName;
@@ -101,13 +102,12 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
     @Override
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
-        stringBuilder.append(", commandName='")
-                     .append(getCommandName())
-                     .append('\'');
+        stringBuilder.append(", commandName='").append(getCommandName()).append('\'');
     }
 
     @Override
     protected String describeType() {
         return "GenericCommandMessage";
     }
+
 }

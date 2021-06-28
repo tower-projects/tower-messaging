@@ -20,6 +20,7 @@ import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.messaging.MetaData;
 import io.iamcyw.tower.messaging.correlation.CorrelationDataProvider;
 import io.iamcyw.tower.utils.Assert;
+import io.iamcyw.tower.utils.i18n.I18ns;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,8 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
         if (logger.isDebugEnabled()) {
             logger.debug("Starting Unit Of Work");
         }
-        Assert.state(Phase.NOT_STARTED.equals(phase()), () -> "UnitOfWork is already started");
+        Assert.state(Phase.NOT_STARTED.equals(phase()),
+                     I18ns.create().content("UnitOfWork is already started").apply());
         rolledBack = false;
         onRollback(u -> rolledBack = true);
         CurrentUnitOfWork.ifStarted(parent -> {
@@ -67,8 +69,8 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
             logger.debug("Committing Unit Of Work");
         }
         Assert.state(phase() == Phase.STARTED,
-                     () -> String.format("The UnitOfWork is in an incompatible phase: %s", phase()));
-        Assert.state(isCurrent(), () -> "The UnitOfWork is not the current Unit of Work");
+                     I18ns.create().content("The UnitOfWork is in an incompatible phase: {}").args(phase()).apply());
+        Assert.state(isCurrent(), I18ns.create().content("The UnitOfWork is not the current Unit of Work").apply());
         try {
             if (isRoot()) {
                 commitAsRoot();
@@ -86,8 +88,8 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
             logger.debug("Rolling back Unit Of Work.", cause);
         }
         Assert.state(isActive() && phase().isBefore(Phase.ROLLBACK),
-                     () -> String.format("The UnitOfWork is in an incompatible phase: %s", phase()));
-        Assert.state(isCurrent(), () -> "The UnitOfWork is not the current Unit of Work");
+                     I18ns.create().content("The UnitOfWork is in an incompatible phase: {}").args(phase()).apply());
+        Assert.state(isCurrent(), I18ns.create().content("The UnitOfWork is not the current Unit of Work").apply());
         try {
             setRollbackCause(cause);
             changePhase(Phase.ROLLBACK);
@@ -196,8 +198,7 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
     private void delegateAfterCommitToParent(UnitOfWork<?> uow) {
         Optional<UnitOfWork<?>> parent = uow.parent();
         if (parent.isPresent()) {
-            parent.get()
-                    .afterCommit(this::delegateAfterCommitToParent);
+            parent.get().afterCommit(this::delegateAfterCommitToParent);
         } else {
             changePhase(Phase.AFTER_COMMIT);
         }
@@ -228,7 +229,8 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
     }
 
     /**
-     * Provides the collection of registered Correlation Data Providers of this Unit of Work. The returned collection is a live view of the providers
+     * Provides the collection of registered Correlation Data Providers of this Unit of Work. The returned collection
+     * is a live view of the providers
      * registered. Any changes in the registration are reflected in the returned collection.
      *
      * @return The Correlation Data Providers registered with this Unit of Work.

@@ -42,8 +42,7 @@ public interface SerializedType {
      * @throws NullPointerException if the given {@link SerializedType} is {@code null}
      */
     static boolean isEmptyType(SerializedType serializedType) {
-        return emptyType().getName()
-                .equals(serializedType.getName());
+        return emptyType().getName().equals(serializedType.getName());
     }
 
     /**

@@ -17,10 +17,6 @@
 package io.iamcyw.tower.queryhandling;
 
 
-import io.iamcyw.tower.messaging.MessageDispatchInterceptorSupport;
-
-import java.util.Collections;
-import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -33,7 +29,8 @@ import java.util.function.Predicate;
  * <p>
  * Added, implementations of this class should thus respect any current UnitOfWork in the {@link
  * io.iamcyw.tower.messaging.unitofwork.UnitOfWork.Phase#STARTED} phase for any of the emitting functions. If this is
- * the case then the emitter call action should be performed during the {@link io.iamcyw.tower.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT}.
+ * the case then the emitter call action should be performed during the
+ * {@link io.iamcyw.tower.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT}.
  * Otherwise the operation can be executed immediately.
  */
 public interface QueryUpdateEmitter {
@@ -70,8 +67,8 @@ public interface QueryUpdateEmitter {
      */
     @SuppressWarnings("unchecked")
     default <Q, U> void emit(Class<Q> queryType, Predicate<Q> filter, SubscriptionQueryUpdateMessage<U> update) {
-        Predicate<SubscriptionQueryMessage<?, ?, U>> sqmFilter =
-                m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
+        Predicate<SubscriptionQueryMessage<?, ?, U>> sqmFilter = m -> m.getPayloadType().equals(queryType) &&
+                filter.test((Q) m.getPayload());
         emit(sqmFilter, update);
     }
 
@@ -104,8 +101,8 @@ public interface QueryUpdateEmitter {
      */
     @SuppressWarnings("unchecked")
     default <Q> void complete(Class<Q> queryType, Predicate<Q> filter) {
-        Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
-                m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
+        Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter = m -> m.getPayloadType().equals(queryType) &&
+                filter.test((Q) m.getPayload());
         complete(sqmFilter);
     }
 
@@ -127,8 +124,9 @@ public interface QueryUpdateEmitter {
      */
     @SuppressWarnings("unchecked")
     default <Q> void completeExceptionally(Class<Q> queryType, Predicate<Q> filter, Throwable cause) {
-        Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
-                m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
+        Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter = m -> m.getPayloadType().equals(queryType) &&
+                filter.test((Q) m.getPayload());
         completeExceptionally(sqmFilter, cause);
     }
+
 }

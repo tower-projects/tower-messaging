@@ -16,10 +16,7 @@
 
 package io.iamcyw.tower.queryhandling;
 
-import io.iamcyw.tower.common.MessagingConfigurationException;
 import io.iamcyw.tower.messaging.MessageHandler;
-import io.iamcyw.tower.utils.Assert;
-import io.iamcyw.tower.utils.i18n.I18ns;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,4 +47,5 @@ public class LoggingQueryInvocationErrorHandler implements QueryInvocationErrorH
     public void onError(Throwable error, QueryMessage<?, ?> queryMessage, MessageHandler messageHandler) {
         logger.warn("An error occurred while processing query message [{}]", queryMessage.getQueryName(), error);
     }
+
 }

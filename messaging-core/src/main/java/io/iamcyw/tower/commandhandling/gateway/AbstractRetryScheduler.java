@@ -20,6 +20,7 @@ import io.iamcyw.tower.commandhandling.CommandMessage;
 import io.iamcyw.tower.common.MessagingConfigurationException;
 import io.iamcyw.tower.common.SystemNonTransientException;
 import io.iamcyw.tower.utils.Assert;
+import io.iamcyw.tower.utils.i18n.I18ns;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
     private static final int DEFAULT_MAX_RETRIES = 1;
 
     private final ScheduledExecutorService retryExecutor;
+
     private final int maxRetryCount;
 
     /**
@@ -67,8 +69,8 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      * retried, or {@code false} when the command has a chance of succeeding if it retried.
      */
     protected boolean isExplicitlyNonTransient(Throwable failure) {
-        return failure instanceof SystemNonTransientException
-                || (failure.getCause() != null && isExplicitlyNonTransient(failure.getCause()));
+        return failure instanceof SystemNonTransientException ||
+                (failure.getCause() != null && isExplicitlyNonTransient(failure.getCause()));
     }
 
     /**
@@ -95,8 +97,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      * @param failures       a {@link List} of all failures up to now.
      * @return the number of milliseconds to wait until retrying.
      */
-    protected abstract long computeRetryInterval(CommandMessage commandMessage,
-                                                 RuntimeException lastFailure,
+    protected abstract long computeRetryInterval(CommandMessage commandMessage, RuntimeException lastFailure,
                                                  List<Class<? extends Throwable>[]> failures);
 
     /**
@@ -111,20 +112,14 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      * @return {@code true} if rescheduling succeeded, {@code false} if otherwise.
      */
     @Override
-    public boolean scheduleRetry(CommandMessage commandMessage,
-                                 RuntimeException lastFailure,
-                                 List<Class<? extends Throwable>[]> failures,
-                                 Runnable dispatchTask) {
+    public boolean scheduleRetry(CommandMessage commandMessage, RuntimeException lastFailure,
+                                 List<Class<? extends Throwable>[]> failures, Runnable dispatchTask) {
         int failureCount = failures.size();
         if (!isExplicitlyNonTransient(lastFailure) && failureCount <= maxRetryCount) {
             if (logger.isInfoEnabled()) {
-                logger.info("Processing of Command [{}] resulted in an exception. Will retry {} more time(s)... "
-                                    + "Exception was {}, {}",
-                            commandMessage.getPayloadType().getSimpleName(),
-                            maxRetryCount - failureCount,
-                            lastFailure.getClass().getName(),
-                            lastFailure.getMessage()
-                );
+                logger.info("Processing of Command [{}] resulted in an exception. Will retry {} more time(s)... " +
+                                    "Exception was {}, {}", commandMessage.getPayloadType().getSimpleName(),
+                            maxRetryCount - failureCount, lastFailure.getClass().getName(), lastFailure.getMessage());
             }
             return scheduleRetry(dispatchTask, computeRetryInterval(commandMessage, lastFailure, failures));
         } else {
@@ -148,6 +143,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
     public abstract static class Builder<B extends Builder> {
 
         private ScheduledExecutorService retryExecutor;
+
         private int maxRetryCount = DEFAULT_MAX_RETRIES;
 
         /**
@@ -157,7 +153,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          * @return the current Builder instance, for fluent interfacing
          */
         public B retryExecutor(ScheduledExecutorService retryExecutor) {
-            Assert.nonNull(retryExecutor, () -> "ScheduledExecutorService may not be null");
+            Assert.nonNull(retryExecutor, I18ns.create().content("ScheduledExecutorService may not be null").apply());
             this.retryExecutor = retryExecutor;
             // noinspection unchecked
             return (B) this;
@@ -170,7 +166,8 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          * @return the current Builder instance, for fluent interfacing
          */
         public B maxRetryCount(int maxRetryCount) {
-            Assert.nonNull(maxRetryCount, ()-> "The maxRetryCount must be a positive number");
+            Assert.nonNull(maxRetryCount,
+                           I18ns.create().content("The maxRetryCount must be a positive number").apply());
             this.maxRetryCount = maxRetryCount;
             // noinspection unchecked
             return (B) this;
@@ -182,7 +179,9 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          * @throws MessagingConfigurationException if validation fails.
          */
         protected void validate() throws MessagingConfigurationException {
-            Assert.nonNull(retryExecutor,() -> "The ScheduledExecutorService is a hard requirement and should be provided");
+            Assert.nonNull(retryExecutor, "The ScheduledExecutorService is a hard requirement and should be provided");
         }
+
     }
+
 }

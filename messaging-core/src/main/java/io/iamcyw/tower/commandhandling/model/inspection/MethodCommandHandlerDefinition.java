@@ -20,10 +20,10 @@ import io.iamcyw.tower.commandhandling.CommandHandler;
 import io.iamcyw.tower.commandhandling.CommandMessage;
 import io.iamcyw.tower.commandhandling.CommandMessageHandlingMember;
 import io.iamcyw.tower.common.MessagingConfigurationException;
-import io.iamcyw.tower.messaging.annotation.WrappedMessageHandlingMember;
 import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.messaging.annotation.HandlerEnhancerDefinition;
 import io.iamcyw.tower.messaging.annotation.MessageHandlingMember;
+import io.iamcyw.tower.messaging.annotation.WrappedMessageHandlingMember;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -40,33 +40,38 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.annotationAttributes(CommandHandler.class)
-                .map(attr -> (MessageHandlingMember<T>) new MethodCommandMessageHandlingMember(original, attr))
-                .orElse(original);
+                       .map(attr -> (MessageHandlingMember<T>) new MethodCommandMessageHandlingMember(original, attr))
+                       .orElse(original);
     }
 
     private static class MethodCommandMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements CommandMessageHandlingMember<T> {
 
         private final String commandName;
+
         private final boolean isFactoryHandler;
+
         private final String routingKey;
 
         private MethodCommandMessageHandlingMember(MessageHandlingMember<T> delegate,
                                                    Map<String, Object> annotationAttributes) {
             super(delegate);
-            this.routingKey = "".equals(annotationAttributes.get("routingKey")) ? null :
-                    (String) annotationAttributes.get("routingKey");
-            Executable executable = delegate.unwrap(Executable.class).orElseThrow(() -> new MessagingConfigurationException(
-                    "The @CommandHandler annotation must be put on an Executable (either directly or as Meta " +
-                            "Annotation)"));
+            this.routingKey = "".equals(annotationAttributes.get("routingKey")) ? null : (String) annotationAttributes
+                    .get("routingKey");
+            Executable executable = delegate.unwrap(Executable.class).orElseThrow(
+                    () -> new MessagingConfigurationException(
+                            "The @CommandHandler annotation must be put on an Executable (either directly or as Meta " +
+                                    "Annotation)"));
             if ("".equals(annotationAttributes.get("commandName"))) {
                 commandName = delegate.payloadType().getName();
             } else {
                 commandName = (String) annotationAttributes.get("commandName");
             }
             final boolean factoryMethod = executable instanceof Method && Modifier.isStatic(executable.getModifiers());
-            if (factoryMethod && !executable.getDeclaringClass().isAssignableFrom(((Method)executable).getReturnType())) {
-                throw new MessagingConfigurationException("static @CommandHandler methods must declare a return value " +
-                                                             "which is equal to or a subclass of the declaring time");
+            if (factoryMethod &&
+                    !executable.getDeclaringClass().isAssignableFrom(((Method) executable).getReturnType())) {
+                throw new MessagingConfigurationException(
+                        "static @CommandHandler methods must declare a return value " +
+                                "which is equal to or a subclass of the declaring time");
             }
             isFactoryHandler = executable instanceof Constructor || factoryMethod;
         }
@@ -92,4 +97,5 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
         }
 
     }
+
 }

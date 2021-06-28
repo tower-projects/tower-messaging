@@ -45,4 +45,5 @@ public class MessagingConfigurationException extends SystemNonTransientException
     public MessagingConfigurationException(String message, Throwable cause) {
         super(message, cause);
     }
+
 }

@@ -20,17 +20,14 @@ import io.iamcyw.tower.commandhandling.CommandBus;
 import io.iamcyw.tower.commandhandling.CommandCallback;
 import io.iamcyw.tower.commandhandling.CommandMessage;
 import io.iamcyw.tower.commandhandling.callbacks.LoggingCallback;
-import io.iamcyw.tower.common.MessagingConfigurationException;
-import io.iamcyw.tower.common.Registration;
 import io.iamcyw.tower.messaging.MessageDispatchInterceptor;
 import io.iamcyw.tower.utils.Assert;
+import io.iamcyw.tower.utils.i18n.I18ns;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
-import static java.util.Arrays.asList;
 import static io.iamcyw.tower.commandhandling.GenericCommandMessage.asCommandMessage;
 
 /**
@@ -43,7 +40,9 @@ import static io.iamcyw.tower.commandhandling.GenericCommandMessage.asCommandMes
 public abstract class AbstractCommandGateway {
 
     private final CommandBus commandBus;
+
     private final RetryScheduler retryScheduler;
+
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
 
     /**
@@ -57,7 +56,7 @@ public abstract class AbstractCommandGateway {
      */
     protected AbstractCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
                                      List<MessageDispatchInterceptor<? super CommandMessage<?>>> messageDispatchInterceptors) {
-        Assert.nonNull(commandBus, () -> "commandBus may not be null");
+        Assert.nonNull(commandBus, I18ns.create().args("commandBus").build());
         this.commandBus = commandBus;
         if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
             this.dispatchInterceptors = new ArrayList<>(messageDispatchInterceptors);
@@ -121,4 +120,5 @@ public abstract class AbstractCommandGateway {
     public CommandBus getCommandBus() {
         return commandBus;
     }
+
 }

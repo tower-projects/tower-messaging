@@ -40,7 +40,9 @@ import static java.util.ServiceLoader.load;
 public final class ClasspathHandlerDefinition {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathHandlerDefinition.class);
+
     private static final Object MONITOR = new Object();
+
     private static final Map<ClassLoader, WeakReference<MultiHandlerDefinition>> FACTORIES = new WeakHashMap<>();
 
     private ClasspathHandlerDefinition() {
@@ -82,8 +84,10 @@ public final class ClasspathHandlerDefinition {
     }
 
     private static MultiHandlerDefinition findDelegates(ClassLoader classLoader) {
-        Iterator<HandlerDefinition> iterator = load(HandlerDefinition.class, classLoader == null ?
-                Thread.currentThread().getContextClassLoader() : classLoader).iterator();
+        Iterator<HandlerDefinition> iterator = load(HandlerDefinition.class,
+                                                    classLoader == null ? Thread.currentThread()
+                                                                                .getContextClassLoader() : classLoader)
+                .iterator();
         //noinspection WhileLoopReplaceableByForEach
         final List<HandlerDefinition> definitions = new ArrayList<>();
         while (iterator.hasNext()) {
@@ -91,9 +95,8 @@ public final class ClasspathHandlerDefinition {
                 HandlerDefinition factory = iterator.next();
                 definitions.add(factory);
             } catch (ServiceConfigurationError e) {
-                LOGGER.info(
-                        "HandlerDefinition instance ignored, as one of the required classes is not available" +
-                                "on the classpath: {}", e.getMessage());
+                LOGGER.info("HandlerDefinition instance ignored, as one of the required classes is not available" +
+                                    "on the classpath: {}", e.getMessage());
             } catch (NoClassDefFoundError e) {
                 LOGGER.info("HandlerDefinition instance ignored. It relies on a class that cannot be found: {}",
                             e.getMessage());
@@ -101,4 +104,5 @@ public final class ClasspathHandlerDefinition {
         }
         return new MultiHandlerDefinition(definitions);
     }
+
 }

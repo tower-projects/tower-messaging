@@ -47,8 +47,7 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
      * @param responseType The expected response type of type {@link ResponseType}
      */
     public GenericQueryMessage(T payload, ResponseType<R> responseType) {
-        this(payload, payload.getClass()
-                .getName(), responseType);
+        this(payload, payload.getClass().getName(), responseType);
     }
 
     /**
@@ -99,12 +98,8 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
     @Override
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
-        stringBuilder.append(", queryName='")
-                .append(getQueryName())
-                .append('\'')
-                .append(", expectedResponseType='")
-                .append(getResponseType())
-                .append('\'');
+        stringBuilder.append(", queryName='").append(getQueryName()).append('\'').append(", expectedResponseType='")
+                     .append(getResponseType()).append('\'');
     }
 
     @Override

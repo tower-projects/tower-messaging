@@ -16,9 +16,6 @@
 
 package io.iamcyw.tower.messaging;
 
-import io.iamcyw.tower.serialization.SerializedObject;
-import io.iamcyw.tower.serialization.Serializer;
-
 import java.io.Serializable;
 import java.util.Map;
 
@@ -78,4 +75,5 @@ public interface Message<T> extends Serializable {
      * @return a copy of this message with the given MetaData
      */
     Message<T> andMetaData(Map<String, ?> metaData);
+
 }
