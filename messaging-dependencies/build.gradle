@@ -11,7 +11,6 @@ dependencies {
     api platform('io.iamcyw.tower:tower-dependencies:1.0.0-SNAPSHOT')
     constraints {
         api project(':messaging-core')
-        api project(':messaging-config')
         api project(':spring:messaging-spring')
         api project(':spring:messaging-boot-autoconfigure')
         api project(':spring:messaging-spring-boot-starter')

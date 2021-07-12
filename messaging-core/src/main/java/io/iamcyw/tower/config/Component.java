@@ -3,14 +3,15 @@ package io.iamcyw.tower.config;
 import io.iamcyw.tower.utils.Assert;
 import io.iamcyw.tower.utils.i18n.I18ns;
 
+import java.io.Serializable;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class Component<B> {
+public class Component<B> implements Serializable {
 
-    private final String name;
+    private String name;
 
-    private final Supplier<Configuration> configuration;
+    private Supplier<Configuration> configuration;
 
     private Function<Configuration, ? extends B> builderFunction;
 

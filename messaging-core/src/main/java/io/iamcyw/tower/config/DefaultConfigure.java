@@ -65,7 +65,7 @@ public class DefaultConfigure implements Configure {
     /**
      * Initialize the Configure.
      */
-    protected DefaultConfigure() {
+    public DefaultConfigure() {
         components.put(ParameterResolverFactory.class,
                        new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
         components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));

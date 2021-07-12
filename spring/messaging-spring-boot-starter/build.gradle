@@ -7,6 +7,5 @@ description("tower message spring starter")
 dependencies {
     api project(":spring:messaging-boot-autoconfigure")
     api project(":spring:messaging-spring")
-    api project(":messaging-config")
     api project(":messaging-core")
 }

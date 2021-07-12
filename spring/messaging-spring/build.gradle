@@ -10,5 +10,4 @@ dependencies {
     implementation("org.springframework:spring-context")
 
     implementation(project(':messaging-core'))
-    implementation(project(':messaging-config'))
 }
