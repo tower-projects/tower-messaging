@@ -51,8 +51,8 @@ public interface ParameterResolver<T> {
      *
      * @return The class of the payload that is supported by this resolver
      */
-    default Class<?> supportedPayloadType() {
-        return Object.class;
+    default Class<T> supportedPayloadType() {
+        return (Class<T>) Object.class;
     }
 
 }

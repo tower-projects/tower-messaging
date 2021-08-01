@@ -8,11 +8,12 @@ import java.util.function.BiPredicate;
 
 public interface MessagePredicate<T extends Message<?>> extends BiPredicate<T, HandlerMethod> {
 
-    static <T> MessagePredicate<? super T> wrapIfNeeded(BiPredicate<? super T, ? super HandlerMethod> other) {
-        MessagePredicate<? super T> right;
+    static <A extends Message<?>> MessagePredicate<A> wrapIfNeeded(
+            BiPredicate<? super A, ? super HandlerMethod> other) {
+        MessagePredicate<A> right;
 
         if (other instanceof MessagePredicate) {
-            right = (MessagePredicate<? super T>) other;
+            right = (MessagePredicate<A>) other;
         } else {
             right = new MessagePredicateWrapper(other);
         }

@@ -1,17 +1,26 @@
 package io.iamcyw.tower.queryhandling;
 
+import io.iamcyw.tower.config.DefaultReactorConfigure;
+import io.iamcyw.tower.config.ReactorConfigure;
 import io.iamcyw.tower.messaging.responsetypes.ResponseTypes;
+import io.iamcyw.tower.mock.TestQuery;
+import io.iamcyw.tower.mock.TestService;
 import org.junit.jupiter.api.Test;
 
 class ReactorQueryBusTest {
 
     @Test
-    void query() {
-        ReactorQueryBus queryBus = new DefaultReactorQueryBus(null);
+    void testCommand() {
+        ReactorConfigure configure = new DefaultReactorConfigure();
 
-        queryBus.query(new GenericQueryMessage<>("", ResponseTypes.instanceOf(Integer.class)))
-                .map(integerQueryResponseMessage -> integerQueryResponseMessage.getPayload());
+        configure.registerQueryHandler(config -> new TestService());
 
+        ReactorQueryBus queryBus = configure.buildConfiguration().queryBus();
+
+        configure.start();
+
+        queryBus.query(new GenericQueryMessage<>(new TestQuery("id"), ResponseTypes.instanceOf(String.class)))
+                .subscribe().with(System.out::println);
     }
 
 }

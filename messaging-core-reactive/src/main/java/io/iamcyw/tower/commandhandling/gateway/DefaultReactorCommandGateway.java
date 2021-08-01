@@ -3,6 +3,7 @@ package io.iamcyw.tower.commandhandling.gateway;
 import io.iamcyw.tower.commandhandling.CommandMessage;
 import io.iamcyw.tower.commandhandling.GenericCommandMessage;
 import io.iamcyw.tower.commandhandling.ReactorCommandBus;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
 public class DefaultReactorCommandGateway implements ReactorCommandGateway {
@@ -14,8 +15,8 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
     }
 
     @Override
-    public <R> Uni<R> send(Object command) {
-        return createCommandMessage(command).flatMap(reactorCommandBus::dispatch);
+    public <R> Multi<R> send(Object command) {
+        return createCommandMessage(command).onItem().transformToMulti(reactorCommandBus::dispatch);
     }
 
     Uni<CommandMessage<?>> createCommandMessage(Object command) {

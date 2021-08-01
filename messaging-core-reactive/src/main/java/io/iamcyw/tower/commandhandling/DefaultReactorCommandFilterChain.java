@@ -1,6 +1,6 @@
 package io.iamcyw.tower.commandhandling;
 
-import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.Multi;
 
 import java.util.List;
 import java.util.function.Function;
@@ -26,8 +26,8 @@ public class DefaultReactorCommandFilterChain implements ReactorCommandFilterCha
     }
 
     @Override
-    public <C, R> Uni<R> filter(CommandMessage<C> commandMessage, Function<CommandMessage<C>, Uni<R>> target) {
-        return Uni.createFrom().deferred(() -> {
+    public <C, R> Multi<R> filter(CommandMessage<C> commandMessage, Function<CommandMessage<C>, Multi<R>> target) {
+        return Multi.createFrom().deferred(() -> {
             if (this.index < filters.size()) {
                 ReactorCommandFilter filter = filters.get(this.index);
                 DefaultReactorCommandFilterChain chain = new DefaultReactorCommandFilterChain(this, this.index + 1);

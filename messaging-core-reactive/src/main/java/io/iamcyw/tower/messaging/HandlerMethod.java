@@ -13,9 +13,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
-public class HandlerMethod {
+public class HandlerMethod<T> {
 
-    private final Class<?> payloadType;
+    private final Class<T> payloadType;
 
     private final int parameterCount;
 
@@ -23,20 +23,17 @@ public class HandlerMethod {
 
     private final Method method;
 
-    private final Object target;
-
     private final String commandName;
 
-    public HandlerMethod(String commandName, Method method, Object target, Class<?> explicitPayloadType,
+    public HandlerMethod(String commandName, Method method, Class<T> explicitPayloadType,
                          ParameterResolverFactory parameterResolverFactory) {
         this.method = method;
-        this.target = target;
         ReflectionUtils.ensureAccessible(this.method);
         Parameter[] parameters = method.getParameters();
         this.parameterCount = method.getParameterCount();
         parameterResolvers = new ParameterResolver[parameterCount];
-        Class<?> supportedPayloadType = explicitPayloadType;
-        this.commandName = StringUtils.isBlank(commandName) ? parameters[0].getType().getSimpleName() : commandName;
+        Class<T> supportedPayloadType = explicitPayloadType;
+        this.commandName = StringUtils.isBlank(commandName) ? parameters[0].getType().getName() : commandName;
         for (int i = 0; i < parameterCount; i++) {
             parameterResolvers[i] = parameterResolverFactory.createInstance(method, parameters, i);
             if (parameterResolvers[i] == null) {
@@ -45,7 +42,7 @@ public class HandlerMethod {
                                 ") in handler " + method.toGenericString() + ".", method);
             }
             if (supportedPayloadType.isAssignableFrom(parameterResolvers[i].supportedPayloadType())) {
-                supportedPayloadType = parameterResolvers[i].supportedPayloadType();
+                supportedPayloadType = (Class<T>) parameterResolvers[i].supportedPayloadType();
             } else if (!parameterResolvers[i].supportedPayloadType().isAssignableFrom(supportedPayloadType)) {
                 throw new UnsupportedHandlerException(String.format(
                         "The method %s seems to have parameters that put conflicting requirements on the payload type" +
@@ -56,11 +53,15 @@ public class HandlerMethod {
         this.payloadType = supportedPayloadType;
     }
 
+    public String getCommandName() {
+        return commandName;
+    }
+
     public Class<?> getPayloadType() {
         return payloadType;
     }
 
-    public <R> Multi<R> handle(Message<?> message) {
+    public <R> Multi<R> handle(Message<?> message, Object target) {
         try {
             if (method instanceof Method) {
                 Object result = method.invoke(target, resolveParameterValues(message));
@@ -68,8 +69,10 @@ public class HandlerMethod {
                     return ((Uni<R>) result).toMulti();
                 } else if (result instanceof Multi) {
                     return (Multi<R>) result;
+                } else if (result == null) {
+                    return Multi.createFrom().empty();
                 } else {
-                    return Multi.createFrom().<R>item((R) result);
+                    return Multi.createFrom().item((R) result);
                 }
             } else {
                 throw new IllegalStateException("What kind of handler is this?");
