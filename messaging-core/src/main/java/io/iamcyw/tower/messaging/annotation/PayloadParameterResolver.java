@@ -18,13 +18,14 @@ package io.iamcyw.tower.messaging.annotation;
 
 
 import io.iamcyw.tower.messaging.Message;
+import io.iamcyw.tower.messaging.SerializePayload;
 
 /**
  * Implementation of a {@link ParameterResolver} that resolves the Message payload as parameter in a handler method.
  */
-public class PayloadParameterResolver implements ParameterResolver {
+public class PayloadParameterResolver<T> implements ParameterResolver<T> {
 
-    private final Class<?> payloadType;
+    private final Class<T> payloadType;
 
     /**
      * Initializes a new {@link PayloadParameterResolver} for a method parameter of given {@code payloadType}. This
@@ -33,13 +34,17 @@ public class PayloadParameterResolver implements ParameterResolver {
      *
      * @param payloadType the parameter type
      */
-    public PayloadParameterResolver(Class<?> payloadType) {
+    public PayloadParameterResolver(Class<T> payloadType) {
         this.payloadType = payloadType;
     }
 
     @Override
-    public Object resolveParameterValue(Message message) {
-        return message.getPayload();
+    public T resolveParameterValue(Message message) {
+        if (message.getPayloadType().equals(SerializePayload.class)) {
+            return ((SerializePayload) message.getPayload()).serialize(payloadType);
+
+        }
+        return (T) message.getPayload();
     }
 
     @Override
