@@ -1,12 +1,10 @@
 package io.iamcyw.tower.commandhandling;
 
 import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.Uni;
 
-import java.util.function.Function;
-
+@FunctionalInterface
 public interface ReactorCommandFilterChain {
 
-    <C, R> Multi<R> filter(CommandMessage<C> commandMessage, Function<CommandMessage<C>, Multi<R>> target);
+    <R> Multi<R> filter(CommandMessage commandMessage);
 
 }

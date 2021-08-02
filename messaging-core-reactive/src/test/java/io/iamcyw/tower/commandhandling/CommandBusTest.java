@@ -18,8 +18,8 @@ public class CommandBusTest {
 
         configure.start();
 
-        commandBus.<TestCommand, String>dispatch(GenericCommandMessage.asCommandMessage(new TestCommand("id11")))
-                  .subscribe().with(s -> System.out.println(s));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new TestCommand("id11"))).subscribe()
+                  .with(s -> System.out.println(s));
     }
 
 }

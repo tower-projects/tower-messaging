@@ -9,6 +9,7 @@ javaPlatform {
 dependencies {
     api(platform("org.springframework.boot:spring-boot-dependencies:2.3.7.RELEASE"))
     api platform('io.iamcyw.tower:tower-dependencies:1.0.0-SNAPSHOT')
+    api platform('io.quarkus:quarkus-universe-bom:2.0.1.Final')
     constraints {
         api project(':messaging-core')
         api project(':spring:messaging-spring')

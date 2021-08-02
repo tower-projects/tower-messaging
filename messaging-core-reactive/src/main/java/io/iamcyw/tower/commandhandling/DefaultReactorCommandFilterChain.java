@@ -2,40 +2,45 @@ package io.iamcyw.tower.commandhandling;
 
 import io.smallrye.mutiny.Multi;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.function.Function;
 
 public class DefaultReactorCommandFilterChain implements ReactorCommandFilterChain {
 
-    private final int index;
+    private final ReactorCommandFilter filter;
 
-    private final List<ReactorCommandFilter> filters;
+    private final ReactorCommandFilterChain nextChain;
 
-    public DefaultReactorCommandFilterChain(List<ReactorCommandFilter> filters) {
-        this.filters = filters;
-        this.index = 0;
+    public DefaultReactorCommandFilterChain(ReactorCommandFilter filter, ReactorCommandFilterChain nextChain) {
+        this.filter = filter;
+        this.nextChain = nextChain;
     }
 
-    private DefaultReactorCommandFilterChain(DefaultReactorCommandFilterChain parent, int index) {
-        this.filters = parent.getFilters();
-        this.index = index;
+    public static <A> ReactorCommandFilterChain build(List<ReactorCommandFilter> filters,
+                                                      Function<CommandMessage, Multi<A>> target) {
+
+        return buildChain(new ArrayDeque(filters), new ReactorCommandFilterChain() {
+            @Override
+            public <B> Multi<B> filter(CommandMessage commandMessage) {
+                return (Multi<B>) target.apply(commandMessage);
+            }
+        });
     }
 
-    public List<ReactorCommandFilter> getFilters() {
-        return filters;
+    public static ReactorCommandFilterChain buildChain(Deque<ReactorCommandFilter> filters,
+                                                       ReactorCommandFilterChain nextChain) {
+        if (filters.isEmpty()) {
+            return nextChain;
+        } else {
+            return buildChain(filters, new DefaultReactorCommandFilterChain(filters.pollLast(), nextChain));
+        }
     }
 
     @Override
-    public <C, R> Multi<R> filter(CommandMessage<C> commandMessage, Function<CommandMessage<C>, Multi<R>> target) {
-        return Multi.createFrom().deferred(() -> {
-            if (this.index < filters.size()) {
-                ReactorCommandFilter filter = filters.get(this.index);
-                DefaultReactorCommandFilterChain chain = new DefaultReactorCommandFilterChain(this, this.index + 1);
-                return filter.filter(commandMessage, chain);
-            } else {
-                return target.apply(commandMessage);
-            }
-        });
+    public <R> Multi<R> filter(CommandMessage commandMessage) {
+        return filter.filter(commandMessage, nextChain);
     }
 
 }

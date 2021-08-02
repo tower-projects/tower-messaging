@@ -14,9 +14,9 @@ import java.lang.reflect.Method;
 
 import static io.iamcyw.tower.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
-public class AnnotationQueryHandler<T> implements ReactorMessageHandler<QueryMessage<T, ?>> {
+public class AnnotationQueryHandler<T> implements ReactorMessageHandler<QueryMessage> {
 
-    private final MessagePredicate<QueryMessage<T, ?>> predicate;
+    private final MessagePredicate<QueryMessage> predicate;
 
     private final HandlerMethod handlerMethod;
 
@@ -34,12 +34,12 @@ public class AnnotationQueryHandler<T> implements ReactorMessageHandler<QueryMes
     }
 
     @Override
-    public boolean canHandle(QueryMessage<T, ?> message) {
+    public boolean canHandle(QueryMessage message) {
         return predicate == null || predicate.test(message, handlerMethod);
     }
 
     @Override
-    public <R> Multi<R> handle(QueryMessage<T, ?> message) {
+    public <R> Multi<R> handle(QueryMessage message) {
         return handlerMethod.handle(message, instance.getCommandHandlerInstance());
     }
 

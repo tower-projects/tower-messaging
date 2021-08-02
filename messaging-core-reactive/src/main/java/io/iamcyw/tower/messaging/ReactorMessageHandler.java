@@ -2,7 +2,7 @@ package io.iamcyw.tower.messaging;
 
 import io.smallrye.mutiny.Multi;
 
-public interface ReactorMessageHandler<T extends Message<?>> {
+public interface ReactorMessageHandler<T extends Message> {
 
     boolean canHandle(T message);
 

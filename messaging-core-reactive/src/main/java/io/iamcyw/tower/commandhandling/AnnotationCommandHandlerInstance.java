@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class AnnotationCommandHandlerInstance implements SupportedCommandNamesAware {
     private final Object commandHandlerInstance;
 
-    private Map<String, ReactorMessageHandler<CommandMessage<?>>> commandHandlers;
+    private Map<String, ReactorMessageHandler<CommandMessage>> commandHandlers;
 
     public AnnotationCommandHandlerInstance(Object commandHandlerInstance) {
         this(commandHandlerInstance, ClasspathParameterResolverFactory.forClass(commandHandlerInstance.getClass()));
@@ -34,9 +34,9 @@ public class AnnotationCommandHandlerInstance implements SupportedCommandNamesAw
         this.commandHandlerInstance = commandHandlerInstance;
     }
 
-    public Map<String, ReactorMessageHandler<CommandMessage<?>>> initialize(Class<?> commandHandlerInstance,
-                                                                            ParameterResolverFactory parameterResolverFactory) {
-        Map<String, ReactorMessageHandler<CommandMessage<?>>> commandHandlers = new HashMap<>();
+    public Map<String, ReactorMessageHandler<CommandMessage>> initialize(Class<?> commandHandlerInstance,
+                                                                         ParameterResolverFactory parameterResolverFactory) {
+        Map<String, ReactorMessageHandler<CommandMessage>> commandHandlers = new HashMap<>();
 
         for (Method method : commandHandlerInstance.getDeclaredMethods()) {
             if (AnnotationUtils.findAnnotation(method, CommandHandler.class) != null) {
@@ -48,11 +48,11 @@ public class AnnotationCommandHandlerInstance implements SupportedCommandNamesAw
         return commandHandlers;
     }
 
-    public Map<String, ReactorMessageHandler<CommandMessage<?>>> getCommandHandlers() {
+    public Map<String, ReactorMessageHandler<CommandMessage>> getCommandHandlers() {
         return commandHandlers;
     }
 
-    public ReactorMessageHandler<CommandMessage<?>> getCommandHandler(String commandName) {
+    public ReactorMessageHandler<CommandMessage> getCommandHandler(String commandName) {
         return this.commandHandlers.get(commandName);
     }
 

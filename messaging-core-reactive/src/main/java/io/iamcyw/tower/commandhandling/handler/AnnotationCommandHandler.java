@@ -14,9 +14,9 @@ import java.lang.reflect.Method;
 
 import static io.iamcyw.tower.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
-public class AnnotationCommandHandler<T> implements ReactorMessageHandler<CommandMessage<T>> {
+public class AnnotationCommandHandler implements ReactorMessageHandler<CommandMessage> {
 
-    private final MessagePredicate<CommandMessage<T>> predicate;
+    private final MessagePredicate<CommandMessage> predicate;
 
     private final HandlerMethod handlerMethod;
 
@@ -39,12 +39,12 @@ public class AnnotationCommandHandler<T> implements ReactorMessageHandler<Comman
     }
 
     @Override
-    public boolean canHandle(CommandMessage<T> message) {
+    public boolean canHandle(CommandMessage message) {
         return predicate == null || predicate.test(message, handlerMethod);
     }
 
     @Override
-    public <R> Multi<R> handle(CommandMessage<T> message) {
+    public <R> Multi<R> handle(CommandMessage message) {
         return handlerMethod.handle(message, instance.getCommandHandlerInstance());
     }
 

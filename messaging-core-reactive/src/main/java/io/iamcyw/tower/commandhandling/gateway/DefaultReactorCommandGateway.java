@@ -19,7 +19,7 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
         return createCommandMessage(command).onItem().transformToMulti(reactorCommandBus::dispatch);
     }
 
-    Uni<CommandMessage<?>> createCommandMessage(Object command) {
+    Uni<CommandMessage> createCommandMessage(Object command) {
         return Uni.createFrom().item(command).onItem().transform(GenericCommandMessage::asCommandMessage);
     }
 

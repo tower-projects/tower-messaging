@@ -6,10 +6,9 @@ import io.iamcyw.tower.utils.Assert;
 
 import java.util.function.BiPredicate;
 
-public interface MessagePredicate<T extends Message<?>> extends BiPredicate<T, HandlerMethod> {
+public interface MessagePredicate<T extends Message> extends BiPredicate<T, HandlerMethod> {
 
-    static <A extends Message<?>> MessagePredicate<A> wrapIfNeeded(
-            BiPredicate<? super A, ? super HandlerMethod> other) {
+    static <A extends Message> MessagePredicate<A> wrapIfNeeded(BiPredicate<? super A, ? super HandlerMethod> other) {
         MessagePredicate<A> right;
 
         if (other instanceof MessagePredicate) {
@@ -35,7 +34,7 @@ public interface MessagePredicate<T extends Message<?>> extends BiPredicate<T, H
         return new OrMessagePredicate<>(this, wrapIfNeeded(other));
     }
 
-    class MessagePredicateWrapper<A extends Message<?>> implements MessagePredicate<A> {
+    class MessagePredicateWrapper<A extends Message> implements MessagePredicate<A> {
 
         private final BiPredicate<A, HandlerMethod> delegate;
 
@@ -55,7 +54,7 @@ public interface MessagePredicate<T extends Message<?>> extends BiPredicate<T, H
 
     }
 
-    class NegateMessagePredicate<A extends Message<?>> implements MessagePredicate<A> {
+    class NegateMessagePredicate<A extends Message> implements MessagePredicate<A> {
 
         private final MessagePredicate<A> predicate;
 
@@ -71,7 +70,7 @@ public interface MessagePredicate<T extends Message<?>> extends BiPredicate<T, H
 
     }
 
-    class AndMessagePredicate<A extends Message<?>> implements MessagePredicate<A> {
+    class AndMessagePredicate<A extends Message> implements MessagePredicate<A> {
 
         private final MessagePredicate<A> left;
 
@@ -92,7 +91,7 @@ public interface MessagePredicate<T extends Message<?>> extends BiPredicate<T, H
 
     }
 
-    class OrMessagePredicate<A extends Message<?>> implements MessagePredicate<A> {
+    class OrMessagePredicate<A extends Message> implements MessagePredicate<A> {
 
         private final MessagePredicate<A> left;
 

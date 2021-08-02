@@ -13,14 +13,14 @@ import java.util.function.Function;
 
 public class DefaultReactorCommandBus implements ReactorCommandBus {
 
-    private final Map<String, List<ReactorMessageHandler<CommandMessage<?>>>> handles = new HashMap<>();
+    private final Map<String, List<ReactorMessageHandler<CommandMessage>>> handles = new HashMap<>();
 
     private final List<ReactorCommandFilter> handlerInterceptors = new CopyOnWriteArrayList<>();
 
     @Override
-    public <C, R> Multi<R> dispatch(CommandMessage<C> command) {
+    public <R> Multi<R> dispatch(CommandMessage command) {
 
-        Function<CommandMessage<C>, Multi<R>> target = c -> lookupHandler(c).filter(
+        Function<CommandMessage, Multi<R>> target = c -> lookupHandler(c).filter(
                 messageHandler -> messageHandler.canHandle(command)).toUni().onItem().transformToMulti(
                 messageHandler -> messageHandler.handle(c));
 
@@ -28,18 +28,18 @@ public class DefaultReactorCommandBus implements ReactorCommandBus {
     }
 
     @Override
-    public Registration subscribe(String commandName, ReactorMessageHandler<CommandMessage<?>> handler) {
-        List<ReactorMessageHandler<CommandMessage<?>>> handlers = handles.getOrDefault(commandName, new ArrayList<>());
+    public Registration subscribe(String commandName, ReactorMessageHandler<CommandMessage> handler) {
+        List<ReactorMessageHandler<CommandMessage>> handlers = handles.getOrDefault(commandName, new ArrayList<>());
         handlers.add(handler);
         handles.put(commandName, handlers);
         return () -> handlers.remove(handler);
     }
 
-    <C, R> Multi<R> filter(CommandMessage<C> commandMessage, Function<CommandMessage<C>, Multi<R>> target) {
-        return new DefaultReactorCommandFilterChain(handlerInterceptors).filter(commandMessage, target);
+    <C, R> Multi<R> filter(CommandMessage commandMessage, Function<CommandMessage, Multi<R>> target) {
+        return DefaultReactorCommandFilterChain.build(handlerInterceptors, target).filter(commandMessage);
     }
 
-    <C> Multi<ReactorMessageHandler<CommandMessage<?>>> lookupHandler(CommandMessage<C> command) {
+    <C> Multi<ReactorMessageHandler<CommandMessage>> lookupHandler(CommandMessage command) {
         return Multi.createFrom().iterable(handles.get(command.getCommandName()));
     }
 

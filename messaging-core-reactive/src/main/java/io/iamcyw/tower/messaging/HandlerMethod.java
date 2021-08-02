@@ -61,7 +61,7 @@ public class HandlerMethod<T> {
         return payloadType;
     }
 
-    public <R> Multi<R> handle(Message<?> message, Object target) {
+    public <R> Multi<R> handle(Message message, Object target) {
         try {
             if (method instanceof Method) {
                 Object result = method.invoke(target, resolveParameterValues(message));
@@ -92,7 +92,7 @@ public class HandlerMethod<T> {
         }
     }
 
-    private Object[] resolveParameterValues(Message<?> message) {
+    private Object[] resolveParameterValues(Message message) {
         Object[] params = new Object[parameterCount];
         for (int i = 0; i < parameterCount; i++) {
             params[i] = parameterResolvers[i].resolveParameterValue(message);

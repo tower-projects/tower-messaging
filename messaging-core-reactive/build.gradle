@@ -2,13 +2,15 @@ apply plugin: 'java-library'
 apply plugin: 'conventions'
 apply plugin: 'deployed'
 
-description("tower message core")
+description("tower message core reactive")
 
 dependencies {
-    api(project(":messaging-core"))
 
     api("io.iamcyw.tower:tower-utils")
     api("io.iamcyw.tower:tower-exception")
     implementation 'io.smallrye.reactive:mutiny:1.0.0'
     implementation("jakarta.persistence:jakarta.persistence-api")
+    implementation("jakarta.transaction:jakarta.transaction-api")
+
+    testImplementation("org.jboss.logging:jboss-logging")
 }

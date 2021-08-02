@@ -9,13 +9,11 @@ import io.iamcyw.tower.common.Registration;
 import io.iamcyw.tower.queryhandling.AnnotationQueryHandlerInstance;
 import io.iamcyw.tower.queryhandling.DefaultReactorQueryBus;
 import io.iamcyw.tower.queryhandling.ReactorQueryBus;
-import io.iamcyw.tower.serialization.Serializer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -24,8 +22,6 @@ public class DefaultReactorConfigure implements ReactorConfigure {
     private final ReactorConfiguration config = new ConfigurationImpl();
 
     private final Map<Class<?>, ReactorComponent<?>> components = new HashMap<>();
-
-    private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
 
     private final List<Runnable> startHandlers = new ArrayList<>();
 
@@ -76,12 +72,6 @@ public class DefaultReactorConfigure implements ReactorConfigure {
             shutdownHandlers.add(registration::cancel);
         });
         return this;
-    }
-
-    @Override
-    public ReactorConfigure configureMessageSerializer(
-            Function<ReactorConfiguration, Serializer> messageSerializerBuilder) {
-        return null;
     }
 
     @Override

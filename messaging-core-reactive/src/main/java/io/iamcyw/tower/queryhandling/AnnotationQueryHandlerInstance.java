@@ -21,7 +21,7 @@ public class AnnotationQueryHandlerInstance implements SupportedCommandNamesAwar
 
     private final Object commandHandlerInstance;
 
-    private final Map<String, ReactorMessageHandler<QueryMessage<?, ?>>> queryHandles;
+    private final Map<String, ReactorMessageHandler<QueryMessage>> queryHandles;
 
     public AnnotationQueryHandlerInstance(Object commandHandlerInstance) {
         this(commandHandlerInstance, ClasspathParameterResolverFactory.forClass(commandHandlerInstance.getClass()));
@@ -35,9 +35,9 @@ public class AnnotationQueryHandlerInstance implements SupportedCommandNamesAwar
         this.commandHandlerInstance = commandHandlerInstance;
     }
 
-    public Map<String, ReactorMessageHandler<QueryMessage<?, ?>>> initialize(Class<?> commandHandlerInstance,
-                                                                             ParameterResolverFactory parameterResolverFactory) {
-        Map<String, ReactorMessageHandler<QueryMessage<?, ?>>> queryHandles = new HashMap<>();
+    public Map<String, ReactorMessageHandler<QueryMessage>> initialize(Class<?> commandHandlerInstance,
+                                                                       ParameterResolverFactory parameterResolverFactory) {
+        Map<String, ReactorMessageHandler<QueryMessage>> queryHandles = new HashMap<>();
 
         for (Method method : commandHandlerInstance.getDeclaredMethods()) {
             if (AnnotationUtils.findAnnotation(method, QueryHandler.class) != null) {
@@ -49,11 +49,11 @@ public class AnnotationQueryHandlerInstance implements SupportedCommandNamesAwar
         return queryHandles;
     }
 
-    public Map<String, ReactorMessageHandler<QueryMessage<?, ?>>> getQueryHandles() {
+    public Map<String, ReactorMessageHandler<QueryMessage>> getQueryHandles() {
         return queryHandles;
     }
 
-    public ReactorMessageHandler<QueryMessage<?, ?>> getQueryHandler(String commandName) {
+    public ReactorMessageHandler<QueryMessage> getQueryHandler(String commandName) {
         return this.queryHandles.get(commandName);
     }
 

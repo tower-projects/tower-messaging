@@ -6,8 +6,8 @@ import io.smallrye.mutiny.Multi;
 
 public interface ReactorCommandBus {
 
-    <C, R> Multi<R> dispatch(CommandMessage<C> command);
+    <R> Multi<R> dispatch(CommandMessage command);
 
-    Registration subscribe(String commandName, ReactorMessageHandler<CommandMessage<?>> handler);
+    Registration subscribe(String commandName, ReactorMessageHandler<CommandMessage> handler);
 
 }
