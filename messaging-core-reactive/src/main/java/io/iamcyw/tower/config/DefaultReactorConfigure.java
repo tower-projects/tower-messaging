@@ -9,6 +9,8 @@ import io.iamcyw.tower.common.Registration;
 import io.iamcyw.tower.queryhandling.AnnotationQueryHandlerInstance;
 import io.iamcyw.tower.queryhandling.DefaultReactorQueryBus;
 import io.iamcyw.tower.queryhandling.ReactorQueryBus;
+import io.iamcyw.tower.queryhandling.gateway.DefaultReactorQueryGateway;
+import io.iamcyw.tower.queryhandling.gateway.ReactorQueryGateway;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +34,12 @@ public class DefaultReactorConfigure implements ReactorConfigure {
         components.put(ReactorCommandGateway.class,
                        new ReactorComponent<>(config, "commandGateway", this::defaultCommandGateway));
         components.put(ReactorQueryBus.class, new ReactorComponent<>(config, "queryBus", this::defaultQueryBus));
+        components.put(ReactorQueryGateway.class,
+                       new ReactorComponent<>(config, "queryGateway", this::defaultQueryGateway));
+    }
+
+    public static ReactorConfigure defaultConfiguration() {
+        return new DefaultReactorConfigure();
     }
 
     protected ReactorQueryBus defaultQueryBus(ReactorConfiguration config) {
@@ -40,6 +48,10 @@ public class DefaultReactorConfigure implements ReactorConfigure {
 
     protected ReactorCommandBus defaultCommandBus(ReactorConfiguration config) {
         return new DefaultReactorCommandBus();
+    }
+
+    protected ReactorQueryGateway defaultQueryGateway(ReactorConfiguration config) {
+        return new DefaultReactorQueryGateway(config.queryBus());
     }
 
     @Override
