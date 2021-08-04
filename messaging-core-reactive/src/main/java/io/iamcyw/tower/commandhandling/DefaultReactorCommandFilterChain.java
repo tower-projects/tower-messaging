@@ -18,10 +18,10 @@ public class DefaultReactorCommandFilterChain implements ReactorCommandFilterCha
         this.nextChain = nextChain;
     }
 
-    public static <A> ReactorCommandFilterChain build(List<ReactorCommandFilter> filters,
-                                                      Function<CommandMessage, Multi<A>> target) {
+    public static <A> ReactorCommandFilterChain buildChain(List<ReactorCommandFilter> filters,
+                                                           Function<CommandMessage, Multi<A>> target) {
 
-        return buildChain(new ArrayDeque(filters), new ReactorCommandFilterChain() {
+        return build(new ArrayDeque<>(filters), new ReactorCommandFilterChain() {
             @Override
             public <B> Multi<B> filter(CommandMessage commandMessage) {
                 return (Multi<B>) target.apply(commandMessage);
@@ -29,12 +29,12 @@ public class DefaultReactorCommandFilterChain implements ReactorCommandFilterCha
         });
     }
 
-    public static ReactorCommandFilterChain buildChain(Deque<ReactorCommandFilter> filters,
-                                                       ReactorCommandFilterChain nextChain) {
+    private static ReactorCommandFilterChain build(Deque<ReactorCommandFilter> filters,
+                                                   ReactorCommandFilterChain nextChain) {
         if (filters.isEmpty()) {
             return nextChain;
         } else {
-            return buildChain(filters, new DefaultReactorCommandFilterChain(filters.pollLast(), nextChain));
+            return build(filters, new DefaultReactorCommandFilterChain(filters.pollLast(), nextChain));
         }
     }
 

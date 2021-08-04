@@ -36,7 +36,7 @@ public class DefaultReactorCommandBus implements ReactorCommandBus {
     }
 
     <C, R> Multi<R> filter(CommandMessage commandMessage, Function<CommandMessage, Multi<R>> target) {
-        return DefaultReactorCommandFilterChain.build(handlerInterceptors, target).filter(commandMessage);
+        return DefaultReactorCommandFilterChain.buildChain(handlerInterceptors, target).filter(commandMessage);
     }
 
     <C> Multi<ReactorMessageHandler<CommandMessage>> lookupHandler(CommandMessage command) {

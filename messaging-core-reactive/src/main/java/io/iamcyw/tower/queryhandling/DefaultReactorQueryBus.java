@@ -35,11 +35,16 @@ public class DefaultReactorQueryBus implements ReactorQueryBus {
 
 
     <Q, R> Multi<R> filter(QueryMessage queryMessage, Function<QueryMessage, Multi<R>> target) {
-        return new DefaultReactorQueryFilterChain(handlerInterceptors).filter(queryMessage);
+        return DefaultReactorQueryFilterChain.buildChain(handlerInterceptors, target).filter(queryMessage);
     }
 
     <Q, R> Multi<ReactorMessageHandler<QueryMessage>> lookupHandler(QueryMessage query) {
         return Multi.createFrom().iterable(handles.get(query.getQueryName()));
+    }
+
+    public Registration registerHandlerInterceptor(ReactorQueryFilter handlerInterceptor) {
+        handlerInterceptors.add(handlerInterceptor);
+        return () -> handlerInterceptors.remove(handlerInterceptor);
     }
 
 }
