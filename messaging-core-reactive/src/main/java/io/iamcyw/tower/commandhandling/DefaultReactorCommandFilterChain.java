@@ -18,9 +18,8 @@ public class DefaultReactorCommandFilterChain implements ReactorCommandFilterCha
         this.nextChain = nextChain;
     }
 
-    public static <A> ReactorCommandFilterChain buildChain(List<ReactorCommandFilter> filters,
+    public static <A> ReactorCommandFilterChain buildChain(final List<ReactorCommandFilter> filters,
                                                            Function<CommandMessage, Multi<A>> target) {
-
         return build(new ArrayDeque<>(filters), new ReactorCommandFilterChain() {
             @Override
             public <B> Multi<B> filter(CommandMessage commandMessage) {

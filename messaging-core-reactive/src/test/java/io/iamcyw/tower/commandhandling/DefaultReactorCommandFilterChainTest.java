@@ -42,6 +42,7 @@ class DefaultReactorCommandFilterChainTest {
             array.add("handle");
             return array;
         });
+
         DefaultReactorCommandFilterChain.buildChain(Arrays.asList(filter1, filter2), target)
                                         .filter(GenericCommandMessage.asCommandMessage("send")).collect().asList()
                                         .await().indefinitely();

@@ -1,12 +1,11 @@
 package io.iamcyw.tower.config;
 
-import io.iamcyw.tower.commandhandling.AnnotationCommandHandlerInstance;
 import io.iamcyw.tower.commandhandling.DefaultReactorCommandBus;
 import io.iamcyw.tower.commandhandling.ReactorCommandBus;
 import io.iamcyw.tower.commandhandling.gateway.DefaultReactorCommandGateway;
 import io.iamcyw.tower.commandhandling.gateway.ReactorCommandGateway;
 import io.iamcyw.tower.common.Registration;
-import io.iamcyw.tower.queryhandling.AnnotationQueryHandlerInstance;
+import io.iamcyw.tower.messaging.MessageClass;
 import io.iamcyw.tower.queryhandling.DefaultReactorQueryBus;
 import io.iamcyw.tower.queryhandling.ReactorQueryBus;
 import io.iamcyw.tower.queryhandling.gateway.DefaultReactorQueryGateway;
@@ -54,6 +53,10 @@ public class DefaultReactorConfigure implements ReactorConfigure {
         return new DefaultReactorQueryGateway(config.queryBus());
     }
 
+    protected ReactorCommandGateway defaultCommandGateway(ReactorConfiguration config) {
+        return new DefaultReactorCommandGateway(config.commandBus());
+    }
+
     @Override
     public void start() {
         invokeStartHandlers();
@@ -62,25 +65,14 @@ public class DefaultReactorConfigure implements ReactorConfigure {
     @Override
     public <C> ReactorConfigure registerComponent(Class<C> componentType,
                                                   Function<ReactorConfiguration, ? extends C> componentBuilder) {
-        return null;
-    }
-
-    @Override
-    public ReactorConfigure registerCommandHandler(
-            Function<ReactorConfiguration, Object> annotatedCommandHandlerBuilder) {
-        startHandlers.add(() -> {
-            Registration registration = new AnnotationCommandHandlerInstance(
-                    annotatedCommandHandlerBuilder.apply(config)).subscribe(config.commandBus());
-            shutdownHandlers.add(registration::cancel);
-        });
+        components.put(componentType, new ReactorComponent<>(config, componentType.getSimpleName(), componentBuilder));
         return this;
     }
 
     @Override
-    public ReactorConfigure registerQueryHandler(Function<ReactorConfiguration, Object> annotatedQueryHandlerBuilder) {
+    public ReactorConfigure registerCommandHandler(Function<ReactorConfiguration, MessageClass> commandClassBuilder) {
         startHandlers.add(() -> {
-            Registration registration = new AnnotationQueryHandlerInstance(
-                    annotatedQueryHandlerBuilder.apply(config)).subscribe(config.queryBus());
+            Registration registration = commandClassBuilder.apply(config).subscribe(config.commandBus());
             shutdownHandlers.add(registration::cancel);
         });
         return this;
@@ -91,15 +83,21 @@ public class DefaultReactorConfigure implements ReactorConfigure {
         return this.config;
     }
 
+    @Override
+    public ReactorConfigure registerQueryHandler(
+            Function<ReactorConfiguration, MessageClass> annotatedQueryHandlerBuilder) {
+        startHandlers.add(() -> {
+            Registration registration = annotatedQueryHandlerBuilder.apply(config).subscribe(config.queryBus());
+            shutdownHandlers.add(registration::cancel);
+        });
+        return this;
+    }
+
     /**
      * Invokes all registered start handlers.
      */
     protected void invokeStartHandlers() {
         startHandlers.forEach(Runnable::run);
-    }
-
-    protected ReactorCommandGateway defaultCommandGateway(ReactorConfiguration config) {
-        return new DefaultReactorCommandGateway(config.commandBus());
     }
 
     private class ConfigurationImpl implements ReactorConfiguration {
@@ -111,6 +109,7 @@ public class DefaultReactorConfigure implements ReactorConfigure {
                                                                                                             c -> defaultImpl.get()))
                                                 .get());
         }
+
 
     }
 

@@ -1,7 +1,7 @@
 package io.iamcyw.tower.queryhandling;
 
 import io.iamcyw.tower.common.Registration;
-import io.iamcyw.tower.messaging.ReactorMessageHandler;
+import io.iamcyw.tower.messaging.ReactorMessageMethod;
 import io.smallrye.mutiny.Multi;
 
 import java.util.ArrayList;
@@ -13,33 +13,34 @@ import java.util.function.Function;
 
 public class DefaultReactorQueryBus implements ReactorQueryBus {
 
-    private final Map<String, List<ReactorMessageHandler<QueryMessage>>> handles = new HashMap<>();
+    private final Map<String, List<ReactorMessageMethod<QueryMessage>>> handles = new HashMap<>();
 
     private final List<ReactorQueryFilter> handlerInterceptors = new CopyOnWriteArrayList<>();
 
-
     @Override
-    public <R> Multi<R> query(QueryMessage query) {
-        Function<QueryMessage, Multi<R>> target = q -> lookupHandler(q).filter(handle -> handle.canHandle(q))
-                                                                       .flatMap(handle -> handle.handle(q));
-        return filter(query, target);
+    public <R> Multi<R> query(QueryMessage command) {
+
+        Function<QueryMessage, Multi<R>> target = c -> lookupHandler(c).filter(
+                messageHandler -> messageHandler.canHandle(command)).toUni().onItem().transformToMulti(
+                messageHandler -> messageHandler.handle(c));
+
+        return filter(command, target);
     }
 
     @Override
-    public Registration subscribe(String queryName, ReactorMessageHandler<QueryMessage> handler) {
-        List<ReactorMessageHandler<QueryMessage>> handlers = handles.getOrDefault(queryName, new ArrayList<>());
+    public Registration subscribe(String queryName, ReactorMessageMethod<QueryMessage> handler) {
+        List<ReactorMessageMethod<QueryMessage>> handlers = handles.getOrDefault(queryName, new ArrayList<>());
         handlers.add(handler);
         handles.put(queryName, handlers);
         return () -> handlers.remove(handler);
     }
 
-
-    <Q, R> Multi<R> filter(QueryMessage queryMessage, Function<QueryMessage, Multi<R>> target) {
-        return DefaultReactorQueryFilterChain.buildChain(handlerInterceptors, target).filter(queryMessage);
+    <C, R> Multi<R> filter(QueryMessage commandMessage, Function<QueryMessage, Multi<R>> target) {
+        return DefaultReactorQueryFilterChain.buildChain(handlerInterceptors, target).filter(commandMessage);
     }
 
-    <Q, R> Multi<ReactorMessageHandler<QueryMessage>> lookupHandler(QueryMessage query) {
-        return Multi.createFrom().iterable(handles.get(query.getQueryName()));
+    <C> Multi<ReactorMessageMethod<QueryMessage>> lookupHandler(QueryMessage command) {
+        return Multi.createFrom().iterable(handles.get(command.getQueryName()));
     }
 
     public Registration registerHandlerInterceptor(ReactorQueryFilter handlerInterceptor) {

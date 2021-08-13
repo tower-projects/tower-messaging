@@ -3,7 +3,6 @@ package io.iamcyw.tower.commandhandling;
 import io.iamcyw.tower.config.DefaultReactorConfigure;
 import io.iamcyw.tower.config.ReactorConfigure;
 import io.iamcyw.tower.mock.TestCommand;
-import io.iamcyw.tower.mock.TestService;
 import org.junit.jupiter.api.Test;
 
 public class CommandBusTest {
@@ -12,7 +11,7 @@ public class CommandBusTest {
     void testCommand() {
         ReactorConfigure configure = new DefaultReactorConfigure();
 
-        configure.registerCommandHandler(config -> new TestService());
+        // configure.registerCommandHandler(config -> new TestService());
 
         ReactorCommandBus commandBus = configure.buildConfiguration().commandBus();
 

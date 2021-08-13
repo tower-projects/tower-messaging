@@ -13,7 +13,7 @@ class ReactorQueryBusTest {
     void testCommand() {
         ReactorConfigure configure = new DefaultReactorConfigure();
 
-        configure.registerQueryHandler(config -> new TestService());
+        // configure.registerQueryHandler(config -> new TestService());
 
         ReactorQueryBus queryBus = configure.buildConfiguration().queryBus();
 

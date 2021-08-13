@@ -1,14 +1,13 @@
 package io.iamcyw.tower.messaging.predicate;
 
-import io.iamcyw.tower.messaging.HandlerMethod;
 import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.utils.Assert;
 
-import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
-public interface MessagePredicate<T extends Message> extends BiPredicate<T, HandlerMethod> {
+public interface MessagePredicate<T extends Message> extends Predicate<T> {
 
-    static <A extends Message> MessagePredicate<A> wrapIfNeeded(BiPredicate<? super A, ? super HandlerMethod> other) {
+    static <A extends Message> MessagePredicate<A> wrapIfNeeded(Predicate<? super A> other) {
         MessagePredicate<A> right;
 
         if (other instanceof MessagePredicate) {
@@ -20,31 +19,31 @@ public interface MessagePredicate<T extends Message> extends BiPredicate<T, Hand
     }
 
     @Override
-    default BiPredicate<T, HandlerMethod> and(BiPredicate<? super T, ? super HandlerMethod> other) {
+    default Predicate<T> and(Predicate<? super T> other) {
         return new AndMessagePredicate<>(this, wrapIfNeeded(other));
     }
 
     @Override
-    default BiPredicate<T, HandlerMethod> negate() {
+    default Predicate<T> negate() {
         return new NegateMessagePredicate<>(this);
     }
 
     @Override
-    default BiPredicate<T, HandlerMethod> or(BiPredicate<? super T, ? super HandlerMethod> other) {
+    default Predicate<T> or(Predicate<? super T> other) {
         return new OrMessagePredicate<>(this, wrapIfNeeded(other));
     }
 
     class MessagePredicateWrapper<A extends Message> implements MessagePredicate<A> {
 
-        private final BiPredicate<A, HandlerMethod> delegate;
+        private final Predicate<A> delegate;
 
-        public MessagePredicateWrapper(BiPredicate<A, HandlerMethod> delegate) {
+        public MessagePredicateWrapper(Predicate<A> delegate) {
             this.delegate = delegate;
         }
 
         @Override
-        public boolean test(A a, HandlerMethod handlerMethod) {
-            return delegate.test(a, handlerMethod);
+        public boolean test(A a) {
+            return delegate.test(a);
         }
 
         @Override
@@ -64,8 +63,8 @@ public interface MessagePredicate<T extends Message> extends BiPredicate<T, Hand
         }
 
         @Override
-        public boolean test(A a, HandlerMethod handlerMethod) {
-            return !this.predicate.test(a, handlerMethod);
+        public boolean test(A a) {
+            return !this.predicate.test(a);
         }
 
     }
@@ -85,8 +84,8 @@ public interface MessagePredicate<T extends Message> extends BiPredicate<T, Hand
 
 
         @Override
-        public boolean test(A a, HandlerMethod handlerMethod) {
-            return left.test(a, handlerMethod) && right.test(a, handlerMethod);
+        public boolean test(A a) {
+            return left.test(a) && right.test(a);
         }
 
     }
@@ -105,8 +104,8 @@ public interface MessagePredicate<T extends Message> extends BiPredicate<T, Hand
         }
 
         @Override
-        public boolean test(A a, HandlerMethod handlerMethod) {
-            return (this.left.test(a, handlerMethod) || this.right.test(a, handlerMethod));
+        public boolean test(A a) {
+            return (this.left.test(a) || this.right.test(a));
         }
 
     }
