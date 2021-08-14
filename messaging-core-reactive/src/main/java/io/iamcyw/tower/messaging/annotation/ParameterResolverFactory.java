@@ -1,5 +1,7 @@
 package io.iamcyw.tower.messaging.annotation;
 
+import io.iamcyw.tower.messaging.parameter.ParameterResolver;
+
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 

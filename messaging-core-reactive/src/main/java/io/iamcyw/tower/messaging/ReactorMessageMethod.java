@@ -1,8 +1,9 @@
 package io.iamcyw.tower.messaging;
 
-import io.iamcyw.tower.messaging.annotation.ParameterResolver;
+import io.iamcyw.tower.messaging.parameter.ParameterResolver;
 import io.iamcyw.tower.messaging.predicate.MessagePredicate;
 import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 
 public abstract class ReactorMessageMethod<T extends Message> {
 
@@ -37,7 +38,16 @@ public abstract class ReactorMessageMethod<T extends Message> {
     }
 
     public <R> Multi<R> handle(T message) {
-        return invoker.invoke(parent.getInstance(), resolveParameter(message));
+        Object result = invoker.invoke(parent.getInstance(), resolveParameter(message));
+        if (result instanceof Multi) {
+            return (Multi<R>) result;
+        } else if (result instanceof Uni) {
+            return ((Uni<R>) result).toMulti();
+        } else if (result == null) {
+            return Multi.createFrom().empty();
+        } else {
+            return Multi.createFrom().<R>item((R) result);
+        }
     }
 
     public Object[] resolveParameter(T message) {

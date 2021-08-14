@@ -1,4 +1,4 @@
-package io.iamcyw.tower.messaging.annotation;
+package io.iamcyw.tower.messaging.parameter;
 
 import java.lang.annotation.*;
 
