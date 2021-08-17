@@ -3,6 +3,7 @@ package io.iamcyw.tower.queryhandling;
 import io.iamcyw.tower.common.Registration;
 import io.iamcyw.tower.messaging.ReactorMessageMethod;
 import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,10 +19,10 @@ public class DefaultReactorQueryBus implements ReactorQueryBus {
     private final List<ReactorQueryFilter> handlerInterceptors = new CopyOnWriteArrayList<>();
 
     @Override
-    public <R> Multi<R> query(QueryMessage command) {
+    public <R> Uni<R> query(QueryMessage command) {
 
-        Function<QueryMessage, Multi<R>> target = c -> lookupHandler(c).filter(
-                messageHandler -> messageHandler.canHandle(command)).toUni().onItem().transformToMulti(
+        Function<QueryMessage, Uni<R>> target = c -> lookupHandler(c).filter(
+                messageHandler -> messageHandler.canHandle(command)).toUni().flatMap(
                 messageHandler -> messageHandler.handle(c));
 
         return filter(command, target);
@@ -35,7 +36,7 @@ public class DefaultReactorQueryBus implements ReactorQueryBus {
         return () -> handlers.remove(handler);
     }
 
-    <C, R> Multi<R> filter(QueryMessage commandMessage, Function<QueryMessage, Multi<R>> target) {
+    <C, R> Uni<R> filter(QueryMessage commandMessage, Function<QueryMessage, Uni<R>> target) {
         return DefaultReactorQueryFilterChain.buildChain(handlerInterceptors, target).filter(commandMessage);
     }
 

@@ -1,10 +1,7 @@
 rootProject.name = 'tower-messaging'
 include 'messaging-dependencies'
 
+include 'common'
+
 include 'messaging-core'
 include 'messaging-core-reactive'
-
-include 'spring:messaging-boot-autoconfigure'
-include 'spring:messaging-spring'
-include 'spring:messaging-spring-boot-starter'
-

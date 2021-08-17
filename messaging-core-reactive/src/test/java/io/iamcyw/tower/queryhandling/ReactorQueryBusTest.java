@@ -3,8 +3,7 @@ package io.iamcyw.tower.queryhandling;
 import io.iamcyw.tower.config.DefaultReactorConfigure;
 import io.iamcyw.tower.config.ReactorConfigure;
 import io.iamcyw.tower.mock.TestQuery;
-import io.iamcyw.tower.mock.TestService;
-import io.smallrye.mutiny.helpers.test.AssertSubscriber;
+import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import org.junit.jupiter.api.Test;
 
 class ReactorQueryBusTest {
@@ -19,10 +18,10 @@ class ReactorQueryBusTest {
 
         configure.start();
 
-        AssertSubscriber<String> subscriber = queryBus.<String>query(new GenericQueryMessage(new TestQuery("id")))
-                                                      .subscribe().withSubscriber(AssertSubscriber.create(1));
+        UniAssertSubscriber<String> subscriber = queryBus.<String>query(new GenericQueryMessage(new TestQuery("id")))
+                                                         .subscribe().withSubscriber(UniAssertSubscriber.create());
 
-        subscriber.assertCompleted().assertItems("id result");
+        subscriber.assertCompleted().assertItem("id result");
     }
 
 }

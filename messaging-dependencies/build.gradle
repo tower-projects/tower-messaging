@@ -8,14 +8,11 @@ javaPlatform {
 
 dependencies {
     api(platform("org.springframework.boot:spring-boot-dependencies:2.3.7.RELEASE"))
-    api platform('io.iamcyw.tower:tower-dependencies:1.0.0-SNAPSHOT')
-    api platform('io.quarkus:quarkus-universe-bom:2.0.1.Final')
+    api platform('io.quarkus.platform:quarkus-bom:2.1.2.Final')
     constraints {
+        api project(':common')
         api project(':messaging-core')
         api project(':messaging-core-reactive')
-        api project(':spring:messaging-spring')
-        api project(':spring:messaging-boot-autoconfigure')
-        api project(':spring:messaging-spring-boot-starter')
         api "io.iamcyw.tower:tower-quarkus:${version}"
     }
 }

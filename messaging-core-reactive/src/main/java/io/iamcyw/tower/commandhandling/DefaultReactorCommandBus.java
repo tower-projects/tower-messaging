@@ -3,6 +3,7 @@ package io.iamcyw.tower.commandhandling;
 import io.iamcyw.tower.common.Registration;
 import io.iamcyw.tower.messaging.ReactorMessageMethod;
 import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,10 +19,10 @@ public class DefaultReactorCommandBus implements ReactorCommandBus {
     private final List<ReactorCommandFilter> handlerInterceptors = new CopyOnWriteArrayList<>();
 
     @Override
-    public <R> Multi<R> dispatch(CommandMessage command) {
+    public <R> Uni<R> dispatch(CommandMessage command) {
 
-        Function<CommandMessage, Multi<R>> target = c -> lookupHandler(c).filter(
-                messageHandler -> messageHandler.canHandle(command)).toUni().onItem().transformToMulti(
+        Function<CommandMessage, Uni<R>> target = c -> lookupHandler(c).filter(
+                messageHandler -> messageHandler.canHandle(command)).toUni().flatMap(
                 messageHandler -> messageHandler.handle(c));
 
         return filter(command, target);
@@ -35,7 +36,7 @@ public class DefaultReactorCommandBus implements ReactorCommandBus {
         return () -> handlers.remove(handler);
     }
 
-    <C, R> Multi<R> filter(CommandMessage commandMessage, Function<CommandMessage, Multi<R>> target) {
+    <C, R> Uni<R> filter(CommandMessage commandMessage, Function<CommandMessage, Uni<R>> target) {
         return DefaultReactorCommandFilterChain.buildChain(handlerInterceptors, target).filter(commandMessage);
     }
 

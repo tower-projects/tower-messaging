@@ -1,6 +1,6 @@
 package io.iamcyw.tower.commandhandling;
 
-import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -19,11 +19,11 @@ public class DefaultReactorCommandFilterChain implements ReactorCommandFilterCha
     }
 
     public static <A> ReactorCommandFilterChain buildChain(final List<ReactorCommandFilter> filters,
-                                                           Function<CommandMessage, Multi<A>> target) {
+                                                           Function<CommandMessage, Uni<A>> target) {
         return build(new ArrayDeque<>(filters), new ReactorCommandFilterChain() {
             @Override
-            public <B> Multi<B> filter(CommandMessage commandMessage) {
-                return (Multi<B>) target.apply(commandMessage);
+            public <B> Uni<B> filter(CommandMessage commandMessage) {
+                return (Uni<B>) target.apply(commandMessage);
             }
         });
     }
@@ -38,7 +38,7 @@ public class DefaultReactorCommandFilterChain implements ReactorCommandFilterCha
     }
 
     @Override
-    public <R> Multi<R> filter(CommandMessage commandMessage) {
+    public <R> Uni<R> filter(CommandMessage commandMessage) {
         return filter.filter(commandMessage, nextChain);
     }
 

@@ -37,16 +37,16 @@ public abstract class ReactorMessageMethod<T extends Message> {
         this.invoker = invoker;
     }
 
-    public <R> Multi<R> handle(T message) {
+    public <R> Uni<R> handle(T message) {
         Object result = invoker.invoke(parent.getInstance(), resolveParameter(message));
         if (result instanceof Multi) {
-            return (Multi<R>) result;
+            return (Uni<R>) ((Multi<?>) result).collect().asList();
         } else if (result instanceof Uni) {
-            return ((Uni<R>) result).toMulti();
+            return (Uni<R>) result;
         } else if (result == null) {
-            return Multi.createFrom().empty();
+            return (Uni<R>) Uni.createFrom().voidItem();
         } else {
-            return Multi.createFrom().<R>item((R) result);
+            return (Uni<R>) Uni.createFrom().item(result);
         }
     }
 

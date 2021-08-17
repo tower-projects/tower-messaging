@@ -1,9 +1,9 @@
 package io.iamcyw.tower.queryhandling;
 
-import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 
 public interface ReactorQueryFilter {
 
-    <Q, R> Multi<R> filter(QueryMessage query, ReactorQueryFilterChain chain);
+    <Q, R> Uni<R> filter(QueryMessage query, ReactorQueryFilterChain chain);
 
 }

@@ -1,6 +1,6 @@
 package io.iamcyw.tower.commandhandling;
 
-import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +15,7 @@ class DefaultReactorCommandFilterChainTest {
     void build() {
         ReactorCommandFilter filter1 = new ReactorCommandFilter() {
             @Override
-            public <C, R> Multi<R> filter(CommandMessage exchange, ReactorCommandFilterChain chain) {
+            public <C, R> Uni<R> filter(CommandMessage exchange, ReactorCommandFilterChain chain) {
                 Logger.getLogger("filter-1").info("pre 1");
                 return chain.<List<String>>filter(exchange).<R>map(string -> {
                     Logger.getLogger("filter-1").info("post 1");
@@ -26,7 +26,7 @@ class DefaultReactorCommandFilterChainTest {
         };
         ReactorCommandFilter filter2 = new ReactorCommandFilter() {
             @Override
-            public <C, R> Multi<R> filter(CommandMessage exchange, ReactorCommandFilterChain chain) {
+            public <C, R> Uni<R> filter(CommandMessage exchange, ReactorCommandFilterChain chain) {
                 Logger.getLogger("filter-2").info("pre 2");
                 return chain.<List<String>>filter(exchange).<R>map(string -> {
                     Logger.getLogger("filter-2").info("post 2");
@@ -36,7 +36,7 @@ class DefaultReactorCommandFilterChainTest {
             }
         };
 
-        Function<CommandMessage, Multi<Object>> target = commandMessage -> Multi.createFrom().item(() -> {
+        Function<CommandMessage, Uni<Object>> target = commandMessage -> Uni.createFrom().item(() -> {
             List<String> array = new ArrayList<>(3);
             Logger.getLogger("handle").info("handle");
             array.add("handle");
@@ -44,8 +44,7 @@ class DefaultReactorCommandFilterChainTest {
         });
 
         DefaultReactorCommandFilterChain.buildChain(Arrays.asList(filter1, filter2), target)
-                                        .filter(GenericCommandMessage.asCommandMessage("send")).collect().asList()
-                                        .await().indefinitely();
+                                        .filter(GenericCommandMessage.asCommandMessage("send")).await().indefinitely();
     }
 
 }

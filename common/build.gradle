@@ -1,0 +1,12 @@
+apply plugin: 'java-library'
+apply plugin: 'conventions'
+apply plugin: 'deployed'
+
+description("common utils")
+
+dependencies {
+    implementation 'com.google.code.findbugs:jsr305'
+    api 'org.apache.commons:commons-lang3'
+    api 'org.slf4j:slf4j-api'
+    api "com.google.guava:guava"
+}

@@ -1,6 +1,7 @@
 package io.iamcyw.tower.queryhandling;
 
 import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -19,11 +20,11 @@ public class DefaultReactorQueryFilterChain implements ReactorQueryFilterChain {
     }
 
     public static <A> ReactorQueryFilterChain buildChain(List<ReactorQueryFilter> filters,
-                                                         Function<QueryMessage, Multi<A>> target) {
+                                                         Function<QueryMessage, Uni<A>> target) {
         return build(new ArrayDeque<>(filters), new ReactorQueryFilterChain() {
             @Override
-            public <R> Multi<R> filter(QueryMessage queryMessage) {
-                return (Multi<R>) target.apply(queryMessage);
+            public <R> Uni<R> filter(QueryMessage queryMessage) {
+                return (Uni<R>) target.apply(queryMessage);
             }
         });
     }
@@ -38,7 +39,7 @@ public class DefaultReactorQueryFilterChain implements ReactorQueryFilterChain {
 
 
     @Override
-    public <R> Multi<R> filter(QueryMessage queryMessage) {
+    public <R> Uni<R> filter(QueryMessage queryMessage) {
         return filter.filter(queryMessage, nextChain);
     }
 

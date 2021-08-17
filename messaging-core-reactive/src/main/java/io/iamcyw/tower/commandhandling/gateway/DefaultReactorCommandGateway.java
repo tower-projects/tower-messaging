@@ -4,7 +4,6 @@ import io.iamcyw.tower.commandhandling.CommandMessage;
 import io.iamcyw.tower.commandhandling.GenericCommandMessage;
 import io.iamcyw.tower.commandhandling.ReactorCommandBus;
 import io.iamcyw.tower.messaging.MessageDispatchInterceptor;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
 import java.util.ArrayList;
@@ -31,12 +30,11 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
         } else {
             this.dispatchInterceptors = Collections.emptyList();
         }
-
     }
 
     @Override
-    public <R> Multi<R> send(Object command) {
-        return createCommandMessage(command).onItem().transformToMulti(reactorCommandBus::dispatch);
+    public <R> Uni<R> send(Object command) {
+        return createCommandMessage(command).flatMap(reactorCommandBus::dispatch);
     }
 
     Uni<CommandMessage> createCommandMessage(Object command) {
