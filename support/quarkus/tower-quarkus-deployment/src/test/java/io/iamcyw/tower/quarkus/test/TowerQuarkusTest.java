@@ -13,7 +13,7 @@ public class TowerQuarkusTest {
     static final QuarkusUnitTest unitTest = new QuarkusUnitTest().setArchiveProducer(
             () -> ShrinkWrap.create(JavaArchive.class));
 
-    @Test
+    // @Test
     public void testHealthServlet() {
     }
 

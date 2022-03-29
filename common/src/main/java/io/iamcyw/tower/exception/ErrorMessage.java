@@ -1,7 +1,7 @@
 package io.iamcyw.tower.exception;
 
-import io.iamcyw.tower.utils.lang.StringPool;
-import org.apache.commons.lang3.StringUtils;
+import com.google.common.base.Strings;
+import io.iamcyw.tower.utils.CommonKit;
 
 public class ErrorMessage {
 
@@ -24,15 +24,15 @@ public class ErrorMessage {
 
     @Override
     public String toString() {
+        if (Strings.isNullOrEmpty(error)) {
+            return arrayFormat(errorMsg, args);
+        }
         return error + " -- " + arrayFormat(errorMsg, args);
     }
 
     private String arrayFormat(String messagePattern, Object[] argArray) {
         if (argArray != null && argArray.length > 0) {
-            for (Object arg : argArray) {
-                messagePattern = StringUtils.replaceOnce(messagePattern, StringPool.LEFT_BRACE + StringPool.RIGHT_BRACE,
-                                                         String.valueOf(arg));
-            }
+            return CommonKit.arrayFormat(messagePattern, argArray);
         }
         return messagePattern;
     }

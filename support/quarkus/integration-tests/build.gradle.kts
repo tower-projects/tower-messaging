@@ -12,6 +12,8 @@ repositories {
 dependencies {
 
     implementation("io.quarkus:quarkus-arc")
+
+    implementation(project(":common"))
     implementation(project(":support:quarkus:tower-quarkus"))
     implementation(project(":support:quarkus:tower-quarkus-deployment"))
 

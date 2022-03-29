@@ -5,40 +5,37 @@ import io.iamcyw.tower.messaging.Message;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-public class DefaultMessageHandlerInterceptorChain implements MessageHandlerInterceptorChain {
+public class DefaultMessageHandlerInterceptorChain<R> implements MessageHandlerInterceptorChain<R> {
 
-    private final MessageHandlerInterceptor interceptor;
+    private final MessageHandlerInterceptor<R> interceptor;
 
-    private final MessageHandlerInterceptorChain nextChain;
+    private final MessageHandlerInterceptorChain<R> nextChain;
 
-    public DefaultMessageHandlerInterceptorChain(MessageHandlerInterceptor interceptor,
-                                                 MessageHandlerInterceptorChain nextChain) {
+    public DefaultMessageHandlerInterceptorChain(MessageHandlerInterceptor<R> interceptor,
+                                                 MessageHandlerInterceptorChain<R> nextChain) {
         this.interceptor = interceptor;
         this.nextChain = nextChain;
     }
 
-    public static MessageHandlerInterceptorChain build(Deque<MessageHandlerInterceptor> interceptors,
-                                                       MessageHandlerInterceptorChain nextChain) {
+    public static <R1> MessageHandlerInterceptorChain<R1> build(Deque<MessageHandlerInterceptor<R1>> interceptors,
+                                                                MessageHandlerInterceptorChain<R1> nextChain) {
         if (interceptors.isEmpty()) {
             return nextChain;
         } else {
-            return build(interceptors, new DefaultMessageHandlerInterceptorChain(interceptors.removeLast(), nextChain));
+            return build(interceptors,
+                         new DefaultMessageHandlerInterceptorChain<R1>(interceptors.removeLast(), nextChain));
         }
     }
 
-    public static <R1> MessageHandlerInterceptorChain buildChain(List<MessageHandlerInterceptor> interceptors,
-                                                                 Handle<R1> handle) {
-        return build(new ArrayDeque<>(interceptors), new MessageHandlerInterceptorChain() {
-            @Override
-            public <R> R filter(Message message) {
-                return (R) handle.handle(message);
-            }
-        });
+    public static <R1> CompletableFuture<MessageHandlerInterceptorChain<R1>> buildChain(
+            List<MessageHandlerInterceptor<R1>> interceptors, Handle<R1> handle) {
+        return CompletableFuture.completedFuture(build(new ArrayDeque<>(interceptors), handle::handle));
     }
 
     @Override
-    public <R> R filter(Message message) {
+    public CompletableFuture<R> filter(Message message) {
         return interceptor.filter(message, nextChain);
     }
 

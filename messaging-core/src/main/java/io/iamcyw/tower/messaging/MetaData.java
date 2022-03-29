@@ -1,12 +1,13 @@
 package io.iamcyw.tower.messaging;
 
 import io.iamcyw.tower.messaging.handle.MessageHandle;
+import io.iamcyw.tower.responsetype.ResponseType;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
+import java.util.concurrent.CompletableFuture;
 
 public class MetaData {
     private final Map<String, Object> value;
@@ -40,12 +41,20 @@ public class MetaData {
         value.put("PREDICATE_PARAMETER", parameter);
     }
 
-    public Stream<MessageHandle> getMessageHandlers() {
-        return (Stream<MessageHandle>) value.get("MESSAGE_HANDLERS");
+    public CompletableFuture<List<MessageHandle>> getMessageHandlers() {
+        return (CompletableFuture<List<MessageHandle>>) value.get("MESSAGE_HANDLERS");
     }
 
-    public void setMessageHandlers(Stream<MessageHandle> messageHandlers) {
+    public void setMessageHandlers(CompletableFuture<List<MessageHandle>> messageHandlers) {
         value.put("MESSAGE_HANDLERS", messageHandlers);
+    }
+
+    public ResponseType<?> getResponseType() {
+        return (ResponseType<?>) value.get("RESPONSE_TYPE");
+    }
+
+    public void setResponseType(ResponseType<?> responseType) {
+        value.put("RESPONSE_TYPE", responseType);
     }
 
     @Override

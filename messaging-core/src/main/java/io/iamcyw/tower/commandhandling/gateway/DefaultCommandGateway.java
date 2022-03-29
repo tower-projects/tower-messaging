@@ -3,7 +3,10 @@ package io.iamcyw.tower.commandhandling.gateway;
 import io.iamcyw.tower.commandhandling.CommandBus;
 import io.iamcyw.tower.messaging.GenericMessage;
 import io.iamcyw.tower.messaging.Message;
+import io.iamcyw.tower.messaging.MetaData;
 import io.iamcyw.tower.messaging.interceptor.MessageDispatchInterceptor;
+import io.iamcyw.tower.responsetype.ResponseType;
+import io.iamcyw.tower.responsetype.ResponseTypes;
 
 import java.util.List;
 
@@ -18,17 +21,19 @@ public class DefaultCommandGateway implements CommandGateway {
     }
 
     @Override
-    public <R> R request(Object command) {
-        return commandBus.dispatch(wrapperMessage(command));
+    public <R> R request(Object command, ResponseType<R> responseType) {
+        return commandBus.<R>dispatch(wrapperMessage(command, responseType)).join();
     }
 
     @Override
     public void send(Object command) {
-        commandBus.<Void>dispatch(wrapperMessage(command));
+        commandBus.<Void>dispatch(wrapperMessage(command, ResponseTypes.instanceOf(Void.TYPE)));
     }
 
-    private Message wrapperMessage(Object payload) {
-        Message message = new GenericMessage(payload);
+    private <R> Message wrapperMessage(Object payload, ResponseType<R> responseType) {
+        MetaData metaData = new MetaData();
+        metaData.setResponseType(responseType);
+        Message message = new GenericMessage(metaData, payload);
         for (MessageDispatchInterceptor interceptor : interceptors) {
             message = interceptor.handle(message);
         }

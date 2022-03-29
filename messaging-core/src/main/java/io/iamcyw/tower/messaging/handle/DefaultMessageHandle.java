@@ -5,6 +5,8 @@ import io.iamcyw.tower.messaging.MessageBean;
 import io.iamcyw.tower.messaging.handle.resolve.ParameterResolver;
 import io.iamcyw.tower.messaging.handle.resolve.ParameterResolverWrapper;
 import io.iamcyw.tower.messaging.predicate.MessageHandlePredicate;
+import io.iamcyw.tower.responsetype.ResponseType;
+import io.iamcyw.tower.utils.Assert;
 
 import java.util.function.Supplier;
 
@@ -17,18 +19,21 @@ public class DefaultMessageHandle extends MessageHandle {
 
     private ParameterResolverWrapper resolvers;
 
+    private Class<?> returnType;
+
     public DefaultMessageHandle() {
-        this("", message -> true, () -> null, new MessageBean(), new ParameterResolver[]{});
+        this("", message -> true, () -> null, new MessageBean(), new ParameterResolver[]{}, Object.class);
     }
 
     public DefaultMessageHandle(String handleTarget, MessageHandlePredicate messageHandlePredicate,
                                 Supplier<MethodInvoker> invoker, MessageBean messageBean,
-                                ParameterResolver<?>[] resolvers) {
+                                ParameterResolver<?>[] resolvers, Class<?> returnType) {
         super(handleTarget);
         this.messageHandlePredicate = messageHandlePredicate;
         this.invoker = invoker;
         this.messageBean = messageBean;
         this.resolvers = new ParameterResolverWrapper(resolvers);
+        this.returnType = returnType;
     }
 
     public DefaultMessageHandle(String handleTarget, MessageHandlePredicate messageHandlePredicate,
@@ -51,7 +56,14 @@ public class DefaultMessageHandle extends MessageHandle {
 
     @Override
     public boolean predicate(Message message) {
-        return messageHandlePredicate.test(message);
+        return getMessageHandlePredicate().test(message) && checkReturnType(message);
+    }
+
+    public boolean checkReturnType(Message message) {
+        ResponseType<?> responseType = message.getMetaData().getResponseType();
+        Assert.assertNotNull(responseType);
+
+        return responseType.matches(returnType);
     }
 
     public MessageHandlePredicate getMessageHandlePredicate() {
@@ -84,6 +96,14 @@ public class DefaultMessageHandle extends MessageHandle {
 
     public void setResolvers(ParameterResolverWrapper resolvers) {
         this.resolvers = resolvers;
+    }
+
+    public Class<?> getReturnType() {
+        return returnType;
+    }
+
+    public void setReturnType(Class<?> returnType) {
+        this.returnType = returnType;
     }
 
 }

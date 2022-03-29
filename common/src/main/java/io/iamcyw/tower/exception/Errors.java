@@ -6,6 +6,10 @@ import io.iamcyw.tower.utils.lang.Nullable;
 
 public class Errors {
 
+    private Errors() {
+        throw new IllegalStateException("Utility class");
+    }
+
     public static Builder create(String key) {
         return new Builder(key);
     }
@@ -16,16 +20,16 @@ public class Errors {
 
     public static class Builder {
         @Nullable
-        private String key;
+        private String error;
 
         @NonNull
-        private String msg;
+        private String msg = "";
 
         @Nullable
         private Object[] args;
 
-        public Builder(String key) {
-            this.key = key;
+        public Builder(@Nullable String error) {
+            this.error = error;
         }
 
         public Builder() {
@@ -42,7 +46,7 @@ public class Errors {
         }
 
         public ErrorMessage apply() {
-            return new ErrorMessage(key, msg, args);
+            return new ErrorMessage(error, msg, args);
         }
 
     }

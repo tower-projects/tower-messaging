@@ -10,17 +10,16 @@ import org.junit.jupiter.api.Assertions;
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class TestService {
+public class TestVoidService {
 
-    private static final Logger LOGGER = Logger.getLogger(TestService.class);
+    private static final Logger LOGGER = Logger.getLogger(TestVoidService.class);
 
     @CommandHandle
-    public String command(@NonNull BasicTestCommand basicTestCommand) {
+    public void command(@NonNull BasicTestCommand basicTestCommand) {
         LOGGER.info(CommonKit.arrayFormat("command: {} payload: {}", basicTestCommand.getClass().getName(),
                                           basicTestCommand.getPayload()));
         Assertions.assertNotNull(basicTestCommand);
         Assertions.assertEquals(basicTestCommand.getPayload(), "payload");
-        return basicTestCommand.getPayload() + "-reply";
     }
 
 }

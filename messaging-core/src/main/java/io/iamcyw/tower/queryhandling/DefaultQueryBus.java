@@ -1,6 +1,7 @@
 package io.iamcyw.tower.queryhandling;
 
-import io.iamcyw.tower.commandhandling.DefaultHandle;
+import com.google.common.collect.ImmutableList;
+import io.iamcyw.tower.Async;
 import io.iamcyw.tower.commandhandling.Registration;
 import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.messaging.handle.MessageHandle;
@@ -8,41 +9,69 @@ import io.iamcyw.tower.messaging.handle.MessageHandlers;
 import io.iamcyw.tower.messaging.interceptor.DefaultMessageHandlerInterceptorChain;
 import io.iamcyw.tower.messaging.interceptor.Handle;
 import io.iamcyw.tower.messaging.interceptor.MessageHandlerInterceptor;
+import io.iamcyw.tower.utils.Assert;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Stream;
 
 public class DefaultQueryBus implements QueryBus {
+    private final List<MessageHandlerInterceptor<?>> handlerInterceptors = new CopyOnWriteArrayList<>();
+
     private final MessageHandlers messageHandlers;
-
-    private final Handle<?> handle = new DefaultHandle<>();
-
-    private final List<MessageHandlerInterceptor> interceptors = new CopyOnWriteArrayList<>();
 
     public DefaultQueryBus(MessageHandlers messageHandlers) {
         this.messageHandlers = messageHandlers;
     }
 
-
     @Override
-    public <R> R dispatch(Message message) {
+    public <R> CompletableFuture<R> dispatch(Message message) {
         message.getMetaData().setMessageHandlers(allowMessageHandlers(message));
         return filter(message);
     }
 
     @Override
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor messageHandlerInterceptor) {
-        interceptors.add(messageHandlerInterceptor);
-        return () -> interceptors.remove(messageHandlerInterceptor);
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<?> messageHandlerInterceptor) {
+        handlerInterceptors.add(messageHandlerInterceptor);
+        return () -> handlerInterceptors.remove(messageHandlerInterceptor);
     }
 
-    private Stream<MessageHandle> allowMessageHandlers(Message message) {
+    private CompletableFuture<List<MessageHandle>> allowMessageHandlers(Message message) {
         return messageHandlers.get(message);
     }
 
-    private <R> R filter(Message message) {
-        return DefaultMessageHandlerInterceptorChain.buildChain(interceptors, handle).filter(message);
+    private <R> CompletableFuture<R> filter(Message message) {
+
+        return DefaultMessageHandlerInterceptorChain.<R>buildChain(matchInterceptor(message), handle())
+                                                    .thenComposeAsync(chain -> chain.filter(message));
+    }
+
+    private <R> List<MessageHandlerInterceptor<R>> matchInterceptor(Message message) {
+        ImmutableList.Builder<MessageHandlerInterceptor<R>> builder = ImmutableList.builder();
+        for (MessageHandlerInterceptor<?> handlerInterceptor : handlerInterceptors) {
+            if (handlerInterceptor.match(message)) {
+                builder.add((MessageHandlerInterceptor<R>) handlerInterceptor);
+            }
+        }
+        return builder.build();
+    }
+
+    private <R> Handle<R> handle() {
+        return message -> {
+            CompletableFuture<List<MessageHandle>> messageHandles = message.getMetaData().getMessageHandlers();
+            Assert.assertNotNull(messageHandles);
+
+            List<MessageHandle> handles = messageHandles.join();
+            Assert.assertNotNull(handles);
+            Assert.assertNotEmpty(handles);
+
+            try {
+                return Async.toCompletableFuture(handles.get(0).handle(message));
+            } catch (Exception e) {
+                return CompletableFuture.failedFuture(e);
+            }
+
+        };
     }
 
 }

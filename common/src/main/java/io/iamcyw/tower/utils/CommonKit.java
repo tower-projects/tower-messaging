@@ -1,13 +1,20 @@
 package io.iamcyw.tower.utils;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.google.common.base.Strings;
 
 import java.util.function.Supplier;
 
-public class CommonUtils {
+public class CommonKit {
 
-    public static final String EXPRESSION_BRACE = "{}";
+    public static final String EXPRESSION_BRACE;
+
+    static {
+        EXPRESSION_BRACE = "{}";
+    }
+
+    private CommonKit() {
+        throw new IllegalStateException("Utility class");
+    }
 
     /**
      * Returns the given instance, if not {@code null}, or otherwise the value provided by {@code defaultProvider}.
@@ -57,17 +64,35 @@ public class CommonUtils {
     /**
      * 将字符串中的'{}'按照数组中的值依次替换
      *
-     * @param messagePattern 待替换的字符串
-     * @param argArray       替换数据的数组
+     * @param text         待替换的字符串
+     * @param replaceArray 替换数据的数组
      * @return 替换后的字符串
      */
-    public static String arrayFormat(String messagePattern, Object[] argArray) {
-        if (argArray != null && argArray.length > 0) {
-            for (Object arg : argArray) {
-                messagePattern = StringUtils.replaceOnce(messagePattern, EXPRESSION_BRACE, ArrayUtils.toString(arg));
-            }
+    public static String arrayFormat(String text, Object... replaceArray) {
+        if (Strings.isNullOrEmpty(text) || replaceArray == null || replaceArray.length == 0) {
+            return text;
         }
-        return messagePattern;
+
+        final int indexNotFound = -1;
+        int start = 0;
+        int end = text.indexOf(EXPRESSION_BRACE, start);
+
+        if (end == indexNotFound) {
+            return text;
+        }
+
+        final int replLength = EXPRESSION_BRACE.length();
+        final StringBuilder buf = new StringBuilder(text.length() + replaceArray.length * 2);
+        int index = 0;
+        while (end != indexNotFound) {
+            final String replacement = String.valueOf(replaceArray[index]);
+            buf.append(text, start, end).append(replacement);
+            start = end + replLength;
+            end = text.indexOf(EXPRESSION_BRACE, start);
+            index++;
+        }
+
+        return buf.toString();
     }
 
     public static String toString(Object object) {

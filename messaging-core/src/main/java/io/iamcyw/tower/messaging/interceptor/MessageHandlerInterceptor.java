@@ -2,8 +2,16 @@ package io.iamcyw.tower.messaging.interceptor;
 
 import io.iamcyw.tower.messaging.Message;
 
-public interface MessageHandlerInterceptor {
+import java.util.concurrent.CompletableFuture;
 
-    <R> R filter(Message message, MessageHandlerInterceptorChain chain);
+public interface MessageHandlerInterceptor<R> {
+
+    CompletableFuture<R> filter(Message message, MessageHandlerInterceptorChain<?> chain);
+
+    Class<R> type();
+
+    default boolean match(Message message) {
+        return true;
+    }
 
 }

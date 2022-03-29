@@ -2,9 +2,11 @@ package io.iamcyw.tower.messaging.interceptor;
 
 import io.iamcyw.tower.messaging.Message;
 
-@FunctionalInterface
-public interface MessageHandlerInterceptorChain {
+import java.util.concurrent.CompletableFuture;
 
-    <R> R filter(Message message);
+@FunctionalInterface
+public interface MessageHandlerInterceptorChain<R> {
+
+    CompletableFuture<R> filter(Message message);
 
 }

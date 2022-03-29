@@ -2,8 +2,10 @@ package io.iamcyw.tower.messaging.interceptor;
 
 import io.iamcyw.tower.messaging.Message;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface Handle<R> {
 
-    R handle(Message message);
+    CompletableFuture<R> handle(Message message);
 
 }

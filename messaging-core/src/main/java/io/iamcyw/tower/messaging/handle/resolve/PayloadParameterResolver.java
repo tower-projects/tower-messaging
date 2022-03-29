@@ -2,7 +2,7 @@ package io.iamcyw.tower.messaging.handle.resolve;
 
 import io.iamcyw.tower.messaging.Message;
 
-public class PayloadParameterResolver<T extends Object> implements ParameterResolver<T> {
+public class PayloadParameterResolver<T> implements ParameterResolver<T> {
     private Class<T> payloadType;
 
     public PayloadParameterResolver() {

@@ -19,7 +19,12 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @Override
     public <R> R query(Object query) {
-        return queryBus.dispatch(wrapperMessage(query));
+        return queryBus.<R>dispatch(wrapperMessage(query)).join();
+    }
+
+    @Override
+    public <R> List<R> queries(Object query) {
+        return queryBus.<List<R>>dispatch(wrapperMessage(query)).join();
     }
 
     private Message wrapperMessage(Object payload) {

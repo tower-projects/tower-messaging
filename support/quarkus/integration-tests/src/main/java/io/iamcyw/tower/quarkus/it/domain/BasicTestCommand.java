@@ -1,12 +1,13 @@
 package io.iamcyw.tower.quarkus.it.domain;
 
-public class TestCommand {
-    public String payload;
+public class BasicTestCommand {
 
-    public TestCommand() {
+    private String payload;
+
+    public BasicTestCommand() {
     }
 
-    public TestCommand(String payload) {
+    public BasicTestCommand(String payload) {
         this.payload = payload;
     }
 

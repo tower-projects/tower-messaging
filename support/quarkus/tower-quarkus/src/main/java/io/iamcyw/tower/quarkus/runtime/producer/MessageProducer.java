@@ -21,48 +21,39 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class MessageProducer {
 
-    public QueryBus queryBus;
+    @Singleton
+    @Produces
+    public QueryGateway queryGateway;
 
-    public CommandBus commandBus;
+    @Singleton
+    @Produces
+    public CommandGateway commandGateway;
 
-    public Map<String, Class<?>> domainMaps;
+    @Singleton
+    @Produces
+    public DomainNameMappings domainMaps;
 
     @Inject
     Instance<MessageDispatchInterceptor> messageDispatchInterceptors;
 
     @Inject
-    Instance<MessageHandlerInterceptor> messageHandlerInterceptors;
+    Instance<MessageHandlerInterceptor<?>> messageHandlerInterceptors;
 
     public void setQueryBus(QueryBus queryBus) {
-        this.queryBus = queryBus;
+        messageHandlerInterceptors.forEach(queryBus::registerHandlerInterceptor);
+        this.queryGateway = new DefaultQueryGateway(queryBus,
+                                                    messageDispatchInterceptors.stream().collect(Collectors.toList()));
     }
 
     public void setCommandBus(CommandBus commandBus) {
-        this.commandBus = commandBus;
+        messageHandlerInterceptors.forEach(commandBus::registerHandlerInterceptor);
+        this.commandGateway = new DefaultCommandGateway(commandBus, messageDispatchInterceptors.stream()
+                                                                                               .collect(
+                                                                                                       Collectors.toList()));
     }
 
     public void setDomainMaps(Map<String, Class<?>> domainMaps) {
-        this.domainMaps = domainMaps;
-    }
-
-    @Singleton
-    @Produces
-    public DomainNameMappings domainNameMappings() {
-        return new DomainNameMappings(this.domainMaps);
-    }
-
-    @Singleton
-    @Produces
-    public CommandGateway commandGateway() {
-        messageHandlerInterceptors.forEach(interceptor -> commandBus.registerHandlerInterceptor(interceptor));
-        return new DefaultCommandGateway(commandBus, messageDispatchInterceptors.stream().collect(Collectors.toList()));
-    }
-
-    @Singleton
-    @Produces
-    public QueryGateway queryGateway() {
-        messageHandlerInterceptors.forEach(interceptor -> queryBus.registerHandlerInterceptor(interceptor));
-        return new DefaultQueryGateway(queryBus, messageDispatchInterceptors.stream().collect(Collectors.toList()));
+        this.domainMaps = new DomainNameMappings(domainMaps);
     }
 
 }

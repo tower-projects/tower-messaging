@@ -22,6 +22,7 @@ public class ArcBeanFactory<T> implements BeanFactory<T> {
 
     @Override
     public BeanInstance<T> createInstance() {
+        @SuppressWarnings("PMD")
         BeanContainer.Instance<T> instance = factory.create();
         return new BeanInstance<T>() {
             @Override

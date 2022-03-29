@@ -4,10 +4,12 @@ import io.iamcyw.tower.commandhandling.Registration;
 import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.messaging.interceptor.MessageHandlerInterceptor;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface QueryBus {
 
-    <R> R dispatch(Message message);
+    <R> CompletableFuture<R> dispatch(Message message);
 
-    Registration registerHandlerInterceptor(MessageHandlerInterceptor messageHandlerInterceptor);
+    Registration registerHandlerInterceptor(MessageHandlerInterceptor<?> messageHandlerInterceptor);
 
 }

@@ -1,5 +1,5 @@
 plugins.withType(JavaBasePlugin::class) {
-    project.setProperty("sourceCompatibility", JavaVersion.VERSION_17)
+    project.setProperty("sourceCompatibility", JavaVersion.VERSION_11)
 }
 
 plugins.withType(JavaPlugin::class) {
@@ -32,13 +32,13 @@ tasks.withType(Test::class) {
 
 tasks.withType(JavaCompile::class) {
     options.encoding = "UTF-8"
-    sourceCompatibility = JavaVersion.VERSION_17.majorVersion
-    targetCompatibility = JavaVersion.VERSION_17.majorVersion
+    sourceCompatibility = JavaVersion.VERSION_11.majorVersion
+    targetCompatibility = JavaVersion.VERSION_11.majorVersion
 }
 
 tasks.withType(Javadoc::class) {
     options {
-        encoding("UTF-8").source(JavaVersion.VERSION_17.majorVersion)
+        encoding("UTF-8").source(JavaVersion.VERSION_11.majorVersion)
         (this as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
     }
 }

@@ -64,7 +64,7 @@ public class MessageBeanFactory {
     }
 
     private MessageBean getMessageBean(String name) {
-        return messageBeans.computeIfAbsent(name, (key) -> new MessageBean(key, beanFactoryCreator.apply(key)));
+        return messageBeans.computeIfAbsent(name, key -> new MessageBean(key, beanFactoryCreator.apply(key)));
     }
 
     private void scanQuery(ClassInfo classInfo) {
@@ -74,7 +74,7 @@ public class MessageBeanFactory {
                                                .get(MessageDotNames.QUERYHANDLER)
                                                .stream()
                                                .map(instance -> scanHandle(instance, messageBean))
-                                               .toList();
+                                               .collect(Collectors.toList());
 
         handles.forEach(messageHandle -> {
             List<MessageHandle> messageHandles = queries.getOrDefault(messageHandle.handleTarget, new ArrayList<>());
@@ -89,17 +89,23 @@ public class MessageBeanFactory {
 
         String handleTarget = methodInfo.parameters().get(0).name().toString();
 
-        domainNameMapping.computeIfAbsent(handleTarget, (key) -> MessageRecorder.loadClass(handleTarget));
+        domainNameMapping.computeIfAbsent(handleTarget, key -> MessageRecorder.loadClass(handleTarget));
 
         List<AnnotationInstance> predicateInstance = methodInfo.annotations(MessageDotNames.MESSAGE_PREDICATE);
         AnnotationInstance predicates = methodInfo.annotation(MessageDotNames.MESSAGE_PREDICATES);
         if (predicates != null) {
-            predicateInstance.addAll(Arrays.stream(predicates.value("value").asNestedArray()).toList());
+            predicateInstance.addAll(
+                    Arrays.stream(predicates.value("value").asNestedArray()).collect(Collectors.toList()));
+        }
+
+        Class<?> returnType = Void.TYPE;
+        if (!methodInfo.returnType().kind().equals(Type.Kind.VOID)) {
+            returnType = MessageRecorder.loadClass(methodInfo.returnType().name().toString());
         }
 
         return new DefaultMessageHandle(handleTarget, buildPredicate(predicateInstance, handleTarget),
                                         invokerFactory.create(methodInfo.declaringClass(), methodInfo), messageBean,
-                                        createResolver(methodInfo));
+                                        createResolver(methodInfo), returnType);
     }
 
     private MessageHandlePredicate buildPredicate(List<AnnotationInstance> predicateInstance, String handleTarget) {
@@ -138,7 +144,7 @@ public class MessageBeanFactory {
                                                .get(MessageDotNames.COMMANDHANDLER)
                                                .stream()
                                                .map(instance -> scanHandle(instance, messageBean))
-                                               .toList();
+                                               .collect(Collectors.toList());
 
         handles.forEach(messageHandle -> {
             List<MessageHandle> messageHandles = commands.getOrDefault(messageHandle.handleTarget, new ArrayList<>());
@@ -173,7 +179,7 @@ public class MessageBeanFactory {
                 methodInfo.declaringClass(), methodInfo), messageBean, createPredicateResolver(methodInfo));
 
         Map<String, MessageHandlePredicate> predicates = predicateMap.computeIfAbsent(predicateTarget,
-                                                                                      (key) -> new HashMap<>());
+                                                                                      key -> new HashMap<>());
         predicates.put(name, messageHandlePredicate);
 
         return messageHandlePredicate;
