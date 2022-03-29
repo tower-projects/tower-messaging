@@ -1,27 +1,26 @@
-package io.iamcyw.tower.collect;
+package io.iamcyw.tower.utils.collect;
 
-import com.google.common.collect.ImmutableList;
-
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
 import static io.iamcyw.tower.utils.Assert.assertNotNull;
 
-public final class ImmutableKit {
+public final class ListKit {
 
-    private ImmutableKit() {
+    private ListKit() {
         throw new IllegalStateException("Utility class");
     }
 
-    public static <T, R> ImmutableList<R> flatMap(Iterable<? extends T> iterable, Function<T, List<R>> mapper) {
+    public static <T, R> List<R> flatMap(Iterable<? extends T> iterable, Function<T, List<R>> mapper) {
         assertNotNull(iterable);
         assertNotNull(mapper);
-        ImmutableList.Builder<R> builder = ImmutableList.builder();
+        List<R> list = new ArrayList<>();
         for (T t : iterable) {
             List<R> r = mapper.apply(t);
-            builder.addAll(r);
+            list.addAll(r);
         }
-        return builder.build();
+        return list;
     }
 
     /**
@@ -35,27 +34,27 @@ public final class ImmutableKit {
      * @param <R>      for result
      * @return a map immutable list of results
      */
-    public static <T, R> ImmutableList<R> map(Iterable<? extends T> iterable, Function<? super T, ? extends R> mapper) {
+    public static <T, R> List<R> map(Iterable<? extends T> iterable, Function<? super T, ? extends R> mapper) {
         assertNotNull(iterable);
         assertNotNull(mapper);
-        ImmutableList.Builder<R> builder = ImmutableList.builder();
+        List<R> builder = new ArrayList<>();
         for (T t : iterable) {
             R r = mapper.apply(t);
             builder.add(r);
         }
-        return builder.build();
+        return builder;
     }
 
-    public static <R> ImmutableList<R> filter(Iterable<R> iterable, Function<R, Boolean> filter) {
+    public static <R> List<R> filter(Iterable<R> iterable, Function<R, Boolean> filter) {
         assertNotNull(iterable);
         assertNotNull(filter);
-        ImmutableList.Builder<R> builder = ImmutableList.builder();
+        List<R> builder = new ArrayList<>();
         for (R r : iterable) {
             if (Boolean.TRUE.equals(filter.apply(r))) {
                 builder.add(r);
             }
         }
-        return builder.build();
+        return builder;
     }
 
 }

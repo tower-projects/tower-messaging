@@ -1,7 +1,5 @@
 package io.iamcyw.tower.responsetype;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -10,8 +8,6 @@ import java.util.Iterator;
 import java.util.List;
 
 public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<R>> {
-
-    private static final Logger logger = LoggerFactory.getLogger(MultipleInstancesResponseType.class);
 
     /**
      * Instantiate a {@link MultipleInstancesResponseType} with the given
@@ -96,8 +92,8 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
 
         boolean canMatchContainedType = responseIterator.hasNext();
         if (!canMatchContainedType) {
-            logger.info("The given response is an Iterable without any contents, hence we cannot verify if the " +
-                                "contained type is assignable to the expected type.");
+            // logger.info("The given response is an Iterable without any contents, hence we cannot verify if the " +
+            //                     "contained type is assignable to the expected type.");
             return true;
         }
 

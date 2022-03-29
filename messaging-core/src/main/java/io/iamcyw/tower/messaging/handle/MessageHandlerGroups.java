@@ -1,6 +1,6 @@
 package io.iamcyw.tower.messaging.handle;
 
-import io.iamcyw.tower.collect.ImmutableKit;
+import io.iamcyw.tower.utils.collect.ListKit;
 import io.iamcyw.tower.messaging.Message;
 
 import java.util.List;
@@ -21,11 +21,11 @@ public class MessageHandlerGroups implements MessageHandlers {
     @Override
     public CompletableFuture<List<MessageHandle>> get(Message message) {
         return CompletableFuture.supplyAsync(() -> {
-            List<MessageHandlerGroup> allowHandlerGroup = ImmutableKit.filter(getMessageHandlerGroupList(),
+            List<MessageHandlerGroup> allowHandlerGroup = ListKit.filter(getMessageHandlerGroupList(),
                                                                               messageHandlerGroup -> messageHandlerGroup.predicate(
                                                                                       message));
 
-            return ImmutableKit.flatMap(allowHandlerGroup, messageHandlerGroup -> messageHandlerGroup.handles(message));
+            return ListKit.flatMap(allowHandlerGroup, messageHandlerGroup -> messageHandlerGroup.handles(message));
         });
     }
 

@@ -1,6 +1,5 @@
 package io.iamcyw.tower.commandhandling;
 
-import com.google.common.collect.ImmutableList;
 import io.iamcyw.tower.Async;
 import io.iamcyw.tower.exception.Errors;
 import io.iamcyw.tower.exception.MessageIllegalStateException;
@@ -12,6 +11,7 @@ import io.iamcyw.tower.messaging.interceptor.Handle;
 import io.iamcyw.tower.messaging.interceptor.MessageHandlerInterceptor;
 import io.iamcyw.tower.utils.Assert;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -47,13 +47,13 @@ public class DefaultCommandBus implements CommandBus {
     }
 
     private <R> List<MessageHandlerInterceptor<R>> matchInterceptor(Message message) {
-        ImmutableList.Builder<MessageHandlerInterceptor<R>> builder = ImmutableList.builder();
+        List<MessageHandlerInterceptor<R>> interceptors = new ArrayList<>();
         for (MessageHandlerInterceptor<?> handlerInterceptor : handlerInterceptors) {
             if (handlerInterceptor.match(message)) {
-                builder.add((MessageHandlerInterceptor<R>) handlerInterceptor);
+                interceptors.add((MessageHandlerInterceptor<R>) handlerInterceptor);
             }
         }
-        return builder.build();
+        return interceptors;
     }
 
     private <R> Handle<R> handle() {

@@ -11,7 +11,7 @@ public interface MessageHandlerInterceptor<R> {
     Class<R> type();
 
     default boolean match(Message message) {
-        return true;
+        return message.getMetaData().getResponseType().matches(type());
     }
 
 }

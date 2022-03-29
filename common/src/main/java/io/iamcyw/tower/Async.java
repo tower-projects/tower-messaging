@@ -1,7 +1,7 @@
 package io.iamcyw.tower;
 
 
-import io.iamcyw.tower.collect.ImmutableKit;
+import io.iamcyw.tower.utils.collect.ListKit;
 import io.iamcyw.tower.utils.Assert;
 
 import java.util.ArrayList;
@@ -120,21 +120,21 @@ public class Async {
     }
 
     public static <U, T> CompletableFuture<List<U>> flatMap(List<T> inputs, Function<T, CompletableFuture<U>> mapper) {
-        List<CompletableFuture<U>> collect = ImmutableKit.map(inputs, mapper);
+        List<CompletableFuture<U>> collect = ListKit.map(inputs, mapper);
         return Async.each(collect);
     }
 
     public static <U, T> CompletableFuture<List<U>> map(CompletableFuture<List<T>> values, Function<T, U> mapper) {
-        return values.thenApply(list -> ImmutableKit.map(list, mapper));
+        return values.thenApply(list -> ListKit.map(list, mapper));
     }
 
     public static <U, T> List<CompletableFuture<U>> map(List<CompletableFuture<T>> values, Function<T, U> mapper) {
-        return ImmutableKit.map(values, cf -> cf.thenApply(mapper));
+        return ListKit.map(values, cf -> cf.thenApply(mapper));
     }
 
     public static <U, T> List<CompletableFuture<U>> mapCompose(List<CompletableFuture<T>> values,
                                                                Function<T, CompletableFuture<U>> mapper) {
-        return ImmutableKit.map(values, cf -> cf.thenCompose(mapper));
+        return ListKit.map(values, cf -> cf.thenCompose(mapper));
     }
 
     @FunctionalInterface

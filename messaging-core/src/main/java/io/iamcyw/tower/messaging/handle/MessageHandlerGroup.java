@@ -1,6 +1,6 @@
 package io.iamcyw.tower.messaging.handle;
 
-import io.iamcyw.tower.collect.ImmutableKit;
+import io.iamcyw.tower.utils.collect.ListKit;
 import io.iamcyw.tower.messaging.Message;
 
 import java.util.List;
@@ -20,7 +20,7 @@ public class MessageHandlerGroup {
     }
 
     public List<MessageHandle> handles(Message message) {
-        return ImmutableKit.filter(handles, messageHandle -> messageHandle.predicate(message));
+        return ListKit.filter(handles, messageHandle -> messageHandle.predicate(message));
     }
 
     public boolean predicate(Message message) {
