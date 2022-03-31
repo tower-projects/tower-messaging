@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-public abstract class TypeReflectionUtils {
+public abstract class TypeReflectionKit {
 
-    private TypeReflectionUtils() {
+    private TypeReflectionKit() {
         // Utility class
     }
 

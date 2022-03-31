@@ -1,6 +1,6 @@
 package io.iamcyw.tower.responsetype;
 
-import io.iamcyw.tower.utils.TypeReflectionUtils;
+import io.iamcyw.tower.utils.TypeReflectionKit;
 
 import java.lang.reflect.*;
 import java.util.Arrays;
@@ -16,7 +16,7 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     }
 
     protected Type unwrapIfTypeFuture(Type type) {
-        Type futureType = TypeReflectionUtils.getExactSuperType(type, Future.class);
+        Type futureType = TypeReflectionKit.getExactSuperType(type, Future.class);
         if (futureType instanceof ParameterizedType) {
             Type[] actualTypeArguments = ((ParameterizedType) futureType).getActualTypeArguments();
             if (actualTypeArguments.length == 1) {
@@ -27,12 +27,12 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     }
 
     protected boolean isIterableOfExpectedType(Type responseType) {
-        Type iterableType = TypeReflectionUtils.getExactSuperType(responseType, Iterable.class);
+        Type iterableType = TypeReflectionKit.getExactSuperType(responseType, Iterable.class);
         return iterableType != null && isParameterizedTypeOfExpectedType(iterableType);
     }
 
     protected boolean isStreamOfExpectedType(Type responseType) {
-        Type streamType = TypeReflectionUtils.getExactSuperType(responseType, Stream.class);
+        Type streamType = TypeReflectionKit.getExactSuperType(responseType, Stream.class);
         return streamType != null && isParameterizedTypeOfExpectedType(streamType);
     }
 

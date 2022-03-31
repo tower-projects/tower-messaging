@@ -1,4 +1,5 @@
 plugins {
+    id("io.quarkus") version "2.7.2.Final" apply false
     id("io.github.gradle-nexus.publish-plugin")
 }
 
@@ -13,15 +14,18 @@ nexusPublishing {
     }
 }
 
+ext {
+    set("quarkus", "2.7.2.Final")
+}
+
 allprojects {
 
     group = "io.iamcyw.tower"
     description = "tower projects"
 
     repositories {
+        maven("https://repo1.maven.org/maven2/")
         maven("https://maven.aliyun.com/repository/central")
-//        mavenCentral()
-//        gradlePluginPortal()
     }
 
     configurations.all {

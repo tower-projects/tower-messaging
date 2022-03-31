@@ -1,11 +1,9 @@
 package io.iamcyw.tower.queryhandling.gateway;
 
-import java.util.List;
+import io.iamcyw.tower.responsetype.ResponseType;
 
 public interface QueryGateway {
 
-    <R> R query(Object query);
-
-    <R> List<R> queries(Object query);
+    <R> R query(Object query, ResponseType<R> responseType);
 
 }

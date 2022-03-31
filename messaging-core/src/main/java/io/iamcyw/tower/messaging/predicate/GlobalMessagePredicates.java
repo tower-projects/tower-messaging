@@ -7,4 +7,5 @@ import java.lang.annotation.Target;
 public @interface GlobalMessagePredicates {
 
     GlobalMessagePredicate[] value();
+
 }

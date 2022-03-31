@@ -1,13 +1,3 @@
-pluginManagement {
-    val quarkusVersion: String by settings
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
-    plugins {
-        id("io.quarkus") version quarkusVersion
-    }
-}
 rootProject.name = "tower-messaging"
 
 include(
@@ -16,7 +6,8 @@ include(
 
 include(
         "common",
-        "messaging-core"
+        "messaging-core",
+        "graphql-adapter"
 )
 
 include(

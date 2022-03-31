@@ -1,4 +1,4 @@
-plugins{
+plugins {
     `java-library`
     id("java-conventions")
     id("maven-deploy")
@@ -7,6 +7,6 @@ plugins{
 description = "tower commons"
 
 dependencies {
-    implementation ("com.google.code.findbugs:jsr305")
-    api ("com.google.guava:guava")
+    implementation("com.google.code.findbugs:jsr305")
+    api("com.google.guava:guava")
 }

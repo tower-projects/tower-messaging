@@ -1,11 +1,14 @@
 package io.iamcyw.tower.messaging.handle;
 
-import io.iamcyw.tower.utils.collect.ListKit;
 import io.iamcyw.tower.messaging.Message;
+import io.iamcyw.tower.utils.collect.ListKit;
 
 import java.util.List;
 
 public class MessageHandlerGroup {
+    /**
+     * 实现的domain类
+     */
     private String name;
 
     private List<MessageHandle> handles;

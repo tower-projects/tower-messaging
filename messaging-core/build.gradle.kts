@@ -4,6 +4,6 @@ plugins {
     id("maven-deploy")
 }
 
-dependencies{
+dependencies {
     implementation(project(":common"))
 }

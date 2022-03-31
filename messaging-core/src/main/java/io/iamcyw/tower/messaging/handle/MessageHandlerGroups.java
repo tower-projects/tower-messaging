@@ -1,7 +1,7 @@
 package io.iamcyw.tower.messaging.handle;
 
-import io.iamcyw.tower.utils.collect.ListKit;
 import io.iamcyw.tower.messaging.Message;
+import io.iamcyw.tower.utils.collect.ListKit;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -22,8 +22,8 @@ public class MessageHandlerGroups implements MessageHandlers {
     public CompletableFuture<List<MessageHandle>> get(Message message) {
         return CompletableFuture.supplyAsync(() -> {
             List<MessageHandlerGroup> allowHandlerGroup = ListKit.filter(getMessageHandlerGroupList(),
-                                                                              messageHandlerGroup -> messageHandlerGroup.predicate(
-                                                                                      message));
+                                                                         messageHandlerGroup -> messageHandlerGroup.predicate(
+                                                                                 message));
 
             return ListKit.flatMap(allowHandlerGroup, messageHandlerGroup -> messageHandlerGroup.handles(message));
         });
@@ -35,6 +35,10 @@ public class MessageHandlerGroups implements MessageHandlers {
 
     public void setMessageHandlerGroupList(List<MessageHandlerGroup> messageHandlerGroupList) {
         this.messageHandlerGroupList = messageHandlerGroupList;
+    }
+
+    public boolean hasHandles() {
+        return messageHandlerGroupList != null && messageHandlerGroupList.size() > 0;
     }
 
 }
