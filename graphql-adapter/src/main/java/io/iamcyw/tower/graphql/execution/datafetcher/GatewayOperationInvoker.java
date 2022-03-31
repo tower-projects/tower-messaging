@@ -19,8 +19,8 @@ public class GatewayOperationInvoker extends OperationInvoker {
 
     @Override
     public <T> T invoke(Object... arguments) throws Exception {
-
         ResponseType responseType = ResponseTypes.instanceOf(Object.class);
+        
         // TODO: Context propagation ?
         if (wrapper != null) {
             if (wrapper.isArray() || wrapper.isCollection()) {
@@ -29,7 +29,7 @@ public class GatewayOperationInvoker extends OperationInvoker {
         }
 
         QueryGateway queryGateway = gatewayLookupService.getQueryGateway();
-        return (T) queryGateway.query(arguments, responseType);
+        return (T) queryGateway.query(arguments[0], responseType);
     }
 
 }

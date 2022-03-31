@@ -14,8 +14,10 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
 
     implementation(project(":common"))
+
     implementation(project(":support:quarkus:tower-quarkus"))
     implementation(project(":support:quarkus:tower-quarkus-deployment"))
+    implementation("io.quarkus:quarkus-smallrye-graphql")
 
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")

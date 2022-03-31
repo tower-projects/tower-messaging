@@ -1,4 +1,4 @@
-package io.iamcyw.tower.graphql;
+package io.iamcyw.tower.quarkus.it;
 
 import io.smallrye.graphql.execution.ExecutionResponse;
 import io.smallrye.graphql.execution.ExecutionResponseWriter;

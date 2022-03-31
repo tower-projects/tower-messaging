@@ -23,5 +23,6 @@ dependencies {
     compileOnly("io.quarkus:quarkus-micrometer")
 
     api(project(":messaging-core"))
+    api(project(":graphql-adapter"))
 
 }
