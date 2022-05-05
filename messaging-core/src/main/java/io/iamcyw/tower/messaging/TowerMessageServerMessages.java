@@ -11,7 +11,6 @@ import java.util.NoSuchElementException;
 
 @MessageBundle(projectCode = "MESSAGE")
 public interface TowerMessageServerMessages {
-
     TowerMessageServerMessages msg = Messages.getBundle(TowerMessageServerMessages.class);
 
     @Message(id = 1, value = "Unknown primitive type [%s]")

@@ -7,7 +7,6 @@ import io.iamcyw.tower.messaging.handle.interceptor.InterceptorChain;
 import io.iamcyw.tower.messaging.handle.interceptor.MessageInterceptor;
 import io.iamcyw.tower.messaging.handle.predicate.HandlePredicate;
 import io.iamcyw.tower.messaging.handle.predicate.PredicateHandle;
-import io.iamcyw.tower.messaging.handle.predicate.TrueHandlePredicate;
 import io.iamcyw.tower.schema.model.Operation;
 
 import java.util.List;
@@ -19,7 +18,7 @@ public class MessageHandle<R> {
 
     private final Identifier identifier;
 
-    private HandlePredicate predicate;
+    private HandlePredicate predicate = message -> CompletableFuture.completedFuture(true);
 
     private List<MessageInterceptor<R>> messageInterceptors;
 
@@ -27,7 +26,6 @@ public class MessageHandle<R> {
 
     public MessageHandle(Operation operation, List<MessageInterceptor<R>> messageInterceptors) {
         this.operation = operation;
-        this.predicate = new TrueHandlePredicate();
         this.messageInterceptors = messageInterceptors;
         this.identifier = new Identifier(operation);
         this.invoker = new OperationInvoker(operation);

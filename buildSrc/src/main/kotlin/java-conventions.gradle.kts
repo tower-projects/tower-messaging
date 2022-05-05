@@ -8,6 +8,11 @@ plugins.withType(JavaPlugin::class) {
         add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.junit.jupiter:junit-jupiter-engine")
         add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.junit.jupiter:junit-jupiter-api")
         add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.assertj:assertj-core")
+        add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, "org.jboss.logging:jboss-logging-annotations")
+
+        add(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME, "org.jboss.logging:jboss-logging")
+        add(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME, "org.jboss.logging:jboss-logging-annotations")
+        add(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME, "org.jboss.logging:jboss-logging-processor")
     }
 }
 

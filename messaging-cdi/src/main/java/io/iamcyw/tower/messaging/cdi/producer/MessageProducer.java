@@ -3,6 +3,7 @@ package io.iamcyw.tower.messaging.cdi.producer;
 import io.iamcyw.tower.messaging.bootstrap.Bootstrap;
 import io.iamcyw.tower.messaging.gateway.MessageGateway;
 import io.iamcyw.tower.schema.model.Schema;
+import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
@@ -10,6 +11,8 @@ import javax.inject.Singleton;
 
 @ApplicationScoped
 public class MessageProducer {
+
+    private static final Logger LOGGER = Logger.getLogger(MessageProducer.class);
 
     @Singleton
     @Produces
@@ -23,7 +26,7 @@ public class MessageProducer {
 
             return true;
         } catch (Exception e) {
-            // todo log
+            LOGGER.error(e);
             return false;
         }
 

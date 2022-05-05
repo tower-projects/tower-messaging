@@ -9,7 +9,7 @@ public class VoidResponseType extends AbstractResponseType<Void> {
 
     @Override
     public boolean matches(Type responseType) {
-        return responseType.getTypeName().equals("");
+        return responseType.getTypeName().equals("void");
     }
 
     @Override

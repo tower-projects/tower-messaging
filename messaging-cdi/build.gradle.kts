@@ -5,12 +5,7 @@ plugins {
 }
 
 dependencies {
-//    implementation("org.jboss.logging:jboss-logging")
-//    compileOnly("org.jboss.logging:jboss-logging-annotations")
-//
-//    annotationProcessor("org.jboss.logging:jboss-logging")
-//    annotationProcessor("org.jboss.logging:jboss-logging-annotations")
-//    annotationProcessor("org.jboss.logging:jboss-logging-processor")
+    implementation("org.jboss.logging:jboss-logging")
 
     api(project(":common"))
     api(project(":messaging-core"))

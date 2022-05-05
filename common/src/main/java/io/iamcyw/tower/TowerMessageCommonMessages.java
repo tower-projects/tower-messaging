@@ -12,13 +12,13 @@ public interface TowerMessageCommonMessages {
     @Message(id = 1, value = "Unknown primitive type [%s]")
     ClassNotFoundException unknownPrimitiveType(String name);
 
-    @Message(value = "Object required to be not null")
+    @Message(id = 2, value = "Object required to be not null")
     IllegalArgumentException objectRequiredNotNull();
 
-    @Message(id = 0, value = "Parameter '%s' may not be null")
+    @Message(id = 3, value = "Parameter '%s' may not be null")
     IllegalArgumentException nullParam(String param);
 
-    @Message(id = 2, value = "cfFactory must return a non null value")
+    @Message(id = 4, value = "cfFactory must return a non null value")
     String cfFactoryNonNullValue();
 
 }
