@@ -1,7 +1,6 @@
 package io.iamcyw.tower.quarkus.it.domain;
 
 public class BasicTestCommand {
-
     private String payload;
 
     public BasicTestCommand() {

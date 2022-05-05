@@ -5,9 +5,14 @@ include(
 )
 
 include(
+        "schema:schema-builder",
+        "schema:schema-model"
+)
+
+include(
         "common",
         "messaging-core",
-        "graphql-adapter"
+        "messaging-cdi"
 )
 
 include(

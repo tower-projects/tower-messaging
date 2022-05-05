@@ -1,25 +1,28 @@
 package io.iamcyw.tower.messaging;
 
+import io.iamcyw.tower.messaging.handle.Identifier;
+import io.iamcyw.tower.schema.model.OperationType;
+
 import java.util.Map;
 
-public interface Message {
+public interface Message<R> {
 
-    String getIdentifier();
+    Identifier getIdentifier();
 
     MetaData getMetaData();
 
     Object getPayload();
 
-    Class<?> getPayloadType();
+    OperationType getOperationType();
 
     /**
      * 覆盖metadata
      */
-    Message withMetaData(Map<String, Object> metaData);
+    Message<R> withMetaData(Map<String, Object> metaData);
 
     /**
      * 合并metadata
      */
-    Message andMetaData(Map<String, Object> metaData);
+    Message<R> andMetaData(Map<String, Object> metaData);
 
 }

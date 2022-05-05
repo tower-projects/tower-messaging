@@ -22,7 +22,7 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     compileOnly("io.quarkus:quarkus-micrometer")
 
-    api(project(":messaging-core"))
-    api(project(":graphql-adapter"))
+    api(project(":messaging-cdi"))
+    api(project(":schema:schema-model"))
 
 }

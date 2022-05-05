@@ -1,10 +1,9 @@
 package io.iamcyw.tower.messaging;
 
 import io.iamcyw.tower.messaging.handle.MessageHandle;
-import io.iamcyw.tower.responsetype.ResponseType;
+import io.iamcyw.tower.messaging.responsetype.ResponseType;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -41,13 +40,14 @@ public class MetaData {
         value.put("PREDICATE_PARAMETER", parameter);
     }
 
-    public CompletableFuture<List<MessageHandle>> getMessageHandlers() {
-        return (CompletableFuture<List<MessageHandle>>) value.get("MESSAGE_HANDLERS");
+    public <R> CompletableFuture<MessageHandle<R>> getMessageHandle() {
+        return (CompletableFuture<MessageHandle<R>>) value.get("MESSAGE_HANDLE");
     }
 
-    public void setMessageHandlers(CompletableFuture<List<MessageHandle>> messageHandlers) {
-        value.put("MESSAGE_HANDLERS", messageHandlers);
+    public void setMessageHandle(CompletableFuture<MessageHandle<?>> messageHandle) {
+        value.put("MESSAGE_HANDLE", messageHandle);
     }
+
 
     public ResponseType<?> getResponseType() {
         return (ResponseType<?>) value.get("RESPONSE_TYPE");
@@ -64,14 +64,21 @@ public class MetaData {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null) {
             return false;
+        }
+        if (o instanceof Map) {
+            return Objects.equals(value, o);
+        } else if (o.getClass() != getClass()) {
+            return false;
+        } else {
+            MetaData metaData = (MetaData) o;
 
-        MetaData metaData = (MetaData) o;
-
-        return Objects.equals(value, metaData.value);
+            return Objects.equals(value, metaData.value);
+        }
     }
 
     public boolean hasMetaData(String key) {

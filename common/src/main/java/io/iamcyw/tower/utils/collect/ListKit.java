@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-import static io.iamcyw.tower.utils.Assert.assertNotNull;
+import static io.iamcyw.tower.Assert.assertNotNull;
 
 public final class ListKit {
 

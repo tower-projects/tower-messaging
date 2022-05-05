@@ -12,6 +12,8 @@ dependencies {
     api("io.quarkus:quarkus-arc-deployment")
 //    api "io.quarkus:quarkus-smallrye-health-spi"
 
+    api(project(":schema:schema-builder"))
+
     testImplementation("io.quarkus:quarkus-junit5-internal")
 }
 

@@ -1,7 +1,6 @@
 package io.iamcyw.tower.utils;
 
-import io.iamcyw.tower.exception.Errors;
-import io.iamcyw.tower.exception.MessageIllegalArgumentException;
+import io.iamcyw.tower.TowerMessageCommonMessages;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -10,8 +9,6 @@ import java.util.*;
 
 /**
  * Class helper
- *
- * @author Phillip Kruger (phillip.kruger@redhat.com)
  */
 public class Classes {
 
@@ -185,8 +182,7 @@ public class Classes {
         if (isPrimitive(primitiveName)) {
             return PRIMITIVE_CLASSES.get(primitiveName);
         }
-        throw new MessageIllegalArgumentException(
-                Errors.create().content("Unknown primitive type {}").args(primitiveName).apply());
+        throw TowerMessageCommonMessages.log.unknownPrimitiveType(primitiveName);
     }
 
     public static boolean isNumberLikeType(String className) {
