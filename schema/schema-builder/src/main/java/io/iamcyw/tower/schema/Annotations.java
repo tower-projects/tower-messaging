@@ -1,10 +1,13 @@
 package io.iamcyw.tower.schema;
 
+import io.iamcyw.tower.schema.helper.Direction;
 import org.jboss.jandex.*;
 import org.jboss.jandex.AnnotationTarget.Kind;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyMap;
 
 /**
  * All the annotations we care about for a certain context
@@ -37,32 +40,6 @@ public class Annotations {
 
     public static final DotName DESCRIPTION = DotName.createSimple("io.iamcyw.tower.messaging.Description");
 
-    // Json-B Annotations
-    public static final DotName JSONB_DATE_FORMAT = DotName.createSimple("javax.json.bind.annotation.JsonbDateFormat");
-
-    public static final DotName JSONB_NUMBER_FORMAT = DotName.createSimple(
-            "javax.json.bind.annotation.JsonbNumberFormat");
-
-    public static final DotName JSONB_PROPERTY = DotName.createSimple("javax.json.bind.annotation.JsonbProperty");
-
-    public static final DotName JSONB_TRANSIENT = DotName.createSimple("javax.json.bind.annotation.JsonbTransient");
-
-    public static final DotName JSONB_CREATOR = DotName.createSimple("javax.json.bind.annotation.JsonbCreator");
-
-    public static final DotName JSONB_TYPE_ADAPTER = DotName.createSimple(
-            "javax.json.bind.annotation.JsonbTypeAdapter");
-
-    // Jackson Annotations
-    public static final DotName JACKSON_IGNORE = DotName.createSimple("com.fasterxml.jackson.annotation.JsonIgnore");
-
-    public static final DotName JACKSON_PROPERTY = DotName.createSimple(
-            "com.fasterxml.jackson.annotation.JsonProperty");
-
-    public static final DotName JACKSON_CREATOR = DotName.createSimple("com.fasterxml.jackson.annotation.JsonCreator");
-
-    // Private static methods use by the static initializers
-
-    public static final DotName JACKSON_FORMAT = DotName.createSimple("com.fasterxml.jackson.annotation.JsonFormat");
 
     // Bean Validation Annotations (SmallRye extra, not part of the spec)
     public static final DotName BEAN_VALIDATION_NOT_NULL = DotName.createSimple("javax.validation.constraints.NotNull");
@@ -72,6 +49,45 @@ public class Annotations {
 
     public static final DotName BEAN_VALIDATION_NOT_BLANK = DotName.createSimple(
             "javax.validation.constraints.NotBlank");
+
+    // Json-B Annotations
+    public static final String JAVAX_JSONB = "javax.json.bind.annotation.";
+
+    public static final DotName JAVAX_JSONB_DATE_FORMAT = DotName.createSimple(JAVAX_JSONB + "JsonbDateFormat");
+
+    public static final DotName JAVAX_JSONB_NUMBER_FORMAT = DotName.createSimple(JAVAX_JSONB + "JsonbNumberFormat");
+
+    public static final DotName JAVAX_JSONB_PROPERTY = DotName.createSimple(JAVAX_JSONB + "JsonbProperty");
+
+    public static final DotName JAVAX_JSONB_TRANSIENT = DotName.createSimple(JAVAX_JSONB + "JsonbTransient");
+
+    public static final DotName JAVAX_JSONB_CREATOR = DotName.createSimple(JAVAX_JSONB + "JsonbCreator");
+
+    public static final DotName JAVAX_JSONB_TYPE_ADAPTER = DotName.createSimple(JAVAX_JSONB + "JsonbTypeAdapter");
+
+    public static final String JAKARTA_JSONB = "jakarta.json.bind.annotation.";
+
+    public static final DotName JAKARTA_JSONB_DATE_FORMAT = DotName.createSimple(JAKARTA_JSONB + "JsonbDateFormat");
+
+    public static final DotName JAKARTA_JSONB_NUMBER_FORMAT = DotName.createSimple(JAKARTA_JSONB + "JsonbNumberFormat");
+
+    public static final DotName JAKARTA_JSONB_PROPERTY = DotName.createSimple(JAKARTA_JSONB + "JsonbProperty");
+
+    public static final DotName JAKARTA_JSONB_TRANSIENT = DotName.createSimple(JAKARTA_JSONB + "JsonbTransient");
+
+    public static final DotName JAKARTA_JSONB_CREATOR = DotName.createSimple(JAKARTA_JSONB + "JsonbCreator");
+
+    public static final DotName JAKARTA_JSONB_TYPE_ADAPTER = DotName.createSimple(JAKARTA_JSONB + "JsonbTypeAdapter");
+
+    // Jackson Annotations
+    public static final DotName JACKSON_IGNORE = DotName.createSimple("com.fasterxml.jackson.annotation.JsonIgnore");
+
+    public static final DotName JACKSON_PROPERTY = DotName.createSimple(
+            "com.fasterxml.jackson.annotation.JsonProperty");
+
+    public static final DotName JACKSON_CREATOR = DotName.createSimple("com.fasterxml.jackson.annotation.JsonCreator");
+
+    public static final DotName JACKSON_FORMAT = DotName.createSimple("com.fasterxml.jackson.annotation.JsonFormat");
 
     //Kotlin NotNull
     public static final DotName KOTLIN_NOT_NULL = DotName.createSimple("org.jetbrains.annotations.NotNull");
@@ -125,6 +141,19 @@ public class Annotations {
         Map<DotName, AnnotationInstance> parentAnnotations = getParentAnnotations(methodInfo.declaringClass());
 
         return new Annotations(annotationMap, parentAnnotations);
+    }
+
+    public static Annotations getAnnotationsForInputCreator(MethodInfo method, short position, FieldInfo fieldInfo) {
+        Map<DotName, AnnotationInstance> annotationsForField = getAnnotationsForField(fieldInfo, null);
+
+        if (fieldInfo != null) {
+            annotationsForField.putAll(getTypeUseAnnotations(fieldInfo.type()));
+        }
+        annotationsForField.putAll(getAnnotationsForArgument(method, position).annotationsMap);
+
+        Map<DotName, AnnotationInstance> parentAnnotations = getParentAnnotations(fieldInfo, method);
+
+        return new Annotations(annotationsForField, parentAnnotations);
     }
 
     private static Map<DotName, AnnotationInstance> getParentAnnotations(FieldInfo fieldInfo, MethodInfo methodInfo) {
@@ -242,6 +271,92 @@ public class Annotations {
         final Map<DotName, AnnotationInstance> parentAnnotations = getParentAnnotations(methodInfo.declaringClass());
 
         return new Annotations(annotationMap, parentAnnotations);
+    }
+
+    /**
+     * Get used when creating fields on interfaces.
+     * Interfaces only has methods, no properties
+     *
+     * @param methodInfo the java method
+     * @return Annotations for this method
+     */
+    public static Annotations getAnnotationsForInterfaceField(MethodInfo methodInfo) {
+        return getAnnotationsForOutputField(null, methodInfo);
+    }
+
+    private static Annotations getAnnotationsForOutputField(FieldInfo fieldInfo, MethodInfo methodInfo) {
+        Map<DotName, AnnotationInstance> annotationsForField = getAnnotationsForField(fieldInfo, methodInfo);
+
+        if (fieldInfo != null) {
+            annotationsForField.putAll(getTypeUseAnnotations(fieldInfo.type()));
+        }
+        if (methodInfo != null) {
+            org.jboss.jandex.Type returnType = methodInfo.returnType();
+            if (returnType != null) {
+                annotationsForField.putAll(getTypeUseAnnotations(methodInfo.returnType()));
+            }
+        }
+
+        Map<DotName, AnnotationInstance> parentAnnotations = getParentAnnotations(fieldInfo, methodInfo);
+
+        return new Annotations(annotationsForField, parentAnnotations);
+    }
+
+    /**
+     * Get used when creating fields on inputs and types.
+     * This is used for public fields
+     *
+     * @param direction the direction
+     * @param fieldInfo the java property
+     * @return annotations for this field
+     */
+    public static Annotations getAnnotationsForPojo(Direction direction, FieldInfo fieldInfo) {
+        return getAnnotationsForPojo(direction, fieldInfo, null);
+    }
+
+    /**
+     * Get used when creating fields on inputs and types.
+     * Both has properties and methods and this needs to combined the two
+     *
+     * @param direction  the direction
+     * @param fieldInfo  the java property
+     * @param methodInfo the java method
+     * @return annotations for this field
+     */
+    public static Annotations getAnnotationsForPojo(Direction direction, FieldInfo fieldInfo, MethodInfo methodInfo) {
+        if (direction.equals(Direction.IN)) {
+            return getAnnotationsForInputField(fieldInfo, methodInfo);
+        } else {
+            return getAnnotationsForOutputField(fieldInfo, methodInfo);
+        }
+    }
+
+    private static Annotations getAnnotationsForInputField(FieldInfo fieldInfo, MethodInfo methodInfo) {
+        Map<DotName, AnnotationInstance> annotationsForField = getAnnotationsForField(fieldInfo, methodInfo);
+
+        if (fieldInfo != null) {
+            annotationsForField.putAll(getTypeUseAnnotations(fieldInfo.type()));
+        }
+        if (methodInfo != null) {
+            List<org.jboss.jandex.Type> parameters = methodInfo.parameters();
+            if (!parameters.isEmpty()) {
+                org.jboss.jandex.Type param = parameters.get(ZERO);
+                annotationsForField.putAll(getTypeUseAnnotations(param));
+            }
+        }
+
+        final Map<DotName, AnnotationInstance> parentAnnotations = getParentAnnotations(fieldInfo, methodInfo);
+
+        return new Annotations(annotationsForField, parentAnnotations);
+    }
+
+    private static Map<DotName, AnnotationInstance> getTypeUseAnnotations(org.jboss.jandex.Type type) {
+        if (type != null) {
+            // return getAnnotationsWithFilter(type,
+            //                                 Annotations.DATE_FORMAT,
+            //                                 Annotations.NUMBER_FORMAT);
+        }
+        return emptyMap();
     }
 
     private static boolean isMethodAnnotation(AnnotationInstance instance) {

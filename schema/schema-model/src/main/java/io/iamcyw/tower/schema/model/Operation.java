@@ -14,6 +14,8 @@ public final class Operation extends Field {
      */
     private String className;
 
+    private String invoke;
+
     /**
      * The arguments (if any)
      */
@@ -83,6 +85,18 @@ public final class Operation extends Field {
 
     public boolean hasArguments() {
         return !this.arguments.isEmpty();
+    }
+
+    public String getInvoke() {
+        return invoke;
+    }
+
+    public void setInvoke(String invoke) {
+        this.invoke = invoke;
+    }
+
+    public boolean hasInvoke() {
+        return this.invoke != null;
     }
 
     public OperationType getOperationType() {

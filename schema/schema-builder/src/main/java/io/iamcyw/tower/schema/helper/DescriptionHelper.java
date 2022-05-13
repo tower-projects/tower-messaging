@@ -30,6 +30,18 @@ public class DescriptionHelper {
         }
     }
 
+    /**
+     * Get the description on a class type
+     *
+     * @param annotations annotation on the class
+     * @return the optional description
+     */
+    public static Optional<String> getDescriptionForType(Annotations annotations) {
+        if (annotations.containsKeyAndValidValue(Annotations.DESCRIPTION)) {
+            return Optional.of(getGivenDescription(annotations));
+        }
+        return Optional.empty();
+    }
 
 
     private static String getGivenDescription(Annotations annotations) {

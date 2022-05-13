@@ -7,7 +7,7 @@ import io.iamcyw.tower.schema.model.Operation;
 public class PredicateInvoker extends OperationInvoker {
 
     public PredicateInvoker(Operation operation, Operation target) {
-        super(operation, operation.getClassName(), new ArgumentHelper(operation.getArguments(), (argument, message) -> {
+        super(operation, new ArgumentHelper(operation.getArguments(), (argument, message) -> {
             if (argument.isParameterArgument()) {
                 return target.getParameter(argument.getName());
             }

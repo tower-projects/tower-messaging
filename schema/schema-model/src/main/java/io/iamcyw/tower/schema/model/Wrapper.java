@@ -10,9 +10,7 @@ public class Wrapper implements Serializable {
 
     private String wrapperClassName;
 
-    private boolean notEmpty = false; // Mark this to be not empty
-
-    private WrapperType wrapperType = WrapperType.UNKNOWN;
+    private WrapperType wrapperType = WrapperType.EMPTY;
 
     private Wrapper wrapper = null;
 
@@ -24,11 +22,6 @@ public class Wrapper implements Serializable {
         this.wrapperClassName = wrapperClassName;
     }
 
-    public Wrapper(WrapperType wrapperType, String wrapperClassName, boolean notEmpty) {
-        this.wrapperType = wrapperType;
-        this.wrapperClassName = wrapperClassName;
-        this.notEmpty = notEmpty;
-    }
 
     public WrapperType getWrapperType() {
         return wrapperType;
@@ -47,12 +40,9 @@ public class Wrapper implements Serializable {
     }
 
     public boolean isNotEmpty() {
-        return this.notEmpty;
+        return !wrapperType.equals(WrapperType.EMPTY);
     }
 
-    public void setNotEmpty(boolean notEmpty) {
-        this.notEmpty = notEmpty;
-    }
 
     public Wrapper getWrapper() {
         return wrapper;
@@ -94,7 +84,6 @@ public class Wrapper implements Serializable {
     public int hashCode() {
         int hash = 7;
         hash = 59 * hash + Objects.hashCode(this.wrapperClassName);
-        hash = 59 * hash + (this.notEmpty ? 1 : 0);
         hash = 59 * hash + Objects.hashCode(this.wrapperType);
         hash = 59 * hash + Objects.hashCode(this.wrapper);
         return hash;
@@ -112,9 +101,6 @@ public class Wrapper implements Serializable {
             return false;
         }
         final Wrapper other = (Wrapper) obj;
-        if (this.notEmpty != other.notEmpty) {
-            return false;
-        }
         if (!Objects.equals(this.wrapperClassName, other.wrapperClassName)) {
             return false;
         }
@@ -129,8 +115,8 @@ public class Wrapper implements Serializable {
 
     @Override
     public String toString() {
-        return "Wrapper{" + "wrapperClassName=" + wrapperClassName + ", notEmpty=" + notEmpty + ", wrapperType=" +
-                wrapperType + ", wrapper=" + wrapper + '}';
+        return "Wrapper{" + "wrapperClassName=" + wrapperClassName + ", wrapperType=" + wrapperType + ", wrapper=" +
+                wrapper + '}';
     }
 
 }

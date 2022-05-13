@@ -33,16 +33,16 @@ public class Argument extends Field {
         return domainArgument;
     }
 
+    public void setDomainArgument(boolean domainArgument) {
+        this.domainArgument = domainArgument;
+    }
+
     public boolean isParameterArgument() {
         return parameterArgument;
     }
 
     public void setParameterArgument(boolean parameterArgument) {
         this.parameterArgument = parameterArgument;
-    }
-
-    public void setDomainArgument(boolean domainArgument) {
-        this.domainArgument = domainArgument;
     }
 
     public boolean isMetaArgument() {

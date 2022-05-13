@@ -51,12 +51,12 @@ publishing {
     }
 }
 
-signing {
-    setRequired { !project.version.toString().endsWith("-SNAPSHOT") }
-    if (System.getenv().containsKey("MAVEN_SIGNING_KEY")) {
-        useInMemoryPgpKeys(System.getenv("MAVEN_SIGNING_KEY").toString(), System.getenv("MAVEN_SIGNING_PASSWORD").toString())
-    } else {
-        useGpgCmd()
-    }
-    sign(publishing.publications["maven"])
-}
+//signing {
+//    setRequired { !project.version.toString().endsWith("-SNAPSHOT") }
+//    if (System.getenv().containsKey("MAVEN_SIGNING_KEY")) {
+//        useInMemoryPgpKeys(System.getenv("MAVEN_SIGNING_KEY").toString(), System.getenv("MAVEN_SIGNING_PASSWORD").toString())
+//    } else {
+//        useGpgCmd()
+//    }
+//    sign(publishing.publications["maven"])
+//}

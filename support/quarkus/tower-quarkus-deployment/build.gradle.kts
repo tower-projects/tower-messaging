@@ -8,9 +8,9 @@ dependencies {
     annotationProcessor("io.quarkus:quarkus-extension-processor")
 
     api(project(":support:quarkus:tower-quarkus"))
+
     api("io.quarkus:quarkus-core-deployment")
     api("io.quarkus:quarkus-arc-deployment")
-//    api "io.quarkus:quarkus-smallrye-health-spi"
 
     api(project(":schema:schema-builder"))
 

@@ -1,6 +1,7 @@
 package io.iamcyw.tower.messaging.handle;
 
 import io.iamcyw.tower.schema.model.Operation;
+import io.iamcyw.tower.schema.model.WrapperType;
 
 import java.util.Objects;
 
@@ -9,13 +10,17 @@ public class Identifier {
 
     private final String field;
 
-    public Identifier(String command, String field) {
+    private final WrapperType wrapperType;
+
+    public Identifier(String command, String field, WrapperType wrapperType) {
         this.command = command;
         this.field = field;
+        this.wrapperType = wrapperType;
     }
 
     public Identifier(Operation operation) {
-        this(operation.getArguments().get(0).getReference().getClassName(), operation.getReference().getClassName());
+        this(operation.getArguments().get(0).getReference().getClassName(), operation.getReference().getClassName(),
+             operation.getWrapper().getWrapperType());
     }
 
     public String getCommand() {

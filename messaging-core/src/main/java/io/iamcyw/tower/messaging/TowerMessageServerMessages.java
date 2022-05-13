@@ -19,8 +19,8 @@ public interface TowerMessageServerMessages {
     @Message(id = 3, value = "Message Handling failed for [%s]")
     RuntimeException generalMessageHandleException(String operation, @Cause Throwable cause);
 
-    @Message(id = 4, value = "No matches found for [%s]")
-    NoSuchElementException notMatchHandleException(Identifier identifier);
+    @Message(id = 4, value = "No handle found for [%s]")
+    NoSuchElementException emptyHandleException(Identifier identifier);
 
     @Message(id = 5, value = "Could not get Instance using the default lookup service")
     RuntimeException countNotGetInstance(@Cause Throwable t);

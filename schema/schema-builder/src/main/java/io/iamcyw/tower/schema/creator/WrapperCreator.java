@@ -31,7 +31,6 @@ public class WrapperCreator {
     public static Optional<Wrapper> createWrapper(Type fieldType, Type methodType) {
         if (Classes.isWrapper(methodType)) {
             Wrapper wrapper = new Wrapper(getWrapperType(methodType), methodType.name().toString());
-            wrapper.setNotEmpty(true);
             // Wrapper of wrapper
             Optional<Wrapper> wrapperOfWrapper = getWrapperOfWrapper(methodType);
             if (wrapperOfWrapper.isPresent()) {

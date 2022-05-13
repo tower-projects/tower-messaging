@@ -4,8 +4,7 @@ plugins {
 
 repositories {
     maven("https://maven.aliyun.com/repository/central")
-//    mavenCentral()
-    gradlePluginPortal()
+    maven("https://maven.aliyun.com/repository/gradle-plugin")
 }
 
 dependencies {

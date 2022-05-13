@@ -8,6 +8,4 @@ package io.iamcyw.tower.schema.model;
 public enum ReferenceType {
     INPUT,
     TYPE,
-    ENUM,
-    INTERFACE
 }

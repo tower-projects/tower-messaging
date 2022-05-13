@@ -15,8 +15,6 @@ import java.util.Optional;
 
 /**
  * Creates a Argument object
- *
- * @author Phillip Kruger (phillip.kruger@redhat.com)
  */
 public class ArgumentCreator extends ModelCreator {
 
@@ -51,8 +49,9 @@ public class ArgumentCreator extends ModelCreator {
         // Name
         String defaultName = methodInfo.parameterName(position);
 
-        Reference reference = referenceCreator.createReferenceForSourceArgument(argumentType,
-                                                                                annotationsForThisArgument);
+        // Reference reference = referenceCreator.createReferenceForSourceArgument(argumentType,
+        //                                                                         annotationsForThisArgument);
+        Reference reference = referenceCreator.createReferenceForOperationArgument(argumentType, annotationsForThisArgument);
 
 
         Argument argument = new Argument(defaultName, methodInfo.name(),
@@ -66,7 +65,7 @@ public class ArgumentCreator extends ModelCreator {
         // parameter
         annotationsForThisArgument.getOneOfTheseAnnotations(Annotations.PARAMETER).ifPresent(annotationInstance -> {
             argument.setParameterArgument(true);
-            argument.setName(annotationInstance.value().asString());
+            argument.setName(annotationInstance.value().name());
         });
 
         populateField(Direction.IN, argument, argumentType, annotationsForThisArgument);

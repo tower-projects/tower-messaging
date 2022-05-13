@@ -20,14 +20,23 @@ public class OperationCreator extends ModelCreator {
 
     private final ArgumentCreator argumentCreator;
 
+    private final MethodInvokerCreator methodInvokerCreator;
+
     public OperationCreator(ReferenceCreator referenceCreator, ArgumentCreator argumentCreator) {
         super(referenceCreator);
         this.argumentCreator = argumentCreator;
+        this.methodInvokerCreator = null;
+    }
+
+    public OperationCreator(ReferenceCreator referenceCreator, ArgumentCreator argumentCreator,
+                            MethodInvokerCreator methodInvokerCreator) {
+        super(referenceCreator);
+        this.argumentCreator = argumentCreator;
+        this.methodInvokerCreator = methodInvokerCreator;
     }
 
     /**
      * Get the name from annotation(s) or default.
-     * This is for operations (query, mutation and source)
      *
      * @param methodInfo    the java method
      * @param operationType the type (query, mutation)
@@ -39,8 +48,7 @@ public class OperationCreator extends ModelCreator {
         DotName operationAnnotation = getOperationAnnotation(operationType);
 
         // If the @Query or @Command annotation has a value, use that, else use name or jsonb property
-        return annotations.getOneOfTheseMethodAnnotationsValue(operationAnnotation, Annotations.JSONB_PROPERTY,
-                                                               Annotations.JACKSON_PROPERTY)
+        return annotations.getOneOfTheseMethodAnnotationsValue(operationAnnotation)
                           .orElse(getDefaultExecutionTypeName(methodInfo, operationType));
 
     }
@@ -62,7 +70,7 @@ public class OperationCreator extends ModelCreator {
     private static String getDefaultExecutionTypeName(MethodInfo methodInfo, OperationType operationType) {
         String methodName = methodInfo.name();
         if (operationType.equals(OperationType.QUERY) || operationType.equals(OperationType.COMMAND)) {
-            methodName = MethodHelper.getPropertyName(Direction.OUT, methodName);
+            methodName = methodInfo.parameters().get(0).asClassType().name().withoutPackagePrefix();
         }
         return methodName;
     }
@@ -93,7 +101,6 @@ public class OperationCreator extends ModelCreator {
         String name = getOperationName(methodInfo, operationType, annotationsForMethod);
 
         // Field Type
-        // validateFieldType(methodInfo, operationType);
         Reference reference = referenceCreator.createReferenceForOperationField(fieldType, annotationsForMethod);
 
         // Execution
@@ -101,6 +108,10 @@ public class OperationCreator extends ModelCreator {
         Operation operation = new Operation(methodInfo.declaringClass().name().toString(), methodInfo.name(),
                                             MethodHelper.getPropertyName(Direction.OUT, methodInfo.name()), name,
                                             reference, operationType, execute);
+
+        if (methodInvokerCreator != null) {
+            operation.setInvoke(methodInvokerCreator.create(methodInfo.declaringClass(), methodInfo));
+        }
 
         // Arguments
         List<Type> parameters = methodInfo.parameters();
@@ -121,18 +132,6 @@ public class OperationCreator extends ModelCreator {
                                     parameter(annotationInstance, operation);
                                 }
                             });
-        // annotationsForMethod.getOneOfTheseAnnotations(Annotations.PREDICATE)
-        //                     .ifPresent(annotationInstance -> {
-        //                         if (annotationInstance.name().equals(Annotations.PREDICATES)) {
-        //                             AnnotationInstance[] annotationValues = annotationInstance.value()
-        //                             .asNestedArray();
-        //                             for (AnnotationInstance annotationValue : annotationValues) {
-        //                                 operation.addPredicate(predicate(annotationValue));
-        //                             }
-        //                         } else {
-        //                             operation.addPredicate(predicate(annotationInstance));
-        //                         }
-        //                     });
 
         populateField(Direction.OUT, operation, fieldType, annotationsForMethod);
 

@@ -3,11 +3,8 @@ package io.iamcyw.tower.messaging.handle.helper;
 import io.iamcyw.tower.messaging.spi.ClassloadingService;
 import io.iamcyw.tower.messaging.spi.LookupService;
 import io.iamcyw.tower.messaging.spi.ManagedInstance;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.LinkedList;
-import java.util.List;
+import io.iamcyw.tower.messaging.spi.MethodInvokeService;
+import io.iamcyw.tower.schema.model.Operation;
 
 import static io.iamcyw.tower.messaging.TowerMessageServerMessages.msg;
 
@@ -15,66 +12,34 @@ public class ReflectionInvoker {
 
     private final LookupService lookupService = LookupService.get();
 
-    private final ClassloadingService classloadingService = ClassloadingService.get();
+    private final MethodInvokeService methodInvokeService = MethodInvokeService.get();
 
-    private final Class<?> operationClass;
+    private final ClassloadingService classloadingService = ClassloadingService.load();
 
-    private Method method;
+    private final Operation operation;
 
-    public ReflectionInvoker(String className) {
-        this.operationClass = classloadingService.loadClass(className);
+    private MethodInvoker methodInvoker;
+
+    private Class<?> operationClass;
+
+    public ReflectionInvoker(Operation operation) {
+        this.operation = operation;
+        this.methodInvoker = methodInvokeService.get(operation);
+        this.operationClass = classloadingService.loadClass(operation.getClassName());
     }
 
-    public ReflectionInvoker(String className, String methodName, List<String> parameterClasses) {
-        this.operationClass = classloadingService.loadClass(className);
-        this.setMethod(methodName, parameterClasses);
-    }
-
-    public void setMethod(String methodName, List<String> parameterClasses) {
-        this.method = lookupMethod(operationClass, methodName, parameterClasses);
-    }
-
-    protected <R> R invoke(Object... arguments) {
+    protected <R> R invoke(Object[] arguments) {
         try {
             ManagedInstance<?> operationInstance = lookupService.getInstance(operationClass);
             Object operationInstance1 = operationInstance.get();
-            return (R) method.invoke(operationInstance1, arguments);
-        } catch (InvocationTargetException ex) {
-            //Invoked method has thrown something, unwrap
-            Throwable throwable = ex.getCause();
-
-            if (throwable instanceof Error) {
-                throw (Error) throwable;
-            } else {
-                throw msg.generalMessageHandleException(operationClass.getName() + ": " + method.getName(), throwable);
-            }
+            return (R) methodInvoker.invoke(operationInstance1, arguments);
         } catch (Throwable throwable) {
             if (throwable instanceof Error) {
                 throw (Error) throwable;
             } else {
-                throw msg.generalMessageHandleException(operationClass.getName() + ": " + method.getName(), throwable);
+                throw msg.generalMessageHandleException(operation.getName(), throwable);
             }
         }
-    }
-
-    private Method lookupMethod(Class<?> operationClass, String methodName, List<String> parameterClasses) {
-        try {
-            return operationClass.getMethod(methodName, getParameterClasses(parameterClasses));
-        } catch (NoSuchMethodException e) {
-            throw msg.generalMessageHandleException(operationClass.getName() + ": " + methodName, e);
-        }
-    }
-
-    private Class<?>[] getParameterClasses(List<String> parameterClasses) {
-        if (parameterClasses != null && !parameterClasses.isEmpty()) {
-            List<Class<?>> cl = new LinkedList<>();
-            for (String className : parameterClasses) {
-                cl.add(classloadingService.loadClass(className));
-            }
-
-            return cl.toArray(new Class[]{});
-        }
-        return null;
     }
 
 }

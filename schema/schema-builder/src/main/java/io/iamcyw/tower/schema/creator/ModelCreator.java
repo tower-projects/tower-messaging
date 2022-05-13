@@ -4,6 +4,7 @@ import io.iamcyw.tower.schema.Annotations;
 import io.iamcyw.tower.schema.helper.DescriptionHelper;
 import io.iamcyw.tower.schema.helper.Direction;
 import io.iamcyw.tower.schema.model.Field;
+import io.iamcyw.tower.schema.model.Wrapper;
 import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Type;
@@ -29,10 +30,6 @@ public abstract class ModelCreator {
         return methodInfo.returnType();
     }
 
-    // public void setDirectives(Directives directives) {
-    //     this.directives = directives;
-    // }
-
     /**
      * The the return type.This is usually the method return type, but can also be adapted to something else
      *
@@ -41,16 +38,12 @@ public abstract class ModelCreator {
      */
     protected static Type getReturnType(FieldInfo fieldInfo) {
         return fieldInfo.type();
-
     }
 
-    public ReferenceCreator getReferenceCreator() {
-        return referenceCreator;
-    }
 
     protected void populateField(Direction direction, Field field, Type type, Annotations annotations) {
         // Wrapper
-        field.setWrapper(WrapperCreator.createWrapper(type).orElse(null));
+        field.setWrapper(WrapperCreator.createWrapper(type).orElse(new Wrapper()));
 
         doPopulateField(direction, field, type, annotations);
     }
@@ -63,15 +56,13 @@ public abstract class ModelCreator {
         doPopulateField(direction, field, methodType, annotations);
     }
 
+
     private void doPopulateField(Direction direction, Field field, Type type, Annotations annotations) {
         // Description
         DescriptionHelper.getDescriptionForField(annotations, type).ifPresent(field::setDescription);
 
         // NotNull
-        // if (NonNullHelper.markAsNonNull(type, annotations)) {
         field.setNotNull(true);
-        // }
-
     }
 
 }

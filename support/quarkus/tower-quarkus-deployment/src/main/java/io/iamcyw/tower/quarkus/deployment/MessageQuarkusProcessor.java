@@ -4,7 +4,11 @@ import io.iamcyw.tower.messaging.cdi.producer.MessageProducer;
 import io.iamcyw.tower.messaging.spi.LookupService;
 import io.iamcyw.tower.quarkus.runtime.MessageRecorder;
 import io.iamcyw.tower.schema.Annotations;
+import io.iamcyw.tower.schema.ScanningContext;
 import io.iamcyw.tower.schema.SchemaBuilder;
+import io.iamcyw.tower.schema.creator.ArgumentCreator;
+import io.iamcyw.tower.schema.creator.OperationCreator;
+import io.iamcyw.tower.schema.creator.ReferenceCreator;
 import io.iamcyw.tower.schema.model.Argument;
 import io.iamcyw.tower.schema.model.Operation;
 import io.iamcyw.tower.schema.model.Reference;
@@ -12,16 +16,13 @@ import io.iamcyw.tower.schema.model.Schema;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.BeanContainerBuildItem;
 import io.quarkus.arc.deployment.BeanDefiningAnnotationBuildItem;
-import io.quarkus.deployment.annotations.BuildProducer;
-import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
-import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
-import io.quarkus.deployment.builditem.FeatureBuildItem;
-import io.quarkus.deployment.builditem.TransformedClassesBuildItem;
+import io.quarkus.deployment.annotations.*;
+import io.quarkus.deployment.builditem.*;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveHierarchyBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ServiceProviderBuildItem;
+import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.RuntimeValue;
 import org.jboss.jandex.Indexer;
 import org.jboss.logging.Logger;
@@ -35,7 +36,7 @@ public class MessageQuarkusProcessor {
 
     private static final Logger LOG = Logger.getLogger(MessageQuarkusProcessor.class);
 
-    private static final String FEATURE = "tower-quarkus";
+    private static final String FEATURE = "tower";
 
     @BuildStep
     FeatureBuildItem feature() {
@@ -81,14 +82,16 @@ public class MessageQuarkusProcessor {
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     void buildExecutionService(BuildProducer<ReflectiveClassBuildItem> reflectiveClassProducer,
+                               BuildProducer<GeneratedClassBuildItem> generatedClassBuildItemBuildProducer,
                                BuildProducer<ReflectiveHierarchyBuildItem> reflectiveHierarchyProducer,
+                               BuildProducer<TowerMessageSchemaBuildItem> towerMessageSchemaBuildItemBuildProducer,
                                MessageRecorder recorder, TowerMessageIndexBuildItem towerMessageIndexBuildItem,
                                BeanContainerBuildItem beanContainer, CombinedIndexBuildItem combinedIndex) {
 
         Indexer indexer = new Indexer();
-        Map<String, byte[]> modifiedClases = towerMessageIndexBuildItem.getModifiedClases();
+        Map<String, byte[]> modifiedClasses = towerMessageIndexBuildItem.getModifiedClases();
 
-        for (Map.Entry<String, byte[]> kv : modifiedClases.entrySet()) {
+        for (Map.Entry<String, byte[]> kv : modifiedClasses.entrySet()) {
             if (kv.getKey() != null && kv.getValue() != null) {
                 try (ByteArrayInputStream bais = new ByteArrayInputStream(kv.getValue())) {
                     indexer.index(bais);
@@ -100,12 +103,42 @@ public class MessageQuarkusProcessor {
 
         OverridableIndex overridableIndex = OverridableIndex.create(combinedIndex.getIndex(), indexer.complete());
 
-        Schema schema = SchemaBuilder.build(overridableIndex);
+        ReferenceCreator referenceCreator = new ReferenceCreator();
+        ArgumentCreator argumentCreator = new ArgumentCreator(referenceCreator);
+        MethodInvokerFactory methodInvokerFactory = new MethodInvokerFactory(generatedClassBuildItemBuildProducer);
+        OperationCreator operationCreator = new OperationCreator(referenceCreator, argumentCreator,
+                                                                 methodInvokerFactory::create);
+
+        SchemaBuilder schemaBuilder = new SchemaBuilder(referenceCreator,operationCreator);
+        ScanningContext.register(overridableIndex);
+        Schema schema = schemaBuilder.generateSchema();
 
         RuntimeValue<Boolean> initialized = recorder.createMessageService(beanContainer.getValue(), schema);
 
+        towerMessageSchemaBuildItemBuildProducer.produce(new TowerMessageSchemaBuildItem(schema));
+
         // Make sure the complex object from the application can work in native mode
         reflectiveClassProducer.produce(new ReflectiveClassBuildItem(true, true, getSchemaJavaClasses(schema)));
+    }
+
+    @Record(ExecutionTime.RUNTIME_INIT)
+    @BuildStep
+    @Consume(BeanContainerBuildItem.class)
+    void buildExecutionEndpoint(MessageRecorder recorder, ShutdownContextBuildItem shutdownContext,
+                                LaunchModeBuildItem launchMode) {
+
+        /*
+         * <em>Ugly Hack</em>
+         * In dev mode, we pass a classloader to use in the CDI Loader.
+         * This hack is required because using the TCCL would get an outdated version - the initial one.
+         * This is because the worker thread on which the handler is called captures the TCCL at creation time
+         * and does not allow updating it.
+         *
+         * In non dev mode, the TCCL is used.
+         */
+        if (launchMode.getLaunchMode() == LaunchMode.DEVELOPMENT) {
+            recorder.setupClDevMode(shutdownContext);
+        }
     }
 
     private String[] getSchemaJavaClasses(Schema schema) {

@@ -38,7 +38,7 @@ public class Bootstrap {
         if (schema.hasQueries()) {
             Set<Operation> queries = schema.getQueries();
 
-            queryHandles = queries.stream().map(this::newQueryHandle).collect(
+            queryHandles = queries.stream().map(this::newMessageHandle).collect(
                     Multimaps.toMultimap(MessageHandle::getIdentifier, messageHandle -> messageHandle,
                                          MultimapBuilder.hashKeys().hashSetValues()::build));
         }
@@ -46,7 +46,7 @@ public class Bootstrap {
         if (schema.hasCommands()) {
             Set<Operation> commands = schema.getCommands();
 
-            commandHandles = commands.stream().map(this::newQueryHandle).collect(
+            commandHandles = commands.stream().map(this::newMessageHandle).collect(
                     Multimaps.toMultimap(MessageHandle::getIdentifier, messageHandle -> messageHandle,
                                          MultimapBuilder.hashKeys().hashSetValues()::build));
         }
@@ -86,12 +86,8 @@ public class Bootstrap {
         this.messageBus = messageBus;
     }
 
-    private MessageHandle<?> newQueryHandle(Operation query) {
+    private MessageHandle<?> newMessageHandle(Operation query) {
         return new MessageHandle<>(query, List.of());
-    }
-
-    private MessageHandle<?> newCommandHandle(Operation command) {
-        return new MessageHandle<>(command, List.of());
     }
 
     private void handlePredicate(Operation predicate) {

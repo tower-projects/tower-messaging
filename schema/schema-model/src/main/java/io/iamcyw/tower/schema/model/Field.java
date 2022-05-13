@@ -19,7 +19,7 @@ public class Field implements Serializable {
     private String propertyName;
 
     /**
-     * This is the GraphQL Name in the schema
+     * This is the Command Name in the schema
      */
     private String name;
 
@@ -39,7 +39,6 @@ public class Field implements Serializable {
      * just plain generic.
      */
     private Wrapper wrapper = null;
-
 
     private String defaultValue = null;
 
@@ -112,7 +111,7 @@ public class Field implements Serializable {
     }
 
     public boolean hasWrapper() {
-        return this.wrapper != null;
+        return this.wrapper != null && this.wrapper.isNotEmpty();
     }
 
     public String getDefaultValue() {

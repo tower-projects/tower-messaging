@@ -26,8 +26,7 @@ public class MessageProducer {
 
             return true;
         } catch (Exception e) {
-            LOGGER.error(e);
-            return false;
+            throw new RuntimeException(e);
         }
 
     }

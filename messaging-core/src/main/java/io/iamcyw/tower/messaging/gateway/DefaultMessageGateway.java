@@ -6,6 +6,7 @@ import io.iamcyw.tower.messaging.MessageBus;
 import io.iamcyw.tower.messaging.responsetype.ResponseType;
 import io.iamcyw.tower.messaging.responsetype.ResponseTypes;
 import io.iamcyw.tower.schema.model.OperationType;
+import io.iamcyw.tower.schema.model.WrapperType;
 
 import java.util.List;
 
@@ -23,8 +24,8 @@ public class DefaultMessageGateway implements MessageGateway {
 
     @Override
     public <R> List<R> queries(Object query, Class<R> response) {
-        return messageBus.dispatch(
-                wrapperMessage(query, ResponseTypes.multipleInstancesOf(response), OperationType.QUERY)).join();
+        return messageBus.dispatch(wrapperMessage(query, ResponseTypes.listInstanceOf(response), OperationType.QUERY))
+                         .join();
     }
 
     @Override
@@ -33,9 +34,13 @@ public class DefaultMessageGateway implements MessageGateway {
                          .join();
     }
 
+    @Override
+    public Object query(Object query, String responseClass, WrapperType wrapperType) {
+        return messageBus.dispatch(new GenericMessage<>(query, responseClass, wrapperType, OperationType.QUERY));
+    }
+
     private <R> Message<R> wrapperMessage(Object payload, ResponseType<R> responseType, OperationType operationType) {
-        Message<R> message = new GenericMessage<R>(payload, responseType, operationType);
-        return message;
+        return new GenericMessage<>(payload, responseType, operationType);
     }
 
 }

@@ -1,18 +1,14 @@
 package io.iamcyw.tower.messaging.responsetype;
 
+import io.iamcyw.tower.schema.model.WrapperType;
+
 import java.io.Serializable;
-import java.lang.reflect.Type;
 
 public interface ResponseType<R> extends Serializable {
 
-    boolean matches(Type responseType);
+    Class<?> responseMessagePayloadType();
 
-    @SuppressWarnings("unchecked")
-    default R convert(Object response) {
-        return (R) response;
-    }
-
-    Class<R> responseMessagePayloadType();
+    WrapperType responseMessagePayloadWrapperType();
 
     default String name() {
         return responseMessagePayloadType().getName();

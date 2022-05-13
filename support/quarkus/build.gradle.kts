@@ -6,4 +6,10 @@ subprojects {
 
         dependencies.add(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME, "io.quarkus:quarkus-extension-processor:${rootProject.extra["quarkus"]}")
     }
+
+    tasks.withType(ProcessResources::class) {
+        filter<org.apache.tools.ant.filters.ReplaceTokens>("tokens" to mapOf("version" to project.version, "quarkus" to rootProject.extra["quarkus"]))
+    }
+
+
 }

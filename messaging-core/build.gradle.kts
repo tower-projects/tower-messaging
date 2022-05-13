@@ -10,7 +10,6 @@ dependencies {
     implementation(project(":common"))
     implementation(project(":schema:schema-model"))
 
-    testImplementation("org.jboss.logging:jboss-logging")
     testImplementation("org.jboss:jandex")
     testImplementation(project(":schema:schema-builder"))
 }

@@ -7,7 +7,7 @@ import org.jboss.jandex.IndexView;
  *
  * At this point we only keep the index in the context
  * 
- * @author Phillip Kruger (phillip.kruger@redhat.com)
+ *
  */
 public class ScanningContext {
     private static final ThreadLocal<ScanningContext> current = new ThreadLocal<>();

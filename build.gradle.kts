@@ -1,5 +1,5 @@
 plugins {
-    id("io.quarkus") version "2.7.2.Final" apply false
+    id("io.quarkus") version "2.9.0.Final" apply false
     id("io.github.gradle-nexus.publish-plugin")
 }
 
@@ -14,8 +14,13 @@ nexusPublishing {
     }
 }
 
+repositories {
+    maven("https://maven.aliyun.com/repository/central")
+    maven("https://maven.aliyun.com/repository/gradle-plugin")
+}
+
 ext {
-    set("quarkus", "2.7.2.Final")
+    set("quarkus", "2.9.0.Final")
 }
 
 allprojects {
@@ -24,7 +29,6 @@ allprojects {
     description = "tower projects"
 
     repositories {
-        maven("https://repo1.maven.org/maven2/")
         maven("https://maven.aliyun.com/repository/central")
     }
 

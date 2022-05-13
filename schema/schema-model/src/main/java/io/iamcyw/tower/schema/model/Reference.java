@@ -16,37 +16,24 @@ public class Reference implements Serializable {
 
     private ReferenceType type;
 
-
     private Map<String, Reference> parametrizedTypeArguments;
 
     private boolean addParametrizedTypeNameExtension;
 
-    /**
-     * If this is wrapped in generics or an array, this contain the info, examples are arrays, collections, async,
-     * optional or
-     * just plain generic.
-     */
-    private Wrapper wrapper = null;
-
     public Reference() {
     }
 
+    public Reference(String className, String name, ReferenceType type) {
+        this(className, name, type, null, false);
+    }
+
     public Reference(String className, String name, ReferenceType type,
-                     Map<String, Reference> parametrizedTypeArguments, boolean addParametrizedTypeNameExtension,
-                     Wrapper wrapper) {
+                     Map<String, Reference> parametrizedTypeArguments, boolean addParametrizedTypeNameExtension) {
         this.className = className;
         this.name = name;
         this.type = type;
         this.parametrizedTypeArguments = parametrizedTypeArguments;
         this.addParametrizedTypeNameExtension = addParametrizedTypeNameExtension;
-        this.wrapper = wrapper;
-    }
-
-    public Reference(String className, String name, ReferenceType referenceType,
-                     Map<String, Reference> parametrizedTypeArgumentsReferences,
-                     boolean addParametrizedTypeNameExtension) {
-        this(className, name, referenceType, parametrizedTypeArgumentsReferences, addParametrizedTypeNameExtension,
-             null);
     }
 
     /**
@@ -86,7 +73,6 @@ public class Reference implements Serializable {
         this.type = type;
     }
 
-
     public Map<String, Reference> getParametrizedTypeArguments() {
         return parametrizedTypeArguments;
     }
@@ -103,18 +89,6 @@ public class Reference implements Serializable {
         this.addParametrizedTypeNameExtension = addParametrizedTypeNameExtension;
     }
 
-    public Wrapper getWrapper() {
-        return wrapper;
-    }
-
-    public void setWrapper(Wrapper wrapper) {
-        this.wrapper = wrapper;
-    }
-
-    public boolean hasWrapper() {
-        return this.wrapper != null;
-    }
-
     @Override
     public int hashCode() {
         int hash = 7;
@@ -123,8 +97,6 @@ public class Reference implements Serializable {
         hash = 97 * hash + Objects.hashCode(this.type);
         hash = 97 * hash + Objects.hashCode(this.parametrizedTypeArguments);
         hash = 97 * hash + (this.addParametrizedTypeNameExtension ? 1 : 0);
-        // hash = 97 * hash + Objects.hashCode(this.directiveInstances);
-        hash = 97 * hash + Objects.hashCode(this.wrapper);
         return hash;
     }
 
@@ -155,9 +127,6 @@ public class Reference implements Serializable {
         if (!Objects.equals(this.parametrizedTypeArguments, other.parametrizedTypeArguments)) {
             return false;
         }
-        if (!Objects.equals(this.wrapper, other.wrapper)) {
-            return false;
-        }
         return true;
     }
 
@@ -165,7 +134,7 @@ public class Reference implements Serializable {
     public String toString() {
         return "Reference{" + "className='" + className + '\'' + ", name='" + name + '\'' + ", type=" + type +
                 ", parametrizedTypeArguments=" + parametrizedTypeArguments + ", addParametrizedTypeNameExtension=" +
-                addParametrizedTypeNameExtension + ", wrapper=" + wrapper + '}';
+                addParametrizedTypeNameExtension + '}';
     }
 
 }

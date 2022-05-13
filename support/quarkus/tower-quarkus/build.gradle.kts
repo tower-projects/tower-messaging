@@ -4,11 +4,6 @@ plugins {
     id("maven-deploy")
 }
 
-
-tasks.processResources {
-    filter<org.apache.tools.ant.filters.ReplaceTokens>("tokens" to mapOf("version" to project.version))
-}
-
 java {
     registerFeature("metrics") {
         usingSourceSet(sourceSets.main.get())
@@ -20,7 +15,8 @@ dependencies {
 
     implementation("io.quarkus:quarkus-core")
     implementation("io.quarkus:quarkus-arc")
-    compileOnly("io.quarkus:quarkus-micrometer")
+
+//    compileOnly("io.quarkus:quarkus-micrometer")
 
     api(project(":messaging-cdi"))
     api(project(":schema:schema-model"))

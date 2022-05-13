@@ -13,16 +13,8 @@ public interface MessageDotNames {
 
     DotName QUERYHANDLER = DotName.createSimple(QueryHandle.class.getName());
 
-    // DotName PREDICATEHANDLE = DotName.createSimple(PredicateHandle.class.getName());
-
     DotName METADATA = DotName.createSimple(MetaData.class.getName());
 
-    // DotName METADATAVALUE = DotName.createSimple(MetaDataValue.class.getName());
-
     DotName MESSAGE = DotName.createSimple(Message.class.getName());
-
-    // DotName MESSAGE_PREDICATE = DotName.createSimple(MessagePredicate.class.getName());
-
-    // DotName MESSAGE_PREDICATES = DotName.createSimple(MessagePredicates.class.getName());
 
 }

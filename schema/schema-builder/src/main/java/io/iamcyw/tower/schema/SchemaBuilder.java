@@ -1,45 +1,50 @@
 package io.iamcyw.tower.schema;
 
 import io.iamcyw.tower.schema.creator.ArgumentCreator;
+import io.iamcyw.tower.schema.creator.FieldCreator;
 import io.iamcyw.tower.schema.creator.OperationCreator;
 import io.iamcyw.tower.schema.creator.ReferenceCreator;
-import io.iamcyw.tower.schema.helper.TypeAutoNameStrategy;
-import io.iamcyw.tower.schema.model.Operation;
-import io.iamcyw.tower.schema.model.OperationType;
-import io.iamcyw.tower.schema.model.Schema;
-import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.IndexView;
-import org.jboss.jandex.MethodInfo;
+import io.iamcyw.tower.schema.creator.type.Creator;
+import io.iamcyw.tower.schema.creator.type.InputTypeCreator;
+import io.iamcyw.tower.schema.creator.type.TypeCreator;
+import io.iamcyw.tower.schema.model.*;
+import org.jboss.jandex.*;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Queue;
+import java.util.function.Consumer;
 
 public class SchemaBuilder {
     private final OperationCreator operationCreator;
 
+    private final InputTypeCreator inputTypeCreator;
+
+    private final FieldCreator fieldCreator;
+
+    private final TypeCreator typeCreator;
+
     private final ReferenceCreator referenceCreator;
 
+    public SchemaBuilder(ReferenceCreator referenceCreator, OperationCreator operationCreator) {
+        this.referenceCreator = referenceCreator;
 
-    private SchemaBuilder(TypeAutoNameStrategy autoNameStrategy) {
-        referenceCreator = new ReferenceCreator();
-
-        ArgumentCreator argumentCreator = new ArgumentCreator(referenceCreator);
-
-        operationCreator = new OperationCreator(referenceCreator, argumentCreator);
+        this.operationCreator = operationCreator;
+        fieldCreator = new FieldCreator(referenceCreator);
+        typeCreator = new TypeCreator(referenceCreator, fieldCreator, operationCreator);
+        this.inputTypeCreator = new InputTypeCreator(fieldCreator);
     }
 
     public static Schema build(IndexView index) {
-        return build(index, TypeAutoNameStrategy.Default);
-    }
-
-    public static Schema build(IndexView index, TypeAutoNameStrategy autoNameStrategy) {
         ScanningContext.register(index);
-        return new SchemaBuilder(autoNameStrategy).generateSchema();
+
+        ReferenceCreator referenceCreator = new ReferenceCreator();
+        OperationCreator opc = new OperationCreator(referenceCreator, new ArgumentCreator(referenceCreator));
+
+        return new SchemaBuilder(referenceCreator, opc).generateSchema();
     }
 
-    private Schema generateSchema() {
-
+    public Schema generateSchema() {
         Collection<AnnotationInstance> useCaseAnnotations = ScanningContext.getIndex()
                                                                            .getAnnotations(Annotations.USECASE);
 
@@ -51,8 +56,36 @@ public class SchemaBuilder {
             addOperations(schema, methods);
         }
 
+        // The above queries and mutations reference some models (input / type / interfaces / enum), let's create those
+        addTypesToSchema(schema);
+
         return schema;
     }
+
+    private void addTypesToSchema(Schema schema) {
+        // Add the input types
+        createAndAddToSchema(ReferenceType.INPUT, inputTypeCreator, schema::addInput);
+
+        // Add the output types
+        createAndAddToSchema(ReferenceType.TYPE, typeCreator, schema::addType);
+
+        // // Add the interface types
+        // createAndAddToSchema(ReferenceType.INTERFACE, interfaceCreator, schema::addInterface);
+        //
+        // // Add the enum types
+        // createAndAddToSchema(ReferenceType.ENUM, enumCreator, schema::addEnum);
+    }
+
+    private <T> void createAndAddToSchema(ReferenceType referenceType, Creator<T> creator, Consumer<T> consumer) {
+        Queue<Reference> queue = referenceCreator.values(referenceType);
+        while (!queue.isEmpty()) {
+            Reference reference = queue.poll();
+            ClassInfo classInfo = ScanningContext.getIndex()
+                                                 .getClassByName(DotName.createSimple(reference.getClassName()));
+            consumer.accept(creator.create(classInfo, reference));
+        }
+    }
+
 
     /**
      * This inspect all method, looking for Query and Mutation annotations,

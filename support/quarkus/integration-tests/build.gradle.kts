@@ -11,8 +11,8 @@ repositories {
 
 dependencies {
 
+    implementation("io.quarkus:quarkus-vertx-web")
     implementation("io.quarkus:quarkus-arc")
-    implementation("io.quarkus:quarkus-smallrye-graphql")
 
     implementation(project(":common"))
 

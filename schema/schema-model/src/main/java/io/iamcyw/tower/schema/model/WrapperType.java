@@ -9,4 +9,6 @@ public enum WrapperType {
     MAP,
     ARRAY,
     UNKNOWN // Could be a plugged in type, or normal generics
+    ,
+    EMPTY
 }

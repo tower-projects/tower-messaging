@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * Lookup service that gets the beans via CDI
  */
-public class CdiLookupService implements LookupService {
+public class CDILookupService implements LookupService {
 
     @Override
     public String getName() {

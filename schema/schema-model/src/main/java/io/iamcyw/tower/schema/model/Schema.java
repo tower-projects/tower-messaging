@@ -20,8 +20,9 @@ public final class Schema implements Serializable {
     // private Map<Group, Set<Operation>> groupedSubscriptions = new HashMap<>();
 
     // private List<DirectiveType> directiveTypes = new ArrayList<>();
-    // private Map<String, InputType> inputs = new HashMap<>();
-    // private Map<String, Type> types = new HashMap<>();
+    private Map<String, InputType> inputs = new HashMap<>();
+
+    private Map<String, Type> types = new HashMap<>();
     // private Map<String, Type> interfaces = new HashMap<>();
     // private Map<String, EnumType> enums = new HashMap<>();
     //
@@ -150,45 +151,45 @@ public final class Schema implements Serializable {
     //     return !this.groupedSubscriptions.isEmpty();
     // }
 
-    // public Map<String, InputType> getInputs() {
-    //     return inputs;
-    // }
+    public Map<String, InputType> getInputs() {
+        return inputs;
+    }
 
-    // public void setInputs(Map<String, InputType> inputs) {
-    //     this.inputs = inputs;
-    // }
+    public void setInputs(Map<String, InputType> inputs) {
+        this.inputs = inputs;
+    }
 
-    // public void addInput(InputType input) {
-    //     this.inputs.put(input.getName(), input);
-    // }
+    public void addInput(InputType input) {
+        this.inputs.put(input.getName(), input);
+    }
 
-    // public boolean containsInput(String name) {
-    //     return this.inputs.containsKey(name);
-    // }
+    public boolean containsInput(String name) {
+        return this.inputs.containsKey(name);
+    }
 
-    // public boolean hasInputs() {
-    //     return !this.inputs.isEmpty();
-    // }
+    public boolean hasInputs() {
+        return !this.inputs.isEmpty();
+    }
 
-    // public Map<String, Type> getTypes() {
-    //     return types;
-    // }
+    public Map<String, Type> getTypes() {
+        return types;
+    }
 
-    // public void setTypes(Map<String, Type> types) {
-    //     this.types = types;
-    // }
+    public void setTypes(Map<String, Type> types) {
+        this.types = types;
+    }
 
-    // public void addType(Type type) {
-    //     this.types.put(type.getName(), type);
-    // }
+    public void addType(Type type) {
+        this.types.put(type.getName(), type);
+    }
 
-    // public boolean containsType(String name) {
-    //     return this.types.containsKey(name);
-    // }
+    public boolean containsType(String name) {
+        return this.types.containsKey(name);
+    }
 
-    // public boolean hasTypes() {
-    //     return !this.types.isEmpty();
-    // }
+    public boolean hasTypes() {
+        return !this.types.isEmpty();
+    }
 
     // public Map<String, Type> getInterfaces() {
     //     return interfaces;

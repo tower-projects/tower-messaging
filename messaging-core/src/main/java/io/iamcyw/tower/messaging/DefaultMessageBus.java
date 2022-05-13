@@ -44,10 +44,15 @@ public class DefaultMessageBus implements MessageBus {
             } else {
                 allowHandle = Collections.emptyList();
             }
-            return allowHandle.stream().filter(messageHandle -> messageHandle.predicate(message)).findFirst()
-                              .orElseThrow(() -> msg.notMatchHandleException(message.getIdentifier()));
+            return allowHandle.stream().filter(messageHandle -> predicateResultType(messageHandle, message))
+                              .filter(messageHandle -> messageHandle.predicate(message)).findFirst()
+                              .orElseThrow(() -> msg.emptyHandleException(message.getIdentifier()));
         });
         message.getMetaData().setMessageHandle(messageHandleCF);
+    }
+
+    private boolean predicateResultType(MessageHandle<?> messageHandle, Message<?> message) {
+        return message.getIdentifier().equals(messageHandle.getIdentifier());
     }
 
     @Override

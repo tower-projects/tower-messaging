@@ -1,6 +1,6 @@
 package io.iamcyw.tower.messaging.responsetype;
 
-import java.lang.reflect.Type;
+import io.iamcyw.tower.schema.model.WrapperType;
 
 public class VoidResponseType extends AbstractResponseType<Void> {
     protected VoidResponseType() {
@@ -8,13 +8,8 @@ public class VoidResponseType extends AbstractResponseType<Void> {
     }
 
     @Override
-    public boolean matches(Type responseType) {
-        return responseType.getTypeName().equals("void");
-    }
-
-    @Override
-    public Class<Void> responseMessagePayloadType() {
-        return Void.class;
+    public WrapperType responseMessagePayloadWrapperType() {
+        return WrapperType.EMPTY;
     }
 
     @Override
