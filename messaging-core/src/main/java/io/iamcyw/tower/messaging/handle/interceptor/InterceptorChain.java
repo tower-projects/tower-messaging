@@ -5,8 +5,8 @@ import io.iamcyw.tower.messaging.Message;
 import java.util.concurrent.CompletableFuture;
 
 @FunctionalInterface
-public interface InterceptorChain<R> {
+public interface InterceptorChain {
 
-    CompletableFuture<R> filter(Message message);
+    <R> CompletableFuture<R> filter(Message<R> message);
 
 }

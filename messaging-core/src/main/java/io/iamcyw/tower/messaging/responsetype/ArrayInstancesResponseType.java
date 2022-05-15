@@ -3,9 +3,9 @@ package io.iamcyw.tower.messaging.responsetype;
 
 import io.iamcyw.tower.schema.model.WrapperType;
 
-public class ArrayInstancesResponseType<R> extends AbstractResponseType<R[]> {
+public class ArrayInstancesResponseType extends AbstractResponseType {
 
-    protected ArrayInstancesResponseType(Class<R> expectedResponseType) {
+    protected ArrayInstancesResponseType(Class expectedResponseType) {
         super(expectedResponseType);
     }
 

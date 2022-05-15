@@ -15,18 +15,7 @@ public final class Schema implements Serializable {
 
     private Set<Operation> predicates = new HashSet<>();
 
-    // private Map<Group, Set<Operation>> groupedQueries = new HashMap<>();
-    // private Map<Group, Set<Operation>> groupedMutations = new HashMap<>();
-    // private Map<Group, Set<Operation>> groupedSubscriptions = new HashMap<>();
-
-    // private List<DirectiveType> directiveTypes = new ArrayList<>();
     private Map<String, InputType> inputs = new HashMap<>();
-
-    private Map<String, Type> types = new HashMap<>();
-    // private Map<String, Type> interfaces = new HashMap<>();
-    // private Map<String, EnumType> enums = new HashMap<>();
-    //
-    // private Map<String, ErrorInfo> errors = new HashMap<>();
 
     private Map<String, String> wrappedDataFetchers = new HashMap<>();
 
@@ -171,88 +160,6 @@ public final class Schema implements Serializable {
         return !this.inputs.isEmpty();
     }
 
-    public Map<String, Type> getTypes() {
-        return types;
-    }
-
-    public void setTypes(Map<String, Type> types) {
-        this.types = types;
-    }
-
-    public void addType(Type type) {
-        this.types.put(type.getName(), type);
-    }
-
-    public boolean containsType(String name) {
-        return this.types.containsKey(name);
-    }
-
-    public boolean hasTypes() {
-        return !this.types.isEmpty();
-    }
-
-    // public Map<String, Type> getInterfaces() {
-    //     return interfaces;
-    // }
-
-    // public void setInterfaces(Map<String, Type> interfaces) {
-    //     this.interfaces = interfaces;
-    // }
-
-    // public void addInterface(Type interfaceType) {
-    //     if (interfaceType.getFields() != null && !interfaceType.getFields().isEmpty()) {
-    //         this.interfaces.put(interfaceType.getName(), interfaceType);
-    //     }
-    // }
-
-    // public boolean containsInterface(String name) {
-    //     return this.interfaces.containsKey(name);
-    // }
-
-    // public boolean hasInterfaces() {
-    //     return !this.interfaces.isEmpty();
-    // }
-
-    // public Map<String, EnumType> getEnums() {
-    //     return enums;
-    // }
-
-    // public void setEnums(Map<String, EnumType> enums) {
-    //     this.enums = enums;
-    // }
-
-    // public void addEnum(EnumType enumType) {
-    //     this.enums.put(enumType.getName(), enumType);
-    // }
-
-    // public boolean containsEnum(String name) {
-    //     return this.enums.containsKey(name);
-    // }
-
-    // public boolean hasEnums() {
-    //     return !this.enums.isEmpty();
-    // }
-    //
-    // public Map<String, ErrorInfo> getErrors() {
-    //     return errors;
-    // }
-    //
-    // public void setErrors(Map<String, ErrorInfo> errors) {
-    //     this.errors = errors;
-    // }
-    //
-    // public void addError(ErrorInfo error) {
-    //     this.errors.put(error.getClassName(), error);
-    // }
-    //
-    // public boolean containsError(String classname) {
-    //     return this.errors.containsKey(classname);
-    // }
-    //
-    // public boolean hasErrors() {
-    //     return !this.errors.isEmpty();
-    // }
-
     public Map<String, String> getWrappedDataFetchers() {
         return this.wrappedDataFetchers;
     }
@@ -284,47 +191,6 @@ public final class Schema implements Serializable {
     public boolean hasFieldDataFetchers() {
         return !this.fieldDataFetchers.isEmpty();
     }
-
-    // public List<Operation> getBatchOperations() {
-    //     List<Operation> batchOperations = new ArrayList<>();
-    //     if (hasTypes()) {
-    //         for (Type type : this.types.values()) {
-    //             if (type.hasBatchOperations()) {
-    //                 batchOperations.addAll(type.getBatchOperations().values());
-    //             }
-    //         }
-    //     }
-    //     return batchOperations;
-    // }
-
-    // private void addToOperationMap(Map<Group, Set<Operation>> map, Group group, Operation query) {
-    //     Set<Operation> set;
-    //
-    //     if (map.containsKey(group)) {
-    //         set = map.get(group);
-    //     } else {
-    //         set = new HashSet<>();
-    //     }
-    //     set.add(query);
-    //     map.put(group, set);
-    // }
-
-    // public List<DirectiveType> getDirectiveTypes() {
-    //     return directiveTypes;
-    // }
-    //
-    // public void setDirectiveTypes(List<DirectiveType> directiveTypes) {
-    //     this.directiveTypes = directiveTypes;
-    // }
-    //
-    // public void addDirectiveType(DirectiveType directiveType) {
-    //     directiveTypes.add(directiveType);
-    // }
-    //
-    // public boolean hasDirectiveTypes() {
-    //     return !directiveTypes.isEmpty();
-    // }
-
 
     @Override
     public String toString() {

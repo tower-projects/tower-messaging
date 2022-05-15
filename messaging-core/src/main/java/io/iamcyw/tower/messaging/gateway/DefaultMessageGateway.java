@@ -3,12 +3,13 @@ package io.iamcyw.tower.messaging.gateway;
 import io.iamcyw.tower.messaging.GenericMessage;
 import io.iamcyw.tower.messaging.Message;
 import io.iamcyw.tower.messaging.MessageBus;
+import io.iamcyw.tower.messaging.MetaData;
 import io.iamcyw.tower.messaging.responsetype.ResponseType;
 import io.iamcyw.tower.messaging.responsetype.ResponseTypes;
 import io.iamcyw.tower.schema.model.OperationType;
-import io.iamcyw.tower.schema.model.WrapperType;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class DefaultMessageGateway implements MessageGateway {
 
@@ -19,27 +20,41 @@ public class DefaultMessageGateway implements MessageGateway {
     }
 
     public void send(Object command) {
-        messageBus.dispatch(wrapperMessage(command, ResponseTypes.voidInstanceOf(), OperationType.COMMAND)).join();
+        sendAsync(command).join();
     }
 
     @Override
     public <R> List<R> queries(Object query, Class<R> response) {
-        return messageBus.dispatch(wrapperMessage(query, ResponseTypes.listInstanceOf(response), OperationType.QUERY))
-                         .join();
+        return queriesAsync(query, response).join();
     }
 
     @Override
     public <R> R query(Object query, Class<R> response) {
-        return messageBus.dispatch(wrapperMessage(query, ResponseTypes.instanceOf(response), OperationType.QUERY))
-                         .join();
+        return queryAsync(query, response).join();
     }
 
     @Override
-    public Object query(Object query, String responseClass, WrapperType wrapperType) {
-        return messageBus.dispatch(new GenericMessage<>(query, responseClass, wrapperType, OperationType.QUERY));
+    public <R> CompletableFuture<R> advance(Object payload, String command, OperationType operationType) {
+        return messageBus.dispatch(
+                new GenericMessage<>(payload, new MetaData(), command, ResponseTypes.anyInstanceOf(), operationType));
     }
 
-    private <R> Message<R> wrapperMessage(Object payload, ResponseType<R> responseType, OperationType operationType) {
+    @Override
+    public CompletableFuture<Void> sendAsync(Object command) {
+        return messageBus.dispatch(wrapperMessage(command, ResponseTypes.voidInstanceOf(), OperationType.COMMAND));
+    }
+
+    @Override
+    public <R> CompletableFuture<List<R>> queriesAsync(Object query, Class<R> response) {
+        return messageBus.dispatch(wrapperMessage(query, ResponseTypes.listInstanceOf(response), OperationType.QUERY));
+    }
+
+    @Override
+    public <R> CompletableFuture<R> queryAsync(Object query, Class<R> response) {
+        return messageBus.dispatch(wrapperMessage(query, ResponseTypes.instanceOf(response), OperationType.QUERY));
+    }
+
+    private <R> Message<R> wrapperMessage(Object payload, ResponseType responseType, OperationType operationType) {
         return new GenericMessage<>(payload, responseType, operationType);
     }
 

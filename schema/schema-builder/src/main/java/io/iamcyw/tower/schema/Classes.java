@@ -40,6 +40,8 @@ public class Classes {
 
     private static final DotName DOUBLE_PRIMATIVE = DotName.createSimple(double.class.getName());
 
+    public static final DotName ENTRY = DotName.createSimple("io.iamcyw.tower.messaging.Entry");
+
     private static final DotName DOUBLE_OPTIONAL = DotName.createSimple(OptionalDouble.class.getName());
 
     private static final DotName BIG_DECIMAL = DotName.createSimple(BigDecimal.class.getName());
@@ -98,8 +100,6 @@ public class Classes {
 
     public static final DotName SORTED_MAP = DotName.createSimple(SortedMap.class.getName());
 
-    public static final DotName ENTRY = DotName.createSimple("io.smallrye.graphql.api.Entry");
-
     public static final DotName OPTIONAL = DotName.createSimple(Optional.class.getName());
 
     public static final DotName ENUM = DotName.createSimple(Enum.class.getName());
@@ -134,8 +134,6 @@ public class Classes {
 
     // Adapters
     public static final DotName JSONB_ADAPTER = DotName.createSimple("javax.json.bind.adapter.JsonbAdapter");
-
-    public static final DotName ADAPTER = DotName.createSimple("io.smallrye.graphql.api.Adapter");
 
     static {
         KNOWN_COLLECTIONS.add(COLLECTION);

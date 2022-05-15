@@ -1,9 +1,10 @@
 package io.iamcyw.tower.messaging;
 
-import com.google.common.collect.Multimap;
 import io.iamcyw.tower.Assert;
-import io.iamcyw.tower.messaging.handle.Identifier;
+import io.iamcyw.tower.messaging.bootstrap.Bootstrap;
 import io.iamcyw.tower.messaging.handle.MessageHandle;
+import io.iamcyw.tower.messaging.handle.interceptor.DefaultInterceptorChain;
+import io.iamcyw.tower.messaging.handle.interceptor.InterceptorChain;
 import io.iamcyw.tower.schema.model.OperationType;
 
 import java.util.Collection;
@@ -13,34 +14,33 @@ import java.util.concurrent.CompletableFuture;
 import static io.iamcyw.tower.messaging.TowerMessageServerMessages.msg;
 
 public class DefaultMessageBus implements MessageBus {
-    private final Multimap<Identifier, MessageHandle<?>> queries;
 
-    private final Multimap<Identifier, MessageHandle<?>> commands;
+    protected final Bootstrap bootstrap;
 
-    public DefaultMessageBus(Multimap<Identifier, MessageHandle<?>> queries,
-                             Multimap<Identifier, MessageHandle<?>> commands) {
-        this.queries = queries;
-        this.commands = commands;
+    public DefaultMessageBus(Bootstrap bootstrap) {
+        this.bootstrap = bootstrap;
     }
 
-    private <R> CompletableFuture<R> handle(Message message) {
-        return CompletableFuture.supplyAsync(() -> {
-            CompletableFuture<MessageHandle<R>> messageHandleCF = message.getMetaData().getMessageHandle();
-            Assert.assertNotNull(messageHandleCF, "MessageHandle");
-            MessageHandle<R> messageHandle = messageHandleCF.join();
-            Assert.assertNotNull(messageHandle, "MessageHandle");
+    public <R> CompletableFuture<R> handle(Message<R> message) {
 
-            return messageHandle;
-        }).thenCompose(msgHandle -> msgHandle.handle(message));
+        return DefaultInterceptorChain.buildChain(bootstrap.getMessageInterceptors(), () -> new InterceptorChain() {
+            @Override
+            public <R> CompletableFuture<R> filter(Message<R> msg) {
+                CompletableFuture<MessageHandle<R>> messageHandleCF = msg.getMetaData().getMessageHandle();
+                Assert.assertNotNull(messageHandleCF, "MessageHandle");
+
+                return messageHandleCF.thenCompose(handle -> handle.handle(msg));
+            }
+        }).thenCompose(chain -> chain.filter(message));
     }
 
-    private void route(Message message) {
+    public void route(Message message) {
         CompletableFuture<MessageHandle<?>> messageHandleCF = CompletableFuture.supplyAsync(() -> {
             Collection<MessageHandle<?>> allowHandle;
             if (message.getOperationType().equals(OperationType.QUERY)) {
-                allowHandle = queries.get(message.getIdentifier());
+                allowHandle = bootstrap.getQueryHandles().get(message.getIdentifier());
             } else if (message.getOperationType().equals(OperationType.COMMAND)) {
-                allowHandle = commands.get(message.getIdentifier());
+                allowHandle = bootstrap.getCommandHandles().get(message.getIdentifier());
             } else {
                 allowHandle = Collections.emptyList();
             }
@@ -51,7 +51,7 @@ public class DefaultMessageBus implements MessageBus {
         message.getMetaData().setMessageHandle(messageHandleCF);
     }
 
-    private boolean predicateResultType(MessageHandle<?> messageHandle, Message<?> message) {
+    public boolean predicateResultType(MessageHandle<?> messageHandle, Message<?> message) {
         return message.getIdentifier().equals(messageHandle.getIdentifier());
     }
 

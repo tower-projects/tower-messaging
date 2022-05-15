@@ -8,33 +8,32 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-public class DefaultInterceptorChain<R> implements InterceptorChain {
+public class DefaultInterceptorChain implements InterceptorChain {
 
-    private final MessageInterceptor<R> interceptor;
+    private final MessageInterceptor interceptor;
 
-    private final InterceptorChain<R> nextChain;
+    private final InterceptorChain nextChain;
 
-    public DefaultInterceptorChain(MessageInterceptor<R> interceptor, InterceptorChain<R> nextChain) {
+    public DefaultInterceptorChain(MessageInterceptor interceptor, InterceptorChain nextChain) {
         this.interceptor = interceptor;
         this.nextChain = nextChain;
     }
 
-    public static <R> InterceptorChain<R> build(Deque<MessageInterceptor<R>> interceptors,
-                                                InterceptorChain<R> nextChain) {
+    public static InterceptorChain build(Deque<MessageInterceptor> interceptors, InterceptorChain nextChain) {
         if (interceptors.isEmpty()) {
             return nextChain;
         } else {
-            return build(interceptors, new DefaultInterceptorChain<R>(interceptors.removeLast(), nextChain));
+            return build(interceptors, new DefaultInterceptorChain(interceptors.removeLast(), nextChain));
         }
     }
 
-    public static <R> CompletableFuture<InterceptorChain<R>> buildChain(List<MessageInterceptor<R>> interceptors,
-                                                                        Supplier<InterceptorChain<R>> handle) {
+    public static CompletableFuture<InterceptorChain> buildChain(List<MessageInterceptor> interceptors,
+                                                                 Supplier<InterceptorChain> handle) {
         return CompletableFuture.completedFuture(build(new ArrayDeque<>(interceptors), handle.get()));
     }
 
     @Override
-    public CompletableFuture filter(Message message) {
+    public <R> CompletableFuture<R> filter(Message<R> message) {
         return interceptor.filter(message, nextChain);
     }
 

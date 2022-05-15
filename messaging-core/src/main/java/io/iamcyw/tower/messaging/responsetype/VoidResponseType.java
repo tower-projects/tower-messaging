@@ -2,7 +2,7 @@ package io.iamcyw.tower.messaging.responsetype;
 
 import io.iamcyw.tower.schema.model.WrapperType;
 
-public class VoidResponseType extends AbstractResponseType<Void> {
+public class VoidResponseType extends AbstractResponseType {
     protected VoidResponseType() {
         super(Void.class);
     }

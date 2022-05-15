@@ -15,6 +15,7 @@ dependencies {
         api("org.jboss.logging:jboss-logging-processor:2.2.1.Final")
 
         api("jakarta.enterprise:jakarta.enterprise.cdi-api:2.0.2")
+        api("org.eclipse.microprofile.context-propagation:microprofile-context-propagation-api:1.2")
 
         api("com.google.guava:guava:31.1-jre")
         api("com.graphql-java:graphql-java:18.0")
@@ -23,10 +24,12 @@ dependencies {
         api("org.apache.commons:commons-collections4:4.4")
         api("org.apache.commons:commons-lang3:3.12.0")
         api("org.jboss:jandex:2.4.2.Final")
-        api(project(":common"))
+
 
         api("org.junit.jupiter:junit-jupiter-engine:5.8.2")
         api("org.assertj:assertj-core:3.22.0")
+
+        api(project(":common"))
         api(project(":messaging-core"))
         api(project(":support:quarkus:tower-quarkus"))
         api(project(":support:quarkus:tower-quarkus-deployment"))

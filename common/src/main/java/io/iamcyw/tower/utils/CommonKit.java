@@ -120,4 +120,9 @@ public class CommonKit {
         return leftTimeout;
     }
 
+    public static String withoutPackagePrefix(String className) {
+        int index = className.lastIndexOf('.');
+        return index == -1 ? className : index < className.length() - 1 ? className.substring(index + 1) : "";
+    }
+
 }

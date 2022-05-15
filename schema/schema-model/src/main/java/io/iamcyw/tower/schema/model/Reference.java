@@ -4,10 +4,6 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * Represents a reference to some other type (type/input/enum/interface) This so that, as we are scanning, we can refer
- * to a type that might not exist yet. All types extends this.
- */
 public class Reference implements Serializable {
 
     private String className;

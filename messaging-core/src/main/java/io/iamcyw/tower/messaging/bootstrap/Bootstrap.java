@@ -10,9 +10,12 @@ import io.iamcyw.tower.messaging.gateway.DefaultMessageGateway;
 import io.iamcyw.tower.messaging.gateway.MessageGateway;
 import io.iamcyw.tower.messaging.handle.Identifier;
 import io.iamcyw.tower.messaging.handle.MessageHandle;
+import io.iamcyw.tower.messaging.handle.interceptor.MessageInterceptor;
+import io.iamcyw.tower.schema.model.Field;
 import io.iamcyw.tower.schema.model.Operation;
 import io.iamcyw.tower.schema.model.Schema;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -27,12 +30,14 @@ public class Bootstrap {
 
     private Multimap<Identifier, MessageHandle<?>> commandHandles;
 
+    private List<MessageInterceptor> messageInterceptors = new ArrayList<>();
+
     public Bootstrap(Schema schema) {
         this.schema = schema;
         bootstrap();
     }
 
-    private void bootstrap() {
+    public void bootstrap() {
         Assert.assertNotNull(schema);
 
         if (schema.hasQueries()) {
@@ -76,7 +81,7 @@ public class Bootstrap {
 
     public MessageBus getMessageBus() {
         if (this.messageBus == null) {
-            messageBus = new DefaultMessageBus(getQueryHandles(), getCommandHandles());
+            messageBus = new DefaultMessageBus(this);
         }
 
         return messageBus;
@@ -86,12 +91,20 @@ public class Bootstrap {
         this.messageBus = messageBus;
     }
 
+    public List<MessageInterceptor> getMessageInterceptors() {
+        return messageInterceptors;
+    }
+
+    public void setMessageInterceptors(List<MessageInterceptor> messageInterceptors) {
+        this.messageInterceptors = messageInterceptors;
+    }
+
     private MessageHandle<?> newMessageHandle(Operation query) {
-        return new MessageHandle<>(query, List.of());
+        return new MessageHandle<>(query);
     }
 
     private void handlePredicate(Operation predicate) {
-        String domainClass = predicate.getArguments().get(0).getReference().getClassName();
+        Field domainClass = predicate.getArguments().get(0);
 
         if (queryHandles != null) {
             Multimaps.filterKeys(queryHandles, input -> input.getCommand().equals(domainClass)).values()

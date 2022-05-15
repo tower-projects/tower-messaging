@@ -18,7 +18,7 @@ import java.util.Optional;
  */
 public class ArgumentCreator extends ModelCreator {
 
-    private Logger logger = Logger.getLogger(ArgumentCreator.class.getName());
+    private final Logger logger = Logger.getLogger(ArgumentCreator.class.getName());
 
     public ArgumentCreator(ReferenceCreator referenceCreator) {
 
@@ -46,19 +46,23 @@ public class ArgumentCreator extends ModelCreator {
         // Argument Type
         Type argumentType = methodInfo.parameters().get(position);
 
+        boolean isDomain = position == 0;
+
         // Name
-        String defaultName = methodInfo.parameterName(position);
+        String defaultName = isDomain ? argumentType.asClassType().name()
+                                                    .withoutPackagePrefix() : methodInfo.parameterName(position);
 
         // Reference reference = referenceCreator.createReferenceForSourceArgument(argumentType,
         //                                                                         annotationsForThisArgument);
-        Reference reference = referenceCreator.createReferenceForOperationArgument(argumentType, annotationsForThisArgument);
+        Reference reference = referenceCreator.createReferenceForOperationArgument(argumentType,
+                                                                                   annotationsForThisArgument);
 
 
         Argument argument = new Argument(defaultName, methodInfo.name(),
                                          MethodHelper.getPropertyName(Direction.IN, methodInfo.name()), defaultName,
                                          reference);
         // set domain flag
-        if (position == 0) {
+        if (isDomain) {
             argument.setDomainArgument(true);
         }
 

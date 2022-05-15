@@ -2,9 +2,7 @@ package io.iamcyw.tower.messaging;
 
 import io.iamcyw.tower.messaging.handle.Identifier;
 import io.iamcyw.tower.messaging.responsetype.ResponseType;
-import io.iamcyw.tower.messaging.responsetype.ResponseTypes;
 import io.iamcyw.tower.schema.model.OperationType;
-import io.iamcyw.tower.schema.model.WrapperType;
 
 import java.util.Map;
 
@@ -20,34 +18,30 @@ public class GenericMessage<R> implements Message<R> {
 
     private final OperationType operationType;
 
-    public GenericMessage(Object payload, MetaData metaData, ResponseType responseType, OperationType operationType) {
-        this.identifier = new Identifier(payload.getClass().getName(), responseType.name(),
-                                         responseType.responseMessagePayloadWrapperType());
+    public GenericMessage(Object payload, MetaData metaData, String command, ResponseType responseType,
+                          OperationType operationType) {
+        this(payload, new Identifier(command, responseType.name()), metaData, responseType, operationType);
+    }
+
+    public GenericMessage(Object payload, Identifier identifier, MetaData metaData, ResponseType responseType,
+                          OperationType operationType) {
+        this.identifier = identifier;
         this.metaData = metaData;
         this.payload = payload;
-        this.responseType = responseType;
         this.operationType = operationType;
+        this.responseType = responseType;
+    }
+
+    public GenericMessage(GenericMessage<R> original, MetaData metaData) {
+        this(original.payload, original.identifier, metaData, original.responseType, original.operationType);
+    }
+
+    public GenericMessage(GenericMessage<R> original, Object payload) {
+        this(payload, original.identifier, original.metaData, original.responseType, original.operationType);
     }
 
     public GenericMessage(Object payload, ResponseType responseType, OperationType operationType) {
-        this.identifier = new Identifier(payload.getClass().getName(), responseType.name(),
-                                         responseType.responseMessagePayloadWrapperType());
-        this.metaData = new MetaData();
-        this.payload = payload;
-        this.responseType = responseType;
-        this.operationType = operationType;
-    }
-
-    public GenericMessage(Object payload, String fieldName, WrapperType wrapperType, OperationType operationType) {
-        this.identifier = new Identifier(payload.getClass().getName(), fieldName, wrapperType);
-        this.metaData = new MetaData();
-        this.payload = payload;
-        this.operationType = operationType;
-        this.responseType = ResponseTypes.instanceOf(fieldName, wrapperType);
-    }
-
-    public GenericMessage(GenericMessage original, MetaData metaData) {
-        this(original.payload, metaData, original.responseType, original.operationType);
+        this(payload, new MetaData(), payload.getClass().getName(), responseType, operationType);
     }
 
     @Override
@@ -88,11 +82,16 @@ public class GenericMessage<R> implements Message<R> {
         }
     }
 
+    @Override
+    public Message<R> updatePayload(Object payload) {
+        return new GenericMessage<R>(this, payload);
+    }
+
     Message<R> withMetaData(MetaData metaData) {
         return new GenericMessage(this, metaData);
     }
 
-    public ResponseType<R> getResponseType() {
+    public ResponseType getResponseType() {
         return responseType;
     }
 

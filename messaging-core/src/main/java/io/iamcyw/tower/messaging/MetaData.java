@@ -49,11 +49,11 @@ public class MetaData {
     }
 
 
-    public ResponseType<?> getResponseType() {
-        return (ResponseType<?>) value.get("RESPONSE_TYPE");
+    public ResponseType getResponseType() {
+        return (ResponseType) value.get("RESPONSE_TYPE");
     }
 
-    public void setResponseType(ResponseType<?> responseType) {
+    public void setResponseType(ResponseType responseType) {
         value.put("RESPONSE_TYPE", responseType);
     }
 

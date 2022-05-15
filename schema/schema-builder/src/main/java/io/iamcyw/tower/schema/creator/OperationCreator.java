@@ -92,6 +92,12 @@ public class OperationCreator extends ModelCreator {
                             " is used as an operation, but is not public");
         }
 
+        if (methodInfo.parameters().size() < 1) {
+            throw new IllegalArgumentException(
+                    "Method " + methodInfo.declaringClass().name().toString() + "#" + methodInfo.name() +
+                            " is used as an operation, but is not command");
+        }
+
         Annotations annotationsForMethod = Annotations.getAnnotationsForMethod(methodInfo);
         Annotations annotationsForClass = Annotations.getAnnotationsForClass(methodInfo.declaringClass());
 

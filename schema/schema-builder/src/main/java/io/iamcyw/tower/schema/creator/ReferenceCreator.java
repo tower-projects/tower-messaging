@@ -12,27 +12,22 @@ import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.ParameterizedType;
 import org.jboss.jandex.Type;
 import org.jboss.jandex.TypeVariable;
+import org.jboss.logging.Logger;
 
 import java.util.*;
 
 public class ReferenceCreator {
 
+    private static final Logger LOG = Logger.getLogger(ReferenceCreator.class.getName());
+
     private final Queue<Reference> inputReferenceQueue = new ArrayDeque<>();
 
     private final Queue<Reference> typeReferenceQueue = new ArrayDeque<>();
-
-    private final Queue<Reference> enumReferenceQueue = new ArrayDeque<>();
-
-    private final Queue<Reference> interfaceReferenceQueue = new ArrayDeque<>();
 
     // Some maps we populate during scanning
     private final Map<String, Reference> inputReferenceMap = new HashMap<>();
 
     private final Map<String, Reference> typeReferenceMap = new HashMap<>();
-
-    private final Map<String, Reference> enumReferenceMap = new HashMap<>();
-
-    private final Map<String, Reference> interfaceReferenceMap = new HashMap<>();
 
     private static ReferenceType getCorrectReferenceType(Direction direction) {
         if (direction.equals(Direction.IN)) {
@@ -54,12 +49,8 @@ public class ReferenceCreator {
 
     private Queue<Reference> getReferenceQueue(ReferenceType referenceType) {
         switch (referenceType) {
-            // case ENUM:
-            //     return enumReferenceQueue;
             case INPUT:
                 return inputReferenceQueue;
-            // case INTERFACE:
-            //     return interfaceReferenceQueue;
             case TYPE:
                 return typeReferenceQueue;
             default:
@@ -108,14 +99,8 @@ public class ReferenceCreator {
      */
     public void clear() {
         inputReferenceMap.clear();
-        typeReferenceMap.clear();
-        enumReferenceMap.clear();
-        interfaceReferenceMap.clear();
 
         inputReferenceQueue.clear();
-        typeReferenceQueue.clear();
-        enumReferenceQueue.clear();
-        interfaceReferenceQueue.clear();
     }
 
     public Reference createReferenceForOperationField(Type fieldType, Annotations annotationsForMethod) {
@@ -159,14 +144,15 @@ public class ReferenceCreator {
 
         String fieldTypeName = fieldType.name().toString();
 
-        if (fieldType.kind().equals(Type.Kind.ARRAY)) {
+        if (fieldType.kind().equals(Type.Kind.VOID)) {
+            return new Reference(void.class.getName(), "void", getCorrectReferenceType(direction));
+        } else if (fieldType.kind().equals(Type.Kind.PRIMITIVE)) {
+            return getNonIndexedReference(direction, fieldType);
+        } else if (fieldType.kind().equals(Type.Kind.ARRAY)) {
             // Java Array
             Type typeInArray = fieldType.asArrayType().component();
             Type typeInMethodArray = methodType.asArrayType().component();
             return getReference(direction, typeInArray, typeInMethodArray, annotations, parentObjectReference);
-        } else if (fieldType.kind().equals(Type.Kind.VOID)) {
-            // Java void
-            return getVoidReference(direction, fieldType);
         } else if (Classes.isCollection(fieldType) || Classes.isUnwrappedType(fieldType)) {
             // Collections and unwrapped types
             Type typeInCollection = fieldType.asParameterizedType().arguments().get(0);
@@ -176,11 +162,36 @@ public class ReferenceCreator {
         } else if (Classes.isMap(fieldType)) {
             ParameterizedType parameterizedFieldType = fieldType.asParameterizedType();
             List<Type> fieldArguments = parameterizedFieldType.arguments();
-            ParameterizedType entryType = ParameterizedType.create(Classes.ENTRY, fieldArguments.toArray(new Type[]{}),
-                                                                   null);
-            return getReference(direction, entryType, entryType, annotations, parentObjectReference);
-        } else if (fieldType.kind().equals(Type.Kind.PRIMITIVE)) {
-            return getNonIndexedReference(direction, fieldType);
+
+            Map<String, Reference> parametrizedTypeArgumentsReferences = new HashMap<>();
+            parametrizedTypeArgumentsReferences.put("key", getReference(direction, fieldArguments.get(0), methodType,
+                                                                        annotations));
+            parametrizedTypeArgumentsReferences.put("value", getReference(direction, fieldArguments.get(1), methodType,
+                                                                          annotations));
+
+            Reference reference = new Reference(Map.class.getName(), "Map", getCorrectReferenceType(direction),
+                                                parametrizedTypeArgumentsReferences, true);
+
+            return reference;
+        } else if (fieldType.kind().equals(Type.Kind.PARAMETERIZED_TYPE)) {
+            // Type.Kind.PARAMETERIZED_TYPE handles generics PoJos here, collections and unwrapped types are catched
+            // before.
+            // We have to add parametrized types into returned reference object name, and also store parameter types
+            // into reference so they can be used for later processing of types
+            ClassInfo classInfo = ScanningContext.getIndex().getClassByName(fieldType.name());
+            if (classInfo != null) {
+
+                List<Type> parametrizedTypeArguments = fieldType.asParameterizedType().arguments();
+                Map<String, Reference> parametrizedTypeArgumentsReferences = collectParametrizedTypes(classInfo,
+                                                                                                      parametrizedTypeArguments,
+                                                                                                      direction,
+                                                                                                      parentObjectReference);
+
+                return createReference(direction, classInfo, true, true, parentObjectReference,
+                                       parametrizedTypeArgumentsReferences, true);
+            } else {
+                return getNonIndexedReference(direction, fieldType);
+            }
         } else if (fieldType.kind().equals(Type.Kind.CLASS)) {
             ClassInfo classInfo = ScanningContext.getIndex().getClassByName(fieldType.name());
             if (classInfo != null) {
@@ -200,108 +211,57 @@ public class ReferenceCreator {
                                                                                    direction, parentObjectReference);
                 }
 
-                // boolean shouldCreateAdapedToType = AdaptToHelper.shouldCreateTypeInSchema(annotations);
-                // boolean shouldCreateAdapedWithType = AdaptWithHelper.shouldCreateTypeInSchema(annotations);
                 return createReference(direction, classInfo, true, true, parentObjectReference,
                                        parametrizedTypeArgumentsReferences, false);
             } else {
                 return getNonIndexedReference(direction, fieldType);
             }
+        } else if (fieldType.kind().equals(Type.Kind.TYPE_VARIABLE)) {
+            if (parentObjectReference == null || parentObjectReference.getParametrizedTypeArguments() == null) {
+                throw new SchemaBuilderException(
+                        "Don't know what to do with [" + fieldType + "] of kind [" + fieldType.kind() +
+                                "] as parent object reference is missing or incomplete: " + parentObjectReference);
+            }
+
+            LOG.debug("Type variable: " + fieldType.asTypeVariable().name() + " identifier: " +
+                              fieldType.asTypeVariable().identifier());
+
+            Reference ret = parentObjectReference.getParametrizedTypeArguments()
+                                                 .get(fieldType.asTypeVariable().identifier());
+
+            if (ret == null) {
+                throw new SchemaBuilderException(
+                        "Don't know what to do with [" + fieldType + "] of kind [" + fieldType.kind() +
+                                "] as parent object reference doesn't contain necessary info: " +
+                                parentObjectReference);
+            }
+
+            return ret;
         } else {
             throw new SchemaBuilderException(
                     "Don't know what to do with [" + fieldType + "] of kind [" + fieldType.kind() + "]");
         }
     }
 
-
-    /**
-     * This method create a reference to type that might not yet exist. It also store to be created later, if we do not
-     * already know about it.
-     *
-     * @param direction          the direction (in or out)
-     * @param classInfo          the Java class
-     * @param createAdapedToType create the type in the schema
-     * @return a reference
-     */
-    public Reference createReference(Direction direction, ClassInfo classInfo, boolean createAdapedToType,
-                                     boolean createAdapedWithType, Reference parentObjectReference,
-                                     Map<String, Reference> parametrizedTypeArgumentsReferences,
-                                     boolean addParametrizedTypeNameExtension) {
-        // Get the initial reference type. It's either Type or Input depending on the direction. This might change as
-        // we figure out this is actually an enum or interface
-        ReferenceType referenceType = getCorrectReferenceType(direction);
-
-        Annotations annotationsForClass = Annotations.getAnnotationsForClass(classInfo);
-
-        // Now check if this is an interface or enum
-        // if (isInterface(classInfo, annotationsForClass)) {
-        //     // Also check that we create all implementations
-        //     Collection<ClassInfo> knownDirectImplementors = ScanningContext.getIndex()
-        //                                                                    .getAllKnownImplementors(classInfo.name
-        //                                                                    ());
-        //     for (ClassInfo impl : knownDirectImplementors) {
-        //         // TODO: First check the class annotations for @Type, if we get one that has that, use it, else
-        //          any/all
-        //         // ?
-        //
-        //         // translate parametrizedTypeArgumentsReferences to match class implementing interface
-        //         Map<String, Reference> parametrizedTypeArgumentsReferencesImpl = null;
-        //         if (!classInfo.typeParameters().isEmpty()) {
-        //             ParameterizedType interfaceType = null;
-        //             for (Type it : impl.interfaceTypes()) {
-        //                 if (it.name().equals(classInfo.name())) {
-        //                     interfaceType = it.asParameterizedType();
-        //                 }
-        //             }
-        //             parametrizedTypeArgumentsReferencesImpl = new HashMap<>();
-        //             int i = 0;
-        //             for (TypeVariable tp : classInfo.typeParameters()) {
-        //                 Type type = interfaceType.arguments().get(i++);
-        //                 if (type.kind() == Type.Kind.TYPE_VARIABLE) {
-        //                     parametrizedTypeArgumentsReferencesImpl.put(
-        //                             type.asTypeVariable().identifier(),
-        //                             parametrizedTypeArgumentsReferences.get(tp.identifier()));
-        //                 }
-        //             }
-        //
-        //         }
-        //
-        //         createReference(direction, impl, createAdapedToType, createAdapedWithType, parentObjectReference,
-        //                         parametrizedTypeArgumentsReferencesImpl,
-        //                         true);
-        //     }
-        //     referenceType = ReferenceType.INTERFACE;
-        // } else if (Classes.isEnum(classInfo)) {
-        //     referenceType = ReferenceType.ENUM;
-        // }
-
-        // Now we should have the correct reference type.
-        String className = classInfo.name().toString();
-
-        String name = TypeNameHelper.getAnyTypeName(
-                addParametrizedTypeNameExtension ? TypeNameHelper.createParametrizedTypeNameExtension(
-                        parametrizedTypeArgumentsReferences) : null, referenceType, classInfo, annotationsForClass);
-
-        Reference reference = new Reference(className, name, referenceType, parametrizedTypeArgumentsReferences,
-                                            addParametrizedTypeNameExtension);
-
-        // Adaptation
-        // Optional<AdaptTo> adaptTo = AdaptToHelper.getAdaptTo(reference, annotationsForClass);
-        // reference.setAdaptTo(adaptTo.orElse(null));
-        //
-        // Optional<AdaptWith> adaptWith = AdaptWithHelper.getAdaptWith(direction, this, reference,
-        // annotationsForClass);
-        // reference.setAdaptWith(adaptWith.orElse(null));
-
-        // Now add it to the correct map
-        // boolean shouldCreateAdapedToType = AdaptToHelper.shouldCreateTypeInSchema(annotationsForClass);
-        // boolean shouldCreateAdapedWithType = AdaptWithHelper.shouldCreateTypeInSchema(annotationsForClass);
-
-        // We ignore the field that is being adapted
-        if (createAdapedToType && createAdapedWithType) {
-            putIfAbsent(name, reference, referenceType);
+    public ParameterizedType findParametrizedParentType(ClassInfo classInfo) {
+        if (classInfo != null && classInfo.superClassType() != null && !Classes.isEnum(classInfo)) {
+            if (classInfo.superClassType().kind().equals(Type.Kind.PARAMETERIZED_TYPE)) {
+                return classInfo.superClassType().asParameterizedType();
+            }
+            return findParametrizedParentType(ScanningContext.getIndex().getClassByName(classInfo.superName()));
         }
-        return reference;
+        return null;
+    }
+
+    private void collectTypeVariables(List<TypeVariable> tvl, ClassInfo classInfo) {
+        if (classInfo == null)
+            return;
+        if (classInfo.typeParameters() != null) {
+            tvl.addAll(classInfo.typeParameters());
+        }
+        if (classInfo.superClassType() != null) {
+            collectTypeVariables(tvl, ScanningContext.getIndex().getClassByName(classInfo.superName()));
+        }
     }
 
     public Map<String, Reference> collectParametrizedTypes(ClassInfo classInfo,
@@ -328,57 +288,32 @@ public class ReferenceCreator {
         return parametrizedTypeArgumentsReferences;
     }
 
-    private void collectTypeVariables(List<TypeVariable> tvl, ClassInfo classInfo) {
-        if (classInfo == null)
-            return;
-        if (classInfo.typeParameters() != null) {
-            tvl.addAll(classInfo.typeParameters());
+    public Reference createReference(Direction direction, ClassInfo classInfo, boolean createAdapedToType,
+                                     boolean createAdapedWithType, Reference parentObjectReference,
+                                     Map<String, Reference> parametrizedTypeArgumentsReferences,
+                                     boolean addParametrizedTypeNameExtension) {
+        // Get the initial reference type. It's either Type or Input depending on the direction. This might change as
+        // we figure out this is actually an enum or interface
+        ReferenceType referenceType = getCorrectReferenceType(direction);
+
+        Annotations annotationsForClass = Annotations.getAnnotationsForClass(classInfo);
+
+
+        // Now we should have the correct reference type.
+        String className = classInfo.name().toString();
+
+        String name = TypeNameHelper.getAnyTypeName(
+                addParametrizedTypeNameExtension ? TypeNameHelper.createParametrizedTypeNameExtension(
+                        parametrizedTypeArgumentsReferences) : null, referenceType, classInfo, annotationsForClass);
+
+        Reference reference = new Reference(className, name, referenceType, parametrizedTypeArgumentsReferences,
+                                            addParametrizedTypeNameExtension);
+
+        // We ignore the field that is being adapted
+        if (createAdapedToType && createAdapedWithType) {
+            putIfAbsent(name, reference, referenceType);
         }
-        if (classInfo.superClassType() != null) {
-            collectTypeVariables(tvl, ScanningContext.getIndex().getClassByName(classInfo.superName()));
-        }
-    }
-
-    public ParameterizedType findParametrizedParentType(ClassInfo classInfo) {
-        if (classInfo != null && classInfo.superClassType() != null && !Classes.isEnum(classInfo)) {
-            if (classInfo.superClassType().kind().equals(Type.Kind.PARAMETERIZED_TYPE)) {
-                return classInfo.superClassType().asParameterizedType();
-            }
-            return findParametrizedParentType(ScanningContext.getIndex().getClassByName(classInfo.superName()));
-        }
-        return null;
-    }
-
-    // private Reference createReference(Direction direction, ClassInfo classInfo, Reference parentObjectReference,
-    //                                   Map<String, Reference> parametrizedTypeArgumentsReferences,
-    //                                   boolean addParametrizedTypeNameExtension) {
-    //     // Get the initial reference type. It's either Type or Input depending on the direction. This might change as
-    //     // we figure out this is actually an enum or interface
-    //     ReferenceType referenceType = getCorrectReferenceType(direction);
-    //
-    //     Annotations annotationsForClass = Annotations.getAnnotationsForClass(classInfo);
-    //
-    //
-    //     // Now we should have the correct reference type.
-    //     String className = classInfo.name().toString();
-    //
-    //     String name = TypeNameHelper.getAnyTypeName(
-    //             addParametrizedTypeNameExtension ? TypeNameHelper.createParametrizedTypeNameExtension(
-    //                     parametrizedTypeArgumentsReferences) : null, referenceType, classInfo, annotationsForClass);
-    //
-    //     Reference reference = new Reference(className, name, referenceType, parametrizedTypeArgumentsReferences,
-    //                                         addParametrizedTypeNameExtension);
-    //
-    //     return reference;
-    // }
-
-    private Reference getVoidReference(Direction direction, Type fieldType) {
-
-        Reference r = new Reference();
-        r.setClassName(fieldType.name().toString());
-        r.setName("void");
-
-        return r;
+        return reference;
     }
 
     private Reference getNonIndexedReference(Direction direction, Type fieldType) {
@@ -393,17 +328,14 @@ public class ReferenceCreator {
             }
         }
 
+        LOG.warn("Class [" + fieldType.name() +
+                         "] is not indexed in Jandex. Can not scan Object Type, might not be mapped correctly. Kind =" +
+                         " [" + fieldType.kind() + "]");
+
         Reference r = new Reference();
         r.setClassName(fieldType.name().toString());
         r.setName(fieldType.name().local());
-
-        boolean isNumber = Classes.isNumberLikeTypeOrContainedIn(fieldType);
-        boolean isDate = Classes.isDateLikeTypeOrContainedIn(fieldType);
-        if (direction.equals(Direction.IN)) {
-            r.setType(ReferenceType.INPUT);
-        } else {
-            r.setType(ReferenceType.TYPE);
-        }
+        r.setType(getCorrectReferenceType(direction));
         return r;
     }
 

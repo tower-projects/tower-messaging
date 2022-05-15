@@ -3,9 +3,7 @@ package io.iamcyw.tower.messaging.responsetype;
 
 import io.iamcyw.tower.schema.model.WrapperType;
 
-import java.util.List;
-
-public class ListInstancesResponseType<R> extends AbstractResponseType<List<R>> {
+public class ListInstancesResponseType<R> extends AbstractResponseType {
 
     protected ListInstancesResponseType(Class<R> expectedResponseType) {
         super(expectedResponseType);

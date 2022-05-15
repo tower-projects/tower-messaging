@@ -6,7 +6,6 @@ import io.iamcyw.tower.schema.creator.OperationCreator;
 import io.iamcyw.tower.schema.creator.ReferenceCreator;
 import io.iamcyw.tower.schema.creator.type.Creator;
 import io.iamcyw.tower.schema.creator.type.InputTypeCreator;
-import io.iamcyw.tower.schema.creator.type.TypeCreator;
 import io.iamcyw.tower.schema.model.*;
 import org.jboss.jandex.*;
 
@@ -18,11 +17,9 @@ import java.util.function.Consumer;
 public class SchemaBuilder {
     private final OperationCreator operationCreator;
 
-    private final InputTypeCreator inputTypeCreator;
-
     private final FieldCreator fieldCreator;
 
-    private final TypeCreator typeCreator;
+    private final InputTypeCreator inputTypeCreator;
 
     private final ReferenceCreator referenceCreator;
 
@@ -31,8 +28,7 @@ public class SchemaBuilder {
 
         this.operationCreator = operationCreator;
         fieldCreator = new FieldCreator(referenceCreator);
-        typeCreator = new TypeCreator(referenceCreator, fieldCreator, operationCreator);
-        this.inputTypeCreator = new InputTypeCreator(fieldCreator);
+        this.inputTypeCreator = new InputTypeCreator();
     }
 
     public static Schema build(IndexView index) {
@@ -65,15 +61,6 @@ public class SchemaBuilder {
     private void addTypesToSchema(Schema schema) {
         // Add the input types
         createAndAddToSchema(ReferenceType.INPUT, inputTypeCreator, schema::addInput);
-
-        // Add the output types
-        createAndAddToSchema(ReferenceType.TYPE, typeCreator, schema::addType);
-
-        // // Add the interface types
-        // createAndAddToSchema(ReferenceType.INTERFACE, interfaceCreator, schema::addInterface);
-        //
-        // // Add the enum types
-        // createAndAddToSchema(ReferenceType.ENUM, enumCreator, schema::addEnum);
     }
 
     private <T> void createAndAddToSchema(ReferenceType referenceType, Creator<T> creator, Consumer<T> consumer) {

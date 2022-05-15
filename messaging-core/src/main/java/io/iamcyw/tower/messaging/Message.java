@@ -25,4 +25,6 @@ public interface Message<R> {
      */
     Message<R> andMetaData(Map<String, Object> metaData);
 
+    Message<R> updatePayload(Object payload);
+
 }

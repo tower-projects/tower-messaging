@@ -21,6 +21,8 @@ public final class Operation extends Field {
      */
     private List<Argument> arguments = new LinkedList<>();
 
+    private InputType source;
+
     /**
      * Operation Type (Query/Mutation)
      */

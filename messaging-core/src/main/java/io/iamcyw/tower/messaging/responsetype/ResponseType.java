@@ -4,7 +4,7 @@ import io.iamcyw.tower.schema.model.WrapperType;
 
 import java.io.Serializable;
 
-public interface ResponseType<R> extends Serializable {
+public interface ResponseType extends Serializable {
 
     Class<?> responseMessagePayloadType();
 

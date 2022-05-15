@@ -4,8 +4,12 @@ import io.iamcyw.tower.messaging.Message;
 
 import java.util.concurrent.CompletableFuture;
 
-public interface MessageInterceptor<R> {
+public interface MessageInterceptor {
 
-    CompletableFuture<R> filter(Message message, InterceptorChain<?> chain);
+    default Long order() {
+        return 0L;
+    }
+
+    <R> CompletableFuture<R> filter(Message<R> message, InterceptorChain chain);
 
 }

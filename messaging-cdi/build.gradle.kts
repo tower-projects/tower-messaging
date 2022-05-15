@@ -12,6 +12,7 @@ dependencies {
     implementation(project(":schema:schema-model"))
 
     compileOnly("jakarta.enterprise:jakarta.enterprise.cdi-api")
+    compileOnly("org.eclipse.microprofile.context-propagation:microprofile-context-propagation-api")
 
     testImplementation("org.jboss.logging:jboss-logging")
     testImplementation("org.jboss:jandex")
